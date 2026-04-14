@@ -40,8 +40,13 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Install mermaid-filter
-RUN npm install -g mermaid-filter
+# Install Node.js tools
+RUN npm install -g mermaid-filter markdownlint-cli
+
+# Install Python tools
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install codespell
 
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the
 # flag is always present regardless of how puppeteer invokes it.

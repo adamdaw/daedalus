@@ -2,18 +2,37 @@ title: "Proposal Title"
 subtitle: "Architecture Document"
 author: "Author Name"
 date: "Month Year"
+
+# Table of contents depth (1–6, default: 3)
+toc-depth: 3
+
+# Set to true for numbered sections (1.1, 1.2, etc.)
+numbersections: false
+
+# Typography — requires the named fonts to be installed on the build system.
+# mainfont: "Georgia"
+# sansfont: "Helvetica Neue"
+# monofont: "Courier New"
+
+# Executive summary — rendered as a formal abstract block before the TOC.
+# abstract: |
+#   One-paragraph summary of the proposal.
+
+# Hyperlink colours
 colorlinks: true
 linkcolor: blue
 urlcolor: blue
 filecolor: magenta
 bookmarksopen: true
+
+# Page margins
 geometry:
   - top=2cm
   - bottom=1.5cm
   - left=2cm
   - right=2cm
 
-# Uncomment and edit to populate additional cover page fields:
+# Additional cover page fields — uncomment and edit as needed.
 # header-includes:
 #   - \def\docclient{Client Name}
 #   - \def\docversion{1.0}

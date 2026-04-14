@@ -3,6 +3,7 @@ project.pdf
 project.html
 proposals/*/project.pdf
 proposals/*/project.html
+proposals/*.zip
 
 # Intermediate files
 *.aux

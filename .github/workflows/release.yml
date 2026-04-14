@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+  PANDOC_VERSION: 3.1.12
+
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache pandoc deb
+        id: cache-pandoc
+        uses: actions/cache@v4
+        with:
+          path: pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb
+          key: pandoc-${{ env.PANDOC_VERSION }}
+
+      - name: Download pandoc
+        if: steps.cache-pandoc.outputs.cache-hit != 'true'
+        run: |
+          wget -q "https://github.com/jgm/pandoc/releases/download/${{ env.PANDOC_VERSION }}/pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb"
+
+      - name: Install pandoc
+        run: sudo dpkg -i "pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb"
+
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/release.yml') }}
+
+      - name: Install XeLaTeX
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends \
+            texlive-xetex \
+            texlive-fonts-recommended \
+            texlive-latex-extra \
+            lmodern
+
+      - name: Setup Chrome for mermaid-filter
+        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+
+      - name: Install mermaid-filter
+        run: npm install -g mermaid-filter
+
+      - name: Build PDF
+        run: make build
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: project.pdf
+          generate_release_notes: true

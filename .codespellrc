@@ -1,0 +1,2 @@
+[codespell]
+skip = .git,*.bib,*.pdf,*.html,project.tex,project.css

@@ -13,17 +13,19 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 | Tool | Purpose | Install |
 |---|---|---|
 | `pandoc` 3.1.12 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
-| `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra` |
+| `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
 | `mermaid-filter` | Diagram rendering | `npm install -g mermaid-filter` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
+| `markdownlint-cli` | Markdown linting (optional) | `npm install -g markdownlint-cli` |
+| `codespell` | Spell checking (optional) | `pip install codespell` |
 
 For mermaid-filter to find the browser:
 ```bash
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-export PUPPETEER_EXECUTABLE_PATH=$(which chromium)  # or google-chrome-stable
+export PUPPETEER_EXECUTABLE_PATH=$(which chromium)
 ```
 
-Verify all dependencies are installed:
+Verify all dependencies:
 ```bash
 make check
 ```
@@ -31,10 +33,25 @@ make check
 ### Build
 
 ```bash
-make build       # generate project.pdf from the root example
-make html        # generate project.html (no XeLaTeX required)
-make clean       # remove project.pdf and project.html
-make watch       # rebuild on file changes (requires fswatch or inotify-tools)
+make build        # generate project.pdf
+make html         # generate project.html
+make all          # generate both PDF and HTML
+make clean        # remove generated output
+make watch        # rebuild on file changes (requires fswatch or inotify-tools)
+```
+
+### Quality checks
+
+```bash
+make lint         # run markdownlint on content files
+make spellcheck   # run codespell on content files
+make wordcount    # word count per file and total
+```
+
+### Draft mode
+
+```bash
+make build DRAFT=1   # adds a DRAFT watermark to every page
 ```
 
 ### Docker (no local dependencies required)
@@ -46,31 +63,45 @@ make docker-run     # run the build inside the container
 
 ### VS Code Dev Container
 
-Open this repository in VS Code with the Remote - Containers extension. The devcontainer uses the same Docker image as `make docker-run` — all dependencies are pre-installed and `make check` runs automatically on container start.
+Open this repository in VS Code with the Remote - Containers extension. The devcontainer uses the same Docker image — all dependencies are pre-installed.
 
 ---
 
-## Creating a New Proposal
+## Managing Proposals
+
+### Create a new proposal
 
 ```bash
 make init NAME=my-proposal
 ```
 
-This scaffolds `proposals/my-proposal/` from the templates directory:
+Scaffolds `proposals/my-proposal/` from the `templates/` directory:
 
 ```
 proposals/my-proposal/
   config.yaml        # document metadata — edit this first
   project.bib        # bibliography
-  images/            # drop logo.jpg or logo.png here for cover page logo
+  images/            # drop logo.jpg or logo.png here
   markdown/
     01_Introduction.md
 ```
 
-Build your proposal:
+### Build a proposal
+
 ```bash
-make build PROPOSAL=my-proposal
-make html  PROPOSAL=my-proposal
+make build PROPOSAL=my-proposal     # PDF
+make html  PROPOSAL=my-proposal     # HTML
+make all   PROPOSAL=my-proposal     # both
+make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
+```
+
+### Archive for delivery
+
+Once built, package the source and output into a timestamped zip:
+
+```bash
+make archive PROPOSAL=my-proposal
+# Creates: proposals/my-proposal-20260414-143022.zip
 ```
 
 ---
@@ -80,20 +111,20 @@ make html  PROPOSAL=my-proposal
 ```
 daedalus/
   config.yaml           # Root example metadata
-  project.tex           # Shared LaTeX template (cover page, headers, styling)
-  project.css           # CSS overrides for Mermaid diagram rendering
+  project.tex           # Shared LaTeX template (cover page, headers, fonts)
+  project.css           # Mermaid CSS overrides
   project.bib           # Root example bibliography
+  draft.tex             # Draft watermark (loaded when DRAFT=1)
   Makefile              # Build automation
   Dockerfile            # Containerised build environment
+  .markdownlint.json    # Lint configuration
+  .codespellrc          # Spell check configuration
   markdown/             # Root example content
   images/               # Root example images
-  templates/            # Starter files used by `make init`
-    config.yaml
-    project.bib
-    markdown/
-  proposals/            # Generated proposals (PDFs are gitignored)
+  templates/            # Starter files used by make init
+  proposals/            # Your proposals (generated output is gitignored)
   .devcontainer/        # VS Code devcontainer config
-  .github/workflows/    # CI pipeline
+  .github/workflows/    # CI/CD pipelines
 ```
 
 ---
@@ -107,18 +138,28 @@ title: "My Architecture Proposal"
 subtitle: "Technical Design Document"
 author: "Jane Smith"
 date: "April 2026"
+
+# TOC depth and section numbering
+toc-depth: 3
+numbersections: true
+
+# Typography (fonts must be installed on the build system)
+mainfont: "Georgia"
+sansfont: "Helvetica Neue"
+monofont: "Courier New"
+
+# Executive summary — rendered before the TOC
+abstract: |
+  One-paragraph summary of the proposal.
 ```
 
-For additional cover page fields, add `header-includes`:
-
+For additional cover page fields:
 ```yaml
 header-includes:
   - \def\docclient{Acme Corp}
   - \def\docversion{1.0}
   - \def\docclassification{Internal Use Only}
 ```
-
-Margin and link colour settings are also in `config.yaml` — see the root example.
 
 ### Content files
 
@@ -134,11 +175,11 @@ markdown/
   99_References.md
 ```
 
-Each `#` heading starts a new page. `##` and `###` headings appear in the table of contents.
+Each `#` heading starts a new page. Sub-headings appear in the TOC up to `toc-depth`.
 
 ### Cover page logo
 
-Drop `logo.jpg` or `logo.png` into the `images/` directory. It appears on the cover page automatically.
+Drop `logo.jpg` or `logo.png` into `images/`. Appears on the cover page automatically.
 
 ### Mermaid diagrams
 
@@ -146,19 +187,19 @@ Drop `logo.jpg` or `logo.png` into the `images/` directory. It appears on the co
 ```mermaid
 flowchart TD
     A[Start] --> B{Decision}
-    B -->|Yes| C[Do something]
-    B -->|No| D[Do something else]
+    B -->|Yes| C[Action]
+    B -->|No| D[Other action]
 ```
 ````
 
-Supported types include flowcharts, sequence diagrams, ERDs, Gantt charts, and more.
+Supported: flowcharts, sequence diagrams, ERDs, Gantt charts, and all other Mermaid types.
 
 ### Bibliography
 
-Add references to `project.bib`. Cite inline with `[@Key]` and list in the references section:
+Add entries to `project.bib`. Cite with `[@Key]` inline:
 
 ```markdown
-[^ref1]: Reference description. [@BibKey]
+The strangler fig pattern is commonly used for legacy migrations [@S1].
 ```
 
 ---
@@ -167,53 +208,51 @@ Add references to `project.bib`. Cite inline with `[@Key]` and list in the refer
 
 ### Cover page fields
 
-`project.tex` defines the cover page layout. The following fields are supported:
-
 | Source | Field | How to set |
 |---|---|---|
 | `config.yaml` | `title` | `title: "..."` |
 | `config.yaml` | `subtitle` | `subtitle: "..."` |
 | `config.yaml` | `author` | `author: "..."` |
 | `config.yaml` | `date` | `date: "..."` |
-| `header-includes` | Client name | `- \def\docclient{...}` |
+| `header-includes` | Client | `- \def\docclient{...}` |
 | `header-includes` | Version | `- \def\docversion{...}` |
 | `header-includes` | Classification | `- \def\docclassification{...}` |
 
-### Margins
-
-```yaml
-geometry:
-  - top=2cm
-  - bottom=1.5cm
-  - left=2cm
-  - right=2cm
-```
-
-### Link colours
-
-```yaml
-colorlinks: true
-linkcolor: blue
-urlcolor: blue
-filecolor: magenta
-```
-
 ### Running headers and footers
 
-Defined in `project.tex`. By default: document title (left), author (right), page number (centre footer). Edit the `\fancyhead` and `\fancyfoot` commands to customise.
+Defined in `project.tex`. Default: document title (left), author (right), page number (centre footer). Edit `\fancyhead` and `\fancyfoot` to customise.
+
+### Margins and colours
+
+Configured in `config.yaml` via `geometry` and `colorlinks`/`linkcolor`/`urlcolor`.
 
 ---
 
-## CI / Automated Validation
+## CI/CD
 
-Every push triggers two GitHub Actions jobs:
+### `build.yml` — runs on every push
 
-**`build`** — installs pandoc, XeLaTeX, and mermaid-filter on a clean Ubuntu runner, builds `project.pdf`, then validates:
-- PDF is non-empty and parseable
-- Minimum page count (≥ 5)
-- Expected section headings present in extracted text
-- Uploads PDF as a downloadable artifact (retained 30 days)
+1. Installs pandoc, XeLaTeX, mermaid-filter, markdownlint, codespell
+2. Lints all markdown files
+3. Spell-checks all markdown files
+4. Builds `project.pdf`
+5. Validates PDF structure (page count, section headings)
+6. Uploads PDF as a downloadable artifact (30-day retention)
+7. Builds and tests the Docker image end-to-end
 
-**`docker`** — builds the Docker image (with layer caching) and runs a full build inside the container to validate the Dockerfile end-to-end.
+### `proposals.yml` — runs when `proposals/**` changes
 
-Dependency downloads are cached (pandoc `.deb`, apt archives, npm) to speed up subsequent runs.
+Detects which proposal directories were modified in the push, then builds only those proposals in parallel (matrix strategy). Uploads PDF and HTML for each as artifacts.
+
+### `release.yml` — runs on `v*` tags
+
+Builds the root example PDF and attaches it to the GitHub Release as a downloadable asset. Tag a release with `git tag v1.0 && git push origin v1.0`.
+
+---
+
+## Dependency caching
+
+All CI jobs cache:
+- The pandoc `.deb` installer (keyed by version)
+- apt package archives (keyed by workflow file hash)
+- npm cache (keyed by workflow file hash)

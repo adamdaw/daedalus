@@ -58,8 +58,17 @@ jobs:
         uses: browser-actions/setup-chrome@v1
         id: setup-chrome
 
-      - name: Install mermaid-filter
-        run: npm install -g mermaid-filter
+      - name: Install Node.js tools
+        run: npm install -g mermaid-filter markdownlint-cli
+
+      - name: Install Python tools
+        run: pip install codespell
+
+      - name: Lint markdown
+        run: make lint
+
+      - name: Spell check
+        run: make spellcheck
 
       - name: Build PDF
         run: make build
