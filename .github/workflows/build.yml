@@ -1,0 +1,71 @@
+name: Build & Validate PDF
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pandoc
+        run: |
+          PANDOC_VERSION=3.1.12
+          wget -q "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb"
+          sudo dpkg -i "pandoc-${PANDOC_VERSION}-1-amd64.deb"
+          pandoc --version
+
+      - name: Install XeLaTeX and PDF utilities
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y \
+            texlive-xetex \
+            texlive-fonts-recommended \
+            texlive-latex-extra \
+            poppler-utils
+
+      - name: Setup Chrome for mermaid-filter
+        uses: browser-actions/setup-chrome@v1
+        id: setup-chrome
+
+      - name: Install mermaid-filter
+        run: npm install -g mermaid-filter
+
+      - name: Build PDF
+        run: make build
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Validate PDF
+        run: |
+          # File exists and is non-empty
+          test -s project.pdf || { echo "FAIL: PDF not generated or is empty"; exit 1; }
+
+          # Valid PDF with extractable metadata
+          pdfinfo project.pdf
+
+          # Minimum page count
+          PAGES=$(pdfinfo project.pdf | awk '/^Pages:/{print $2}')
+          echo "Page count: $PAGES"
+          [ "$PAGES" -ge 3 ] || { echo "FAIL: Expected at least 3 pages, got $PAGES"; exit 1; }
+
+          # Expected sections present in text content
+          pdftotext project.pdf - > /tmp/pdf-text.txt
+          grep -q "Introduction"  /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";  exit 1; }
+          grep -q "First Section" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'First Section'"; exit 1; }
+          grep -q "References"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";    exit 1; }
+          grep -q "Sub-Section"   /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Sub-Section'";   exit 1; }
+
+          echo "All validation checks passed."
+
+      - name: Upload PDF artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proposal-pdf
+          path: project.pdf
+          retention-days: 30

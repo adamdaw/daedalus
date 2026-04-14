@@ -1,7 +1,11 @@
 \usepackage{fancyvrb,newverbs,titlesec}
 \usepackage[top=2cm, bottom=1.5cm, left=2cm, right=2cm]{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
 
-%% color and other settings for hyperref package
+\graphicspath{{images/}}
+
+%% Hyperlink colours
 \hypersetup{
     bookmarksopen=true,
     linkcolor=blue,
@@ -9,5 +13,30 @@
     urlcolor=RoyalBlue,
 }
 
-
+%% Page break before each top-level section
 \newcommand{\sectionbreak}{\clearpage}
+
+%% Custom cover page
+%% Reads \@title, \@author, \@date from pandoc metadata (title/author/date in config.yaml).
+%% Drop a logo at images/logo.jpg or images/logo.png and it will appear automatically.
+\makeatletter
+\renewcommand{\maketitle}{%
+  \begin{titlepage}%
+    \centering%
+    \vspace*{1.5cm}%
+    \IfFileExists{images/logo.jpg}{%
+      \includegraphics[width=0.35\textwidth]{images/logo.jpg}\\[2cm]%
+    }{%
+      \IfFileExists{images/logo.png}{%
+        \includegraphics[width=0.35\textwidth]{images/logo.png}\\[2cm]%
+      }{\vspace{3.5cm}}%
+    }%
+    {\Huge\bfseries\@title\par}%
+    \vspace{1.5cm}%
+    {\large\@author\par}%
+    \vspace{0.5cm}%
+    {\large\@date\par}%
+    \vfill%
+  \end{titlepage}%
+}%
+\makeatother
