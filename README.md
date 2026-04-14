@@ -47,7 +47,7 @@ make check
 make build        # generate project.pdf
 make html         # generate project.html
 make docx         # generate project.docx (Word)
-make all          # generate both PDF and HTML
+make all          # generate PDF, HTML, and DOCX
 make clean        # remove generated output
 make watch        # rebuild on file changes (requires fswatch or inotify-tools)
 make open         # open the PDF in the system viewer
@@ -82,9 +82,13 @@ Available themes: `default`, `dark`, `forest`, `neutral`. Defaults to `default`.
 ### Docker (no local dependencies required)
 
 ```bash
-make docker-build   # build the image
-make docker-run     # run the build inside the container
+make docker-build       # build the image locally
+make docker-run         # run the build inside the locally-built container
+make docker-pull-run    # pull the pre-built image from GHCR and run the build
 ```
+
+The pre-built image (`ghcr.io/adamdaw/daedalus:latest`) is published to GitHub Container
+Registry on every push to `master`. Using it skips the ~3-minute local Docker build.
 
 ### VS Code Dev Container
 
@@ -159,7 +163,7 @@ Creates the next numbered Markdown file in the proposal's `markdown/` directory.
 make build PROPOSAL=my-proposal     # PDF
 make html  PROPOSAL=my-proposal     # HTML
 make docx  PROPOSAL=my-proposal     # Word (DOCX)
-make all   PROPOSAL=my-proposal     # both PDF and HTML
+make all   PROPOSAL=my-proposal     # PDF, HTML, and DOCX
 make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
 make open  PROPOSAL=my-proposal     # open PDF in viewer
 ```
@@ -175,7 +179,7 @@ Permanently removes `proposals/my-proposal/`. Requires `CONFIRM=yes` to prevent 
 ### Build all proposals
 
 ```bash
-make build-all     # build PDF and HTML for every proposal in proposals/
+make build-all     # build PDF, HTML, and DOCX for every proposal in proposals/
 make validate-all  # run lint + spellcheck for root example and every proposal
 make clean-all     # remove generated output for root example and all proposals
 ```
@@ -361,23 +365,35 @@ autoSectionLabels: true
 
 ## CI/CD
 
-### `build.yml` — runs on every push
+### `build.yml` — runs on every push, PR, or manual trigger
 
 1. Installs pandoc, pandoc-crossref, XeLaTeX, mermaid-filter, markdownlint, codespell
 2. Lints all markdown files
 3. Spell-checks all markdown files
-4. Builds `project.pdf` and validates structure (page count, section headings)
+4. Builds `project.pdf` and validates structure (page count, arc42 section headings)
 5. Builds `project.html` and validates it is non-empty
 6. Uploads PDF and HTML as downloadable artifacts (30-day retention)
-7. Builds and tests the Docker image end-to-end (full PDF validation)
+7. Builds and validates the Docker image end-to-end, then pushes to GHCR
 
-### `proposals.yml` — runs when `proposals/**` changes
+Can also be triggered manually from the GitHub Actions UI (`workflow_dispatch`).
 
-Detects which proposal directories were modified in the push, then builds only those proposals in parallel (matrix strategy). Uploads PDF and HTML for each as artifacts.
+### `proposals.yml` — runs when `proposals/**` changes, or manually
+
+Detects which proposal directories were modified in the push, then builds and validates
+only those proposals in parallel (matrix strategy). Each proposal is checked against
+all arc42 section headings. Uploads PDF and HTML for each as artifacts.
+
+Supports manual trigger: optionally specify a single `proposal` name to rebuild, or
+leave empty to rebuild all proposals.
 
 ### `release.yml` — runs on `v*` tags
 
-Builds the root example PDF and HTML and attaches both to the GitHub Release as downloadable assets. Tag a release with `git tag v1.0 && git push origin v1.0`.
+Lints and spell-checks, builds the root example PDF, HTML, and DOCX, validates all
+artifacts, then attaches them to the GitHub Release. Tag a release with:
+
+```bash
+git tag v1.0 && git push origin v1.0
+```
 
 ---
 

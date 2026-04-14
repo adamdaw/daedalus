@@ -121,6 +121,8 @@ jobs:
 
           grep -qi "<h1" project.html || { echo "FAIL: HTML missing heading content"; exit 1; }
 
+          test -s project.docx || { echo "FAIL: project.docx not generated or is empty"; exit 1; }
+
           echo "Release artifacts validated."
 
       - name: Create GitHub Release

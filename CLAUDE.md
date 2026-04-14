@@ -29,7 +29,7 @@ See `docs/` for the full VSDD knowledge base.
 make build                    # → project.pdf
 make html                     # → project.html
 make docx                     # → project.docx
-make all                      # → PDF + HTML
+make all                      # → PDF + HTML + DOCX
 make build PROPOSAL=name      # build a specific proposal
 make build DRAFT=1            # add DRAFT watermark
 make lint                     # markdownlint on content
@@ -37,7 +37,9 @@ make spellcheck               # codespell on content
 make validate                 # lint + spellcheck
 make validate-all             # lint + spellcheck across all proposals
 make check                    # verify all build dependencies are installed
-make docker-run               # run make all inside Docker (no local deps needed)
+make docker-run               # run make all inside locally-built Docker image
+make docker-pull-run          # pull pre-built image from GHCR and run (faster)
+make version                  # print installed versions of all build tools
 ```
 
 ---
@@ -108,9 +110,9 @@ daedalus/
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `build.yml` | Every push / PR | lint → spellcheck → build PDF+HTML → validate → upload artifacts; Docker job runs full build+validate inside container |
-| `proposals.yml` | Push touching `proposals/**` | Detects changed proposals; builds + validates each in matrix |
-| `release.yml` | Push of `v*` tag | Builds PDF+HTML → **validates before upload** → attaches to GitHub Release |
+| `build.yml` | Every push / PR / `workflow_dispatch` | lint → spellcheck → build PDF+HTML → validate → upload artifacts; Docker job builds, validates, and pushes to GHCR |
+| `proposals.yml` | Push to `proposals/**` / `workflow_dispatch` | Detects changed proposals (or uses manual input); builds + validates each in matrix; arc42 heading checks |
+| `release.yml` | Push of `v*` tag | lint → spellcheck → build PDF+HTML+DOCX → **validate all three** → attach to GitHub Release |
 
 PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading grep
 (Introduction, Context, Solution Strategy, Building Block, Deployment, Risks, References).
@@ -133,6 +135,23 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | 10 | Quality Requirements | Quality tree + measurable quality scenarios |
 | 11 | Risks and Technical Debt | Risk register, tracked debt |
 | 99 | References | Bibliography (auto-populated by --citeproc) |
+
+---
+
+## VSDD Prompt Roster
+
+The `prompts/` directory contains the agent prompts for the full VSDD workflow. Load
+`docs/mem-1-project-context.md` through `mem-4` at the start of every session.
+
+| Prompt | File | Role | Phase |
+| --- | --- | --- | --- |
+| 00 | `prompts/00-workflow.md` | Architect (session start) | All — state assessment, phase mapping, handoff protocol |
+| 01 | `prompts/01-arch-spec-author.md` | Spec Author (Claude) | 1b — write or revise arc42 document |
+| 02 | `prompts/02-adversary-arch.md` | Adversary (Sarcasmotron) | 3 — full adversarial review of all 11 sections |
+| 03 | `prompts/03-adr-author.md` | ADR Author (Claude) | 1b — write or audit ADRs in Section 9 |
+| 04 | `prompts/04-feedback-triage.md` | Architect (triage) | 4 — Accept / Reject / Defer adversarial findings |
+
+**Session start sequence:** Load Prompt 00 → assess document state → pick the right next prompt.
 
 ---
 

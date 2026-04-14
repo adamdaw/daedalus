@@ -53,7 +53,7 @@ DOCX_FLAGS = \
 
 .PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
         watch lint spellcheck wordcount validate validate-all archive init list open open-html \
-        new-section status build-all delete help docker-build docker-run
+        new-section status build-all delete help version docker-build docker-run docker-pull-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -201,11 +201,11 @@ watch: ## Rebuild on file changes (requires fswatch or inotify-tools)
 	fi
 
 lint: ## Run markdownlint on content files
-	@command -v markdownlint >/dev/null 2>&1 || { echo "Error: markdownlint not found. Run: npm install -g markdownlint-cli"; exit 1; }
+	@command -v markdownlint >/dev/null 2>&1 || { echo "Error: markdownlint not found. Run: npm install -g markdownlint-cli@0.44.0"; exit 1; }
 	markdownlint $(MARKDOWN)
 
 spellcheck: ## Run codespell on content files
-	@command -v codespell >/dev/null 2>&1 || { echo "Error: codespell not found. Run: pip install codespell"; exit 1; }
+	@command -v codespell >/dev/null 2>&1 || { echo "Error: codespell not found. Run: pip install codespell==2.3.0"; exit 1; }
 	codespell $(PROPOSAL_DIR)/markdown/
 
 validate: lint spellcheck ## Run lint + spellcheck without building
@@ -308,11 +308,28 @@ delete: ## Delete a proposal and all its contents (requires PROPOSAL=; add CONFI
 	rm -rf proposals/$(PROPOSAL)/
 	@echo "Deleted proposals/$(PROPOSAL)/"
 
-docker-build: ## Build the Docker image
+version: ## Print installed versions of all build tools
+	@echo "pandoc:          $$(pandoc --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
+	@echo "pandoc-crossref: $$(pandoc-crossref --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
+	@echo "xelatex:         $$(xelatex --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
+	@echo "mermaid-filter:  $$(mermaid-filter --version 2>/dev/null | tr -d '\n' || echo 'NOT FOUND')"
+	@echo "markdownlint:    $$(markdownlint --version 2>/dev/null || echo 'NOT FOUND')"
+	@echo "codespell:       $$(codespell --version 2>/dev/null || echo 'NOT FOUND')"
+	@echo "node:            $$(node --version 2>/dev/null || echo 'NOT FOUND')"
+	@echo "python:          $$(python3 --version 2>/dev/null || echo 'NOT FOUND')"
+
+docker-build: ## Build the Docker image locally
 	docker build -t daedalus .
 
-docker-run: docker-build ## Run the build inside Docker (optional: TARGET=all TARGET=validate)
+docker-run: docker-build ## Run the build inside the locally-built Docker image (optional: TARGET=all TARGET=validate)
 	docker run --rm -v "$(CURDIR):/workspace" \
 		$(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) \
 		daedalus \
+		$(if $(TARGET),make $(TARGET))
+
+docker-pull-run: ## Pull the pre-built image from GHCR and run the build (no local Docker build required)
+	docker pull ghcr.io/adamdaw/daedalus:latest
+	docker run --rm -v "$(CURDIR):/workspace" \
+		$(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) \
+		ghcr.io/adamdaw/daedalus:latest \
 		$(if $(TARGET),make $(TARGET))
