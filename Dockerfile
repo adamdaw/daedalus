@@ -43,6 +43,13 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # Install mermaid-filter
 RUN npm install -g mermaid-filter
 
+# Chrome refuses to run as root without --no-sandbox. Wrap the binary so the
+# flag is always present regardless of how puppeteer invokes it.
+RUN mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real \
+    && printf '#!/bin/sh\nexec /usr/bin/google-chrome-stable-real --no-sandbox --disable-setuid-sandbox "$@"\n' \
+       > /usr/bin/google-chrome-stable \
+    && chmod +x /usr/bin/google-chrome-stable
+
 WORKDIR /workspace
 
 CMD ["make", "build"]
