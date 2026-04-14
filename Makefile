@@ -32,9 +32,9 @@ PANDOC_FLAGS = \
 	--citeproc \
 	--resource-path=.:$(IMAGES)
 
-.PHONY: build html all clean check check-pandoc check-proposal watch \
+.PHONY: build html all clean clean-all check check-pandoc check-proposal watch \
         lint spellcheck wordcount validate archive init list open \
-        new-section status help docker-build docker-run
+        new-section status build-all help docker-build docker-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -50,8 +50,16 @@ html: check-pandoc check-proposal ## Build HTML
 
 all: build html ## Build both PDF and HTML
 
-clean: ## Remove generated output files
+clean: ## Remove generated output for the current target (root or PROPOSAL=)
 	rm -f $(OUTPUT) $(HTML_OUT)
+
+clean-all: ## Remove generated output for the root example and every proposal
+	rm -f project.pdf project.html
+	@for dir in proposals/*/; do \
+		[ -d "$$dir" ] || continue; \
+		rm -f "$$dir/project.pdf" "$$dir/project.html"; \
+		echo "Cleaned $$(basename $$dir)"; \
+	done
 
 check: check-pandoc ## Verify all build dependencies are installed
 	@command -v xelatex         >/dev/null 2>&1 || { echo "Error: xelatex not found. Install texlive-xetex."; exit 1; }
@@ -126,8 +134,10 @@ open: ## Open the built PDF in the system viewer
 
 new-section: ## Scaffold next numbered section file (requires TITLE="Section Name")
 	@test -n "$(TITLE)" || { echo "Usage: make new-section TITLE='Section Name' [PROPOSAL=my-proposal]"; exit 1; }
-	@NEXT=$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null | wc -l); \
-	NEXT=$$(printf "%02d" $$((NEXT + 1))); \
+	@LAST=$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null \
+		| sed 's|.*/\([0-9][0-9]*\)_.*|\1|' \
+		| grep -v '^99$$' | sort -n | tail -1); \
+	NEXT=$$(printf "%02d" $$(( $${LAST:-0} + 1 ))); \
 	SLUG=$$(echo "$(TITLE)" | tr ' ' '_' | tr -cd 'A-Za-z0-9_-'); \
 	FILE="$(PROPOSAL_DIR)/markdown/$${NEXT}_$${SLUG}.md"; \
 	printf "# $(TITLE)\n" > "$$FILE"; \
@@ -163,6 +173,17 @@ wordcount: ## Print word count per file and total
 	@echo "Word count ($(PROPOSAL_DIR)/markdown/):"
 	@wc -w $(MARKDOWN)
 
+build-all: ## Build PDF for every proposal
+	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
+		for cfg in proposals/*/config.yaml; do \
+			name=$$(basename "$$(dirname "$$cfg")"); \
+			echo "==> Building $$name..."; \
+			$(MAKE) build PROPOSAL=$$name || exit 1; \
+		done; \
+	else \
+		echo "No proposals found. Run: make init NAME=my-proposal"; \
+	fi
+
 archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 	@test -n "$(PROPOSAL)" || { echo "Usage: make archive PROPOSAL=my-proposal"; exit 1; }
 	@test -f $(OUTPUT) || { echo "Error: Run 'make build PROPOSAL=$(PROPOSAL)' first"; exit 1; }
@@ -178,13 +199,16 @@ archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 		project.css; \
 	echo "Created: $${ARCHIVE}"
 
-init: ## Scaffold a new proposal (requires NAME=; optional TITLE="...")
-	@test -n "$(NAME)" || { echo "Usage: make init NAME=my-proposal [TITLE='My Proposal Title']"; exit 1; }
+init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR=)
+	@test -n "$(NAME)" || { echo "Usage: make init NAME=my-proposal [TITLE='My Title'] [AUTHOR='Name']"; exit 1; }
 	@test ! -d proposals/$(NAME) || { echo "Error: proposals/$(NAME) already exists"; exit 1; }
 	mkdir -p proposals/$(NAME)/markdown proposals/$(NAME)/images
 	cp templates/config.yaml proposals/$(NAME)/config.yaml
 	@if [ -n "$(TITLE)" ]; then \
 		sed -i 's|^title: "Proposal Title"|title: "$(TITLE)"|' proposals/$(NAME)/config.yaml; \
+	fi
+	@if [ -n "$(AUTHOR)" ]; then \
+		sed -i 's|^author: "Author Name"|author: "$(AUTHOR)"|' proposals/$(NAME)/config.yaml; \
 	fi
 	cp templates/project.bib proposals/$(NAME)/project.bib
 	cp -r templates/markdown/. proposals/$(NAME)/markdown/

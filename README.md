@@ -105,7 +105,7 @@ This runs markdownlint and codespell automatically before every commit.
 
 ```bash
 make init NAME=my-proposal
-make init NAME=my-proposal TITLE="My Architecture Proposal"
+make init NAME=my-proposal TITLE="My Architecture Proposal" AUTHOR="Jane Smith"
 ```
 
 Scaffolds `proposals/my-proposal/` by copying from `templates/`. The root `markdown/` directory is a complete worked example used to demo the build — it is not a template and is not copied.
@@ -150,6 +150,13 @@ make html  PROPOSAL=my-proposal     # HTML
 make all   PROPOSAL=my-proposal     # both
 make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
 make open  PROPOSAL=my-proposal     # open PDF in viewer
+```
+
+### Build all proposals
+
+```bash
+make build-all    # build PDF for every proposal in proposals/
+make clean-all    # remove generated output for root example and all proposals
 ```
 
 ### Archive for delivery

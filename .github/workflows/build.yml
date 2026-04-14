@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PANDOC_VERSION: 3.1.13
@@ -95,6 +99,12 @@ jobs:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
+      - name: Build HTML
+        run: make html
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
       - name: Validate PDF
         run: |
           test -s project.pdf || { echo "FAIL: PDF not generated or is empty"; exit 1; }
@@ -123,6 +133,14 @@ jobs:
           path: project.pdf
           retention-days: 30
 
+      - name: Upload HTML artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proposal-html
+          path: project.html
+          retention-days: 30
+
   docker:
     runs-on: ubuntu-22.04
 
@@ -146,7 +164,25 @@ jobs:
         run: |
           docker run --rm -v "$GITHUB_WORKSPACE:/workspace" daedalus
 
+      - name: Install PDF utilities
+        run: sudo apt-get install -y --no-install-recommends poppler-utils
+
       - name: Validate Docker PDF output
         run: |
           test -s project.pdf || { echo "FAIL: Docker build did not produce project.pdf"; exit 1; }
-          echo "Docker build produced a valid PDF."
+
+          pdfinfo project.pdf
+
+          PAGES=$(pdfinfo project.pdf | awk '/^Pages:/{print $2}')
+          echo "Page count: $PAGES"
+          [ "$PAGES" -ge 5 ] || { echo "FAIL: Expected at least 5 pages, got $PAGES"; exit 1; }
+
+          pdftotext project.pdf - > /tmp/pdf-text.txt
+          grep -q "Introduction"      /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";      exit 1; }
+          grep -q "Current State"     /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Current State'";     exit 1; }
+          grep -q "Proposed Solution" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Proposed Solution'"; exit 1; }
+          grep -q "Implementation"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Implementation'";    exit 1; }
+          grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
+          grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
+
+          echo "All Docker validation checks passed."

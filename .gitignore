@@ -5,8 +5,17 @@ proposals/*/project.pdf
 proposals/*/project.html
 proposals/*.zip
 
-# Intermediate files
+# Intermediate LaTeX files
 *.aux
 *.log
 *.out
 *.toc
+
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+Thumbs.db

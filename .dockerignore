@@ -1,3 +1,29 @@
+# Version control and CI — not needed at image build time
 .git
-project.pdf
+.github
+.devcontainer
+
+# Generated output
+*.pdf
+*.html
+*.zip
+
+# LaTeX intermediate files
+*.aux
+*.log
+*.out
+*.toc
+
+# Cached installers from local builds
+*.deb
+*.tar.xz
+
+# User proposals — workspace is mounted at runtime, not baked in
+proposals/
+
+# Node and Python
 node_modules
+__pycache__
+
+# Documentation
+README.md
