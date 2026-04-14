@@ -11,7 +11,7 @@ a time rather than in a single migration event.
 | --- | --- | --- |
 | Independent deployability | Containerised services on AWS ECS | Each service is a separate task definition with its own deployment lifecycle |
 | Peak load scaling | Horizontal auto-scaling per service | Order service scales independently during promotions without scaling auth or product services |
-| Async order processing | Amazon SQS message queue | Decouples order intake from fulfilment; enables at-least-once delivery with dead-letter queue |
+| Async order processing | Amazon SQS message queue | Decouples order intake from fulfillment; enables at-least-once delivery with dead-letter queue |
 | Auth reuse | Dedicated auth service issuing JWTs | Stateless tokens; downstream services validate without calling auth on each request |
 | Incremental migration | API gateway (AWS API Gateway) | Enables traffic routing to either the monolith or a new service without client changes |
 

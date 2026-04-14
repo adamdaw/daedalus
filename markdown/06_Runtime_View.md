@@ -3,7 +3,7 @@
 ## Scenario: Place Order
 
 The most critical user journey: a client submits an order, which is validated, paid,
-and acknowledged before fulfilment processing continues asynchronously.
+and acknowledged before fulfillment processing continues asynchronously.
 
 ```mermaid
 sequenceDiagram
@@ -27,7 +27,7 @@ sequenceDiagram
     Order->>SQS: Publish order.placed event
     Order-->>GW: 201 Created (orderId)
     GW-->>Client: 201 Created (orderId)
-    Note over SQS: Fulfilment and notification\ncontinue asynchronously
+    Note over SQS: Fulfillment and notification\ncontinue asynchronously
 ```
 
 ## Scenario: Payment Failure

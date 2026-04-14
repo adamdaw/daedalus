@@ -2,9 +2,9 @@
 
 ## Business Context
 
-The Acme Commerce platform sits at the centre of the order fulfilment pipeline. It accepts
+The Acme Commerce platform sits at the centre of the order fulfillment pipeline. It accepts
 orders from web and mobile clients, processes payments through a third-party provider, and
-co-ordinates fulfilment with the warehouse management system. Transactional emails are
+coordinates fulfillment with the warehouse management system. Transactional emails are
 dispatched via an external email service provider.
 
 ```mermaid
