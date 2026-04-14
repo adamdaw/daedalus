@@ -15,6 +15,7 @@ endif
 MARKDOWN := $(sort $(wildcard $(PROPOSAL_DIR)/markdown/*.md))
 OUTPUT   := $(PROPOSAL_DIR)/project.pdf
 HTML_OUT := $(PROPOSAL_DIR)/project.html
+DOCX_OUT := $(PROPOSAL_DIR)/project.docx
 CONFIG   := $(PROPOSAL_DIR)/config.yaml
 BIB      := $(PROPOSAL_DIR)/project.bib
 IMAGES   := $(PROPOSAL_DIR)/images
@@ -32,7 +33,17 @@ PANDOC_FLAGS = \
 	--citeproc \
 	--resource-path=.:$(IMAGES)
 
-.PHONY: build html all clean clean-all check check-pandoc check-filters check-proposal \
+# Flags for DOCX — excludes LaTeX-specific options (-H, -V subparagraph, --css)
+DOCX_FLAGS = \
+	--metadata-file=$(CONFIG) \
+	-F pandoc-crossref \
+	-F mermaid-filter \
+	--toc \
+	--bibliography $(BIB) \
+	--citeproc \
+	--resource-path=.:$(IMAGES)
+
+.PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
         watch lint spellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help docker-build docker-run
 
@@ -48,16 +59,21 @@ html: check-pandoc check-filters check-proposal ## Build HTML
 		--standalone \
 		-o $(HTML_OUT)
 
+docx: check-pandoc check-filters check-proposal ## Build Word document (DOCX)
+	pandoc $(MARKDOWN) $(DOCX_FLAGS) \
+		--to=docx \
+		-o $(DOCX_OUT)
+
 all: build html ## Build both PDF and HTML
 
 clean: ## Remove generated output for the current target (root or PROPOSAL=)
-	rm -f $(OUTPUT) $(HTML_OUT)
+	rm -f $(OUTPUT) $(HTML_OUT) $(DOCX_OUT)
 
 clean-all: ## Remove generated output for the root example and every proposal
-	rm -f project.pdf project.html
+	rm -f project.pdf project.html project.docx
 	@for dir in proposals/*/; do \
 		[ -d "$$dir" ] || continue; \
-		rm -f "$$dir/project.pdf" "$$dir/project.html"; \
+		rm -f "$$dir/project.pdf" "$$dir/project.html" "$$dir/project.docx"; \
 		echo "Cleaned $$(basename $$dir)"; \
 	done
 

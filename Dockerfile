@@ -50,8 +50,8 @@ RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Install Node.js tools
-RUN npm install -g mermaid-filter markdownlint-cli
+# Install Node.js tools (pin markdownlint-cli to match .pre-commit-config.yaml)
+RUN npm install -g mermaid-filter markdownlint-cli@0.44.0
 
 # Install Python tools
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \

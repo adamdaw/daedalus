@@ -1,5 +1,7 @@
 # Daedalus
 
+[![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml)
+
 A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 
 Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [mermaid-filter](https://github.com/raghur/mermaid-filter), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
@@ -44,6 +46,7 @@ make check
 ```bash
 make build        # generate project.pdf
 make html         # generate project.html
+make docx         # generate project.docx (Word)
 make all          # generate both PDF and HTML
 make clean        # remove generated output
 make watch        # rebuild on file changes (requires fswatch or inotify-tools)
@@ -149,7 +152,8 @@ Creates the next numbered Markdown file in the proposal's `markdown/` directory.
 ```bash
 make build PROPOSAL=my-proposal     # PDF
 make html  PROPOSAL=my-proposal     # HTML
-make all   PROPOSAL=my-proposal     # both
+make docx  PROPOSAL=my-proposal     # Word (DOCX)
+make all   PROPOSAL=my-proposal     # both PDF and HTML
 make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
 make open  PROPOSAL=my-proposal     # open PDF in viewer
 ```
@@ -369,3 +373,66 @@ All CI jobs cache:
 - The pandoc-crossref `.tar.xz` binary (keyed by crossref version)
 - apt package archives (keyed by workflow file hash)
 - npm cache (keyed by workflow file hash)
+
+---
+
+## Troubleshooting
+
+### `Error: mermaid-filter not found`
+
+Install mermaid-filter and ensure the browser path is set:
+
+```bash
+npm install -g mermaid-filter
+export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+export PUPPETEER_EXECUTABLE_PATH=$(which chromium || which google-chrome)
+```
+
+### `Error: pandoc-crossref not found`
+
+Download the binary matching your pandoc version and place it on `$PATH`:
+
+```bash
+wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
+tar -xf pandoc-crossref-Linux.tar.xz
+sudo mv pandoc-crossref /usr/local/bin/
+```
+
+pandoc-crossref must be version-matched to pandoc. Run `make check` to verify both versions together.
+
+### `Warning: expected pandoc 3.1.13, got X.Y.Z`
+
+The build will still proceed, but cross-references or other features may behave differently. Install the pinned version from [pandoc releases](https://github.com/jgm/pandoc/releases/tag/3.1.13) or use Docker to get a guaranteed-correct environment.
+
+### Mermaid diagrams render as blank boxes
+
+The `PUPPETEER_EXECUTABLE_PATH` environment variable must point to a real Chrome or Chromium binary. Confirm with:
+
+```bash
+echo $PUPPETEER_EXECUTABLE_PATH
+$PUPPETEER_EXECUTABLE_PATH --version
+```
+
+If running as root (e.g., in Docker), Chrome requires `--no-sandbox`. The Dockerfile wraps the binary automatically; for local root environments, set:
+
+```bash
+export MERMAID_FILTER_PUPPETEER_ARGS='{"args":["--no-sandbox"]}'
+```
+
+### `xelatex not found`
+
+Install the required TeX packages:
+
+```bash
+# Debian / Ubuntu
+sudo apt-get install texlive-xetex texlive-fonts-recommended texlive-latex-extra lmodern
+
+# macOS
+brew install --cask mactex
+```
+
+Alternatively, use Docker — all dependencies are pre-installed:
+
+```bash
+make docker-run
+```

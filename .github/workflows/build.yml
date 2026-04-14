@@ -85,7 +85,7 @@ jobs:
         id: setup-chrome
 
       - name: Install Node.js tools
-        run: npm install -g mermaid-filter markdownlint-cli
+        run: npm install -g mermaid-filter markdownlint-cli@0.44.0
 
       - name: Install Python tools
         run: pip install codespell

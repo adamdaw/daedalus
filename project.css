@@ -248,6 +248,101 @@ section.footnotes li {
   margin-bottom: 0.4rem;
 }
 
+/* ─── Dark mode ─────────────────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1e1e1e;
+    color: #d4d4d4;
+  }
+
+  header#title-block-header {
+    border-bottom-color: #444;
+  }
+
+  .subtitle {
+    color: #999;
+  }
+
+  .author,
+  .date {
+    color: #aaa;
+  }
+
+  nav#TOC {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+
+  h1 {
+    border-bottom-color: #444;
+  }
+
+  h2 {
+    color: #d4d4d4;
+  }
+
+  h3 {
+    color: #bbb;
+  }
+
+  th {
+    background: #444;
+  }
+
+  td {
+    border-bottom-color: #333;
+  }
+
+  tr:nth-child(even) td {
+    background: #252525;
+  }
+
+  caption {
+    color: #999;
+  }
+
+  code {
+    background: #2a2a2a;
+    color: #ce9178;
+  }
+
+  pre {
+    background: #2a2a2a;
+    border-left-color: #555;
+  }
+
+  blockquote {
+    border-left-color: #555;
+    color: #999;
+  }
+
+  a {
+    color: #4e9de0;
+  }
+
+  .abstract {
+    background: #2a2a2a;
+    border-left-color: #555;
+  }
+
+  figcaption {
+    color: #999;
+  }
+
+  hr {
+    border-top-color: #444;
+  }
+
+  dd {
+    color: #bbb;
+  }
+
+  section.footnotes {
+    border-top-color: #444;
+    color: #999;
+  }
+}
+
 /* ─── Print ────────────────────────────────────────────────── */
 @media print {
   body {
