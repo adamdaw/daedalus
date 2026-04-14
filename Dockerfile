@@ -2,7 +2,7 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG PANDOC_VERSION=3.1.13
-ARG CROSSREF_VERSION=0.3.17.2
+ARG CROSSREF_VERSION=0.3.17.1
 
 # Install base utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -18,10 +18,10 @@ RUN wget -q "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/p
     && rm "pandoc-${PANDOC_VERSION}-1-amd64.deb"
 
 # Install pandoc-crossref (must match pandoc version)
-RUN wget -q "https://github.com/lierdakil/pandoc-crossref/releases/download/v${CROSSREF_VERSION}/pandoc-crossref-Linux-X64.tar.xz" \
-    && tar -xf "pandoc-crossref-Linux-X64.tar.xz" \
+RUN wget -q "https://github.com/lierdakil/pandoc-crossref/releases/download/v${CROSSREF_VERSION}/pandoc-crossref-Linux.tar.xz" \
+    && tar -xf "pandoc-crossref-Linux.tar.xz" \
     && mv pandoc-crossref /usr/local/bin/ \
-    && rm "pandoc-crossref-Linux-X64.tar.xz"
+    && rm "pandoc-crossref-Linux.tar.xz"
 
 # Install XeLaTeX
 RUN apt-get update && apt-get install -y --no-install-recommends \

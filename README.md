@@ -13,7 +13,7 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 | Tool | Purpose | Install |
 |---|---|---|
 | `pandoc` 3.1.13 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
-| `pandoc-crossref` 0.3.17.2 | Figure/table cross-references | [releases](https://github.com/lierdakil/pandoc-crossref/releases) |
+| `pandoc-crossref` 0.3.17.1 | Figure/table cross-references | [releases](https://github.com/lierdakil/pandoc-crossref/releases) |
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
 | `mermaid-filter` | Diagram rendering | `npm install -g mermaid-filter` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
@@ -23,8 +23,8 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:
 
 ```bash
-wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.2/pandoc-crossref-Linux-X64.tar.xz
-tar -xf pandoc-crossref-Linux-X64.tar.xz
+wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
+tar -xf pandoc-crossref-Linux.tar.xz
 sudo mv pandoc-crossref /usr/local/bin/
 ```
 
