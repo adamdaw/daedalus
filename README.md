@@ -179,7 +179,7 @@ daedalus/
   .pre-commit-config.yaml  # Pre-commit hook definitions
   markdown/             # Root example content (a complete sample proposal)
   images/               # Root example images
-  templates/            # Starter files copied by make init (not a proposal)
+  templates/            # Skeleton copied into each new proposal by make init
   proposals/            # Your proposals (generated output is gitignored)
   .devcontainer/        # VS Code devcontainer config
   .github/workflows/    # CI/CD pipelines
