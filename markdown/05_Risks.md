@@ -1,7 +1,7 @@
 # Risks
 
 | Risk | Likelihood | Impact | Mitigation |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Data consistency issues during migration | Medium | High | Use dual-write pattern during transition; validate with reconciliation job |
 | Team unfamiliarity with distributed systems | Medium | Medium | Knowledge-sharing sessions; pair experienced engineers with new joiners |
 | Latency increase from network hops | Low | Medium | Benchmark before and after each phase; co-locate services in same region |

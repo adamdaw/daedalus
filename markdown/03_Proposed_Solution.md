@@ -45,7 +45,7 @@ flowchart TD
 ## Key Design Decisions
 
 | Decision | Choice | Rationale |
-|---|---|---|
+| --- | --- | --- |
 | Inter-service communication | REST over HTTPS | Simplicity; teams already familiar with HTTP |
 | Async messaging | Message queue | Decouples order processing from notification delivery |
 | Data isolation | One DB per service | Prevents cross-service coupling at the data layer |
