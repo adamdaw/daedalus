@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+# Default all permissions to none; each job grants only what it needs.
+permissions: {}
+
 env:
   PANDOC_VERSION: 3.1.13
   CROSSREF_VERSION: 0.3.17.1
