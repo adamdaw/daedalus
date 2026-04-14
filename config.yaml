@@ -1,3 +1,13 @@
 title: "Project Title"
 author: "Author Name"
 date: "April 2026"
+colorlinks: true
+linkcolor: blue
+urlcolor: blue
+filecolor: magenta
+bookmarksopen: true
+geometry:
+  - top=2cm
+  - bottom=1.5cm
+  - left=2cm
+  - right=2cm

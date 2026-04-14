@@ -141,21 +141,25 @@ Build status reflects whether the document compiles and contains the expected st
 
 ### Margins and layout
 
-Edit `project.tex`. The geometry settings are at the top:
+Edit the `geometry` block in `config.yaml`:
 
-```latex
-\usepackage[top=2cm, bottom=1.5cm, left=2cm, right=2cm]{geometry}
+```yaml
+geometry:
+  - top=2cm
+  - bottom=1.5cm
+  - left=2cm
+  - right=2cm
 ```
 
 ### Hyperlink colours
 
-Also in `project.tex`:
+Edit the colour fields in `config.yaml`:
 
-```latex
-\hypersetup{
-    linkcolor=blue,
-    urlcolor=RoyalBlue,
-}
+```yaml
+colorlinks: true
+linkcolor: blue
+urlcolor: blue
+filecolor: magenta
 ```
 
 ### Mermaid diagram appearance
