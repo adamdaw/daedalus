@@ -45,6 +45,7 @@ jobs:
             texlive-xetex \
             texlive-fonts-recommended \
             texlive-latex-extra \
+            lmodern \
             poppler-utils
 
       - name: Cache npm
