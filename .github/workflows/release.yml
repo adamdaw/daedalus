@@ -26,7 +26,7 @@ jobs:
 
       - name: Cache pandoc deb
         id: cache-pandoc
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb
           key: pandoc-${{ env.PANDOC_VERSION }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Cache pandoc-crossref
         id: cache-crossref
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: pandoc-crossref-Linux.tar.xz
           key: pandoc-crossref-${{ env.CROSSREF_VERSION }}
@@ -57,7 +57,7 @@ jobs:
           sudo mv pandoc-crossref /usr/local/bin/
 
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: /var/cache/apt/archives
           key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/release.yml') }}
@@ -72,7 +72,7 @@ jobs:
             lmodern
 
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.npm
           key: npm-mermaid-filter-${{ hashFiles('.github/workflows/release.yml') }}
