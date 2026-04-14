@@ -124,6 +124,26 @@ dependabot without SHA pins means no protection.
 
 ---
 
+### PL-10 — Ubuntu 24.04 enforces PEP 668; pip3 install requires --break-system-packages
+
+**Date:** 2026-04
+**Source:** daedalus Dockerfile, Dependabot docker bump PR
+
+Ubuntu 24.04 ships pip 24.x which enforces PEP 668 (externally-managed-environment).
+`pip3 install <package>` fails with "externally managed environment" unless
+`--break-system-packages` is passed. Ubuntu 22.04 ships pip 22.0.2, which does not
+recognise that flag and would error if it is present.
+
+**Fix:** Use a fallback pattern in the Dockerfile:
+```dockerfile
+pip3 install --break-system-packages codespell==2.3.0 2>/dev/null \
+|| pip3 install codespell==2.3.0
+```
+Tries with the flag (works on 24.04), falls back without it (works on 22.04).
+If both fail, the layer fails as expected.
+
+---
+
 ### PL-09 — sed -i is not portable between Linux and macOS
 
 **Date:** 2026-04
