@@ -21,11 +21,11 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Cache pandoc deb
         id: cache-pandoc
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb
           key: pandoc-${{ env.PANDOC_VERSION }}
@@ -42,7 +42,7 @@ jobs:
 
       - name: Cache pandoc-crossref
         id: cache-crossref
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: pandoc-crossref-Linux.tar.xz
           key: pandoc-crossref-${{ env.CROSSREF_VERSION }}
@@ -59,7 +59,7 @@ jobs:
           pandoc-crossref --version
 
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /var/cache/apt/archives
           key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/build.yml') }}
@@ -75,13 +75,13 @@ jobs:
             poppler-utils
 
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
           key: npm-mermaid-filter-${{ hashFiles('.github/workflows/build.yml') }}
 
       - name: Setup Chrome for mermaid-filter
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
         id: setup-chrome
 
       - name: Install Node.js tools
@@ -119,17 +119,18 @@ jobs:
           [ "$PAGES" -ge 5 ] || { echo "FAIL: Expected at least 5 pages, got $PAGES"; exit 1; }
 
           pdftotext project.pdf - > /tmp/pdf-text.txt
-          grep -q "Introduction"      /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";      exit 1; }
-          grep -q "Current State"     /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Current State'";     exit 1; }
-          grep -q "Proposed Solution" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Proposed Solution'"; exit 1; }
-          grep -q "Implementation"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Implementation'";    exit 1; }
-          grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
-          grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
+          grep -q "Introduction"     /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";     exit 1; }
+          grep -q "Context"          /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Context'";          exit 1; }
+          grep -q "Solution Strategy" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Solution Strategy'"; exit 1; }
+          grep -q "Building Block"   /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Building Block'";   exit 1; }
+          grep -q "Deployment"       /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Deployment'";       exit 1; }
+          grep -q "Risks"            /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";            exit 1; }
+          grep -q "References"       /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";       exit 1; }
 
           echo "All validation checks passed."
 
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: proposal-pdf
@@ -143,7 +144,7 @@ jobs:
           echo "HTML validation passed."
 
       - name: Upload HTML artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: proposal-html
@@ -154,13 +155,13 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
       - name: Build Docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
           context: .
           push: false
@@ -189,9 +190,10 @@ jobs:
 
           pdftotext project.pdf - > /tmp/pdf-text.txt
           grep -q "Introduction"      /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";      exit 1; }
-          grep -q "Current State"     /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Current State'";     exit 1; }
-          grep -q "Proposed Solution" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Proposed Solution'"; exit 1; }
-          grep -q "Implementation"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Implementation'";    exit 1; }
+          grep -q "Context"           /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Context'";           exit 1; }
+          grep -q "Solution Strategy" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Solution Strategy'"; exit 1; }
+          grep -q "Building Block"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Building Block'";    exit 1; }
+          grep -q "Deployment"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Deployment'";        exit 1; }
           grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
           grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
 

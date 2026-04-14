@@ -121,13 +121,19 @@ Each starter section contains placeholder headings and instructional comments. D
 proposals/my-proposal/
   config.yaml        # document metadata — edit this first
   project.bib        # bibliography
-  images/            # drop logo.jpg or logo.png here
+  images/            # drop logo.jpg, logo.png, or logo.pdf here
   markdown/
-    01_Introduction.md
-    02_Current_State.md
-    03_Proposed_Solution.md
-    04_Implementation.md
-    05_Risks.md
+    01_Introduction_and_Goals.md
+    02_Constraints.md
+    03_Context_and_Scope.md
+    04_Solution_Strategy.md
+    05_Building_Block_View.md
+    06_Runtime_View.md
+    07_Deployment_View.md
+    08_Crosscutting_Concepts.md
+    09_Architecture_Decisions.md
+    10_Quality_Requirements.md
+    11_Risks_and_Technical_Debt.md
     99_References.md
 ```
 
@@ -251,19 +257,28 @@ header-includes:
 
 ### Content files
 
-Number Markdown files to control order:
+Number Markdown files to control order. The default template follows the
+[arc42](https://arc42.org) structure — a pragmatic, widely adopted standard for
+software and systems architecture documentation:
 
 ```
 markdown/
-  01_Introduction.md
-  02_Current_State.md
-  03_Proposed_Solution.md
-  04_Implementation.md
-  05_Risks.md
-  99_References.md
+  01_Introduction_and_Goals.md     # requirements, quality goals, stakeholders
+  02_Constraints.md                # technical, organisational, and conventional constraints
+  03_Context_and_Scope.md          # system boundary, external systems, interfaces
+  04_Solution_Strategy.md          # fundamental technology and structural decisions
+  05_Building_Block_View.md        # static decomposition (C4 Container / Component)
+  06_Runtime_View.md               # key scenarios and sequence diagrams
+  07_Deployment_View.md            # infrastructure, environments, deployment process
+  08_Crosscutting_Concepts.md      # security, logging, error handling, configuration
+  09_Architecture_Decisions.md     # ADRs — the "why" behind key choices
+  10_Quality_Requirements.md       # quality tree and measurable quality scenarios
+  11_Risks_and_Technical_Debt.md   # known risks and tracked technical debt
+  99_References.md                 # bibliography (populated by --citeproc)
 ```
 
 Each `#` heading starts a new page. Sub-headings appear in the TOC up to `toc-depth`.
+Add sections with `make new-section TITLE="Section Name" PROPOSAL=my-proposal`.
 
 ### Cover page logo
 

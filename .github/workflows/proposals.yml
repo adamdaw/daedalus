@@ -24,7 +24,7 @@ jobs:
       proposals: ${{ steps.detect.outputs.proposals }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
 
@@ -55,11 +55,11 @@ jobs:
         proposal: ${{ fromJson(needs.detect.outputs.proposals) }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Cache pandoc deb
         id: cache-pandoc
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb
           key: pandoc-${{ env.PANDOC_VERSION }}
@@ -74,7 +74,7 @@ jobs:
 
       - name: Cache pandoc-crossref
         id: cache-crossref
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: pandoc-crossref-Linux.tar.xz
           key: pandoc-crossref-${{ env.CROSSREF_VERSION }}
@@ -90,7 +90,7 @@ jobs:
           sudo mv pandoc-crossref /usr/local/bin/
 
       - name: Cache apt packages
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /var/cache/apt/archives
           key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/proposals.yml') }}
@@ -106,13 +106,13 @@ jobs:
             poppler-utils
 
       - name: Cache npm
-        uses: actions/cache@v4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
           key: npm-mermaid-filter-${{ hashFiles('.github/workflows/proposals.yml') }}
 
       - name: Setup Chrome for mermaid-filter
-        uses: browser-actions/setup-chrome@v1
+        uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
         id: setup-chrome
 
       - name: Install Node.js tools
@@ -158,7 +158,7 @@ jobs:
           echo "Outputs validated for ${{ matrix.proposal }}."
 
       - name: Upload proposal artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ matrix.proposal }}
           path: |
