@@ -56,7 +56,7 @@ RUN npm install -g mermaid-filter markdownlint-cli@0.44.0
 # Install Python tools
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install codespell
+    && pip3 install codespell==2.3.0
 
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the
 # flag is always present regardless of how puppeteer invokes it.

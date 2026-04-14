@@ -1,7 +1,12 @@
 /* ─── Mermaid diagrams ─────────────────────────────────────── */
 .mermaid {
-  background-color: white;
   width: 100%;
+}
+
+@media (prefers-color-scheme: light) {
+  .mermaid {
+    background-color: white;
+  }
 }
 
 /* ─── Layout and typography ────────────────────────────────── */
@@ -340,6 +345,12 @@ section.footnotes li {
   section.footnotes {
     border-top-color: #444;
     color: #999;
+  }
+
+  .mermaid {
+    background-color: #2a2a2a;
+    border-radius: 4px;
+    padding: 0.75rem;
   }
 }
 

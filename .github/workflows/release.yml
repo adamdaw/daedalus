@@ -13,7 +13,6 @@ permissions:
   contents: write
 
 env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PANDOC_VERSION: 3.1.13
   CROSSREF_VERSION: 0.3.17.1
 
@@ -62,14 +61,15 @@ jobs:
           path: /var/cache/apt/archives
           key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/release.yml') }}
 
-      - name: Install XeLaTeX
+      - name: Install XeLaTeX and PDF utilities
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends \
             texlive-xetex \
             texlive-fonts-recommended \
             texlive-latex-extra \
-            lmodern
+            lmodern \
+            poppler-utils
 
       - name: Cache npm
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
@@ -89,6 +89,30 @@ jobs:
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Validate release artifacts
+        run: |
+          test -s project.pdf  || { echo "FAIL: project.pdf not generated or is empty"; exit 1; }
+          test -s project.html || { echo "FAIL: project.html not generated or is empty"; exit 1; }
+
+          pdfinfo project.pdf
+
+          PAGES=$(pdfinfo project.pdf | awk '/^Pages:/{print $2}')
+          echo "Page count: $PAGES"
+          [ "$PAGES" -ge 5 ] || { echo "FAIL: Expected at least 5 pages, got $PAGES"; exit 1; }
+
+          pdftotext project.pdf - > /tmp/pdf-text.txt
+          grep -q "Introduction"      /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";      exit 1; }
+          grep -q "Context"           /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Context'";           exit 1; }
+          grep -q "Solution Strategy" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Solution Strategy'"; exit 1; }
+          grep -q "Building Block"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Building Block'";    exit 1; }
+          grep -q "Deployment"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Deployment'";        exit 1; }
+          grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
+          grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
+
+          grep -qi "<h1" project.html || { echo "FAIL: HTML missing heading content"; exit 1; }
+
+          echo "Release artifacts validated."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@b4309332981a82ec1c5618f44dd2e27cc8bfbfda # v3.0.0

@@ -242,6 +242,7 @@ archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 		$(PROPOSAL_DIR)/project.bib \
 		$(PROPOSAL_DIR)/project.pdf \
 		$(if $(wildcard $(HTML_OUT)),$(HTML_OUT),) \
+		$(if $(wildcard $(DOCX_OUT)),$(DOCX_OUT),) \
 		project.tex \
 		project.css; \
 	echo "Created: $${ARCHIVE}"
