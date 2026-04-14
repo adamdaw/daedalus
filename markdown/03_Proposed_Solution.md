@@ -1,6 +1,6 @@
 # Proposed Solution
 
-The proposed architecture decomposes the monolith into three focused services behind an API gateway. Each service owns its data store and communicates via well-defined contracts.
+The proposed architecture decomposes the monolith into three focused services behind an API gateway. Each service owns its data store and communicates via well-defined contracts. Key design decisions are summarised in [@tbl:decisions].
 
 ## Service Architecture
 
@@ -50,3 +50,5 @@ flowchart TD
 | Async messaging | Message queue | Decouples order processing from notification delivery |
 | Data isolation | One DB per service | Prevents cross-service coupling at the data layer |
 | Authentication | JWT at gateway | Stateless; services trust validated tokens |
+
+Table: Key design decisions {#tbl:decisions}

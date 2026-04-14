@@ -1,4 +1,9 @@
-PANDOC_VERSION := 3.1.12
+PANDOC_VERSION   := 3.1.13
+CROSSREF_VERSION := 0.3.17.2
+
+# Mermaid diagram theme. Override with: make build MERMAID_THEME=dark
+MERMAID_THEME ?= default
+export MERMAID_FILTER_THEME = $(MERMAID_THEME)
 
 # Set PROPOSAL=name to build proposals/name/; omit to build the root example.
 ifdef PROPOSAL
@@ -16,6 +21,7 @@ IMAGES   := $(PROPOSAL_DIR)/images
 
 PANDOC_FLAGS = \
 	--metadata-file=$(CONFIG) \
+	-F pandoc-crossref \
 	-F mermaid-filter \
 	--toc \
 	-H project.tex \
@@ -26,15 +32,16 @@ PANDOC_FLAGS = \
 	--citeproc \
 	--resource-path=.:$(IMAGES)
 
-.PHONY: build html all clean check watch lint spellcheck wordcount archive init \
+.PHONY: build html all clean check check-pandoc check-proposal watch \
+        lint spellcheck wordcount archive init list open new-section \
         docker-build docker-run
 
-build: check
+build: check check-proposal
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
 		--pdf-engine=xelatex \
 		-o $(OUTPUT)
 
-html: check-pandoc
+html: check-pandoc check-proposal
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
 		--to=html5 \
 		--embed-resources \
@@ -47,13 +54,56 @@ clean:
 	rm -f $(OUTPUT) $(HTML_OUT)
 
 check: check-pandoc
-	@command -v xelatex        >/dev/null 2>&1 || { echo "Error: xelatex not found. Install texlive-xetex."; exit 1; }
-	@command -v mermaid-filter >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter"; exit 1; }
+	@command -v xelatex         >/dev/null 2>&1 || { echo "Error: xelatex not found. Install texlive-xetex."; exit 1; }
+	@command -v mermaid-filter  >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter"; exit 1; }
+	@command -v pandoc-crossref >/dev/null 2>&1 || { echo "Error: pandoc-crossref not found. See: https://github.com/lierdakil/pandoc-crossref/releases"; exit 1; }
 
 check-pandoc:
 	@command -v pandoc >/dev/null 2>&1 || { echo "Error: pandoc not found. See https://pandoc.org/installing.html"; exit 1; }
 	@pandoc --version | head -1 | grep -qF "$(PANDOC_VERSION)" || \
 		echo "Warning: expected pandoc $(PANDOC_VERSION), got $$(pandoc --version | head -1)"
+
+check-proposal:
+ifdef PROPOSAL
+	@test -d $(PROPOSAL_DIR) || { \
+		echo "Error: proposal '$(PROPOSAL)' not found."; \
+		echo "  Run 'make list' to see available proposals."; \
+		echo "  Run 'make init NAME=$(PROPOSAL)' to create it."; \
+		exit 1; \
+	}
+endif
+
+list:
+	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
+		echo "Proposals:"; \
+		for cfg in proposals/*/config.yaml; do \
+			name=$$(basename "$$(dirname "$$cfg")"); \
+			title=$$(grep '^title:' "$$cfg" 2>/dev/null \
+				| head -1 | sed 's/title:[[:space:]]*//' | tr -d '"'"'"'); \
+			echo "  $$name — $$title"; \
+		done; \
+	else \
+		echo "No proposals found. Run: make init NAME=my-proposal"; \
+	fi
+
+open:
+	@test -f $(OUTPUT) || { echo "Error: $(OUTPUT) not found. Run 'make build$(if $(PROPOSAL), PROPOSAL=$(PROPOSAL),)' first."; exit 1; }
+	@if command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open $(OUTPUT); \
+	elif command -v open >/dev/null 2>&1; then \
+		open $(OUTPUT); \
+	else \
+		echo "Cannot open PDF: install xdg-utils (Linux) or use macOS."; exit 1; \
+	fi
+
+new-section:
+	@test -n "$(TITLE)" || { echo "Usage: make new-section TITLE='Section Name' [PROPOSAL=my-proposal]"; exit 1; }
+	@NEXT=$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null | wc -l); \
+	NEXT=$$(printf "%02d" $$((NEXT + 1))); \
+	SLUG=$$(echo "$(TITLE)" | tr ' ' '_' | tr -cd 'A-Za-z0-9_-'); \
+	FILE="$(PROPOSAL_DIR)/markdown/$${NEXT}_$${SLUG}.md"; \
+	printf "# $(TITLE)\n" > "$$FILE"; \
+	echo "Created: $$FILE"
 
 watch:
 	@if command -v fswatch >/dev/null 2>&1; then \

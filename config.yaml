@@ -1,5 +1,9 @@
 title: "Example Architecture Proposal"
 subtitle: "Technical Design Document"
+# Multiple authors: use a YAML list
+#   author:
+#     - "Jane Smith"
+#     - "John Doe"
 author: "Author Name"
 date: "April 2026"
 
@@ -8,6 +12,13 @@ toc-depth: 3
 
 # Set to true for numbered sections (1.1, 1.2, etc.)
 numbersections: false
+
+# Paper size: a4, letter, a5, etc.
+papersize: a4
+
+# Code block syntax highlighting theme.
+# Options: pygments, tango, espresso, zenburn, kate, monochrome, breezedark, haddock
+highlight-style: tango
 
 # Typography — requires the named fonts to be installed on the build system.
 # When using Docker, install fonts in the Dockerfile first.
@@ -33,6 +44,14 @@ geometry:
   - bottom=1.5cm
   - left=2cm
   - right=2cm
+
+# pandoc-crossref — figure, table, and equation labels.
+# Prefix labels: {#fig:id} {#tbl:id} {#eq:id} — cite with [@fig:id] etc.
+# figureTitle: "Figure"
+# tableTitle: "Table"
+# figPrefix: "fig."
+# tblPrefix: "tbl."
+# autoSectionLabels: true
 
 # Additional cover page fields — uncomment and edit as needed.
 # header-includes:

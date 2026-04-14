@@ -1,8 +1,8 @@
 # Daedalus
 
-A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with cover page, table of contents, running headers, Mermaid diagrams, and bibliography.
+A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 
-Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), and [mermaid-filter](https://github.com/raghur/mermaid-filter).
+Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [mermaid-filter](https://github.com/raghur/mermaid-filter), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
 
 ---
 
@@ -12,12 +12,21 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 
 | Tool | Purpose | Install |
 |---|---|---|
-| `pandoc` 3.1.12 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
+| `pandoc` 3.1.13 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
+| `pandoc-crossref` 0.3.17.2 | Figure/table cross-references | [releases](https://github.com/lierdakil/pandoc-crossref/releases) |
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
 | `mermaid-filter` | Diagram rendering | `npm install -g mermaid-filter` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
 | `markdownlint-cli` | Markdown linting (optional) | `npm install -g markdownlint-cli` |
 | `codespell` | Spell checking (optional) | `pip install codespell` |
+
+pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:
+
+```bash
+wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.2/pandoc-crossref-Linux-X64.tar.xz
+tar -xf pandoc-crossref-Linux-X64.tar.xz
+sudo mv pandoc-crossref /usr/local/bin/
+```
 
 For mermaid-filter to find the browser:
 ```bash
@@ -38,6 +47,7 @@ make html         # generate project.html
 make all          # generate both PDF and HTML
 make clean        # remove generated output
 make watch        # rebuild on file changes (requires fswatch or inotify-tools)
+make open         # open the PDF in the system viewer
 ```
 
 ### Quality checks
@@ -54,6 +64,15 @@ make wordcount    # word count per file and total
 make build DRAFT=1   # adds a DRAFT watermark to every page
 ```
 
+### Mermaid theme
+
+```bash
+make build MERMAID_THEME=dark     # dark theme
+make build MERMAID_THEME=forest   # forest theme
+```
+
+Available themes: `default`, `dark`, `forest`, `neutral`. Defaults to `default`.
+
 ### Docker (no local dependencies required)
 
 ```bash
@@ -64,6 +83,16 @@ make docker-run     # run the build inside the container
 ### VS Code Dev Container
 
 Open this repository in VS Code with the Remote - Containers extension. The devcontainer uses the same Docker image — all dependencies are pre-installed.
+
+### Pre-commit hooks
+
+Install [pre-commit](https://pre-commit.com/) and run:
+
+```bash
+pre-commit install
+```
+
+This runs markdownlint and codespell automatically before every commit.
 
 ---
 
@@ -86,6 +115,22 @@ proposals/my-proposal/
     01_Introduction.md
 ```
 
+### List proposals
+
+```bash
+make list
+```
+
+Prints all initialized proposals with their titles from `config.yaml`.
+
+### Add a section
+
+```bash
+make new-section TITLE="Security Considerations" PROPOSAL=my-proposal
+```
+
+Creates the next numbered Markdown file in the proposal's `markdown/` directory.
+
 ### Build a proposal
 
 ```bash
@@ -93,6 +138,7 @@ make build PROPOSAL=my-proposal     # PDF
 make html  PROPOSAL=my-proposal     # HTML
 make all   PROPOSAL=my-proposal     # both
 make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
+make open  PROPOSAL=my-proposal     # open PDF in viewer
 ```
 
 ### Archive for delivery
@@ -119,6 +165,7 @@ daedalus/
   Dockerfile            # Containerised build environment
   .markdownlint.json    # Lint configuration
   .codespellrc          # Spell check configuration
+  .pre-commit-config.yaml  # Pre-commit hook definitions
   markdown/             # Root example content
   images/               # Root example images
   templates/            # Starter files used by make init
@@ -136,8 +183,16 @@ daedalus/
 ```yaml
 title: "My Architecture Proposal"
 subtitle: "Technical Design Document"
+# Multiple authors:
+# author:
+#   - "Jane Smith"
+#   - "John Doe"
 author: "Jane Smith"
 date: "April 2026"
+
+# Paper size and code highlighting
+papersize: a4
+highlight-style: tango
 
 # TOC depth and section numbering
 toc-depth: 3
@@ -194,6 +249,22 @@ flowchart TD
 
 Supported: flowcharts, sequence diagrams, ERDs, Gantt charts, and all other Mermaid types.
 
+### Cross-references
+
+Label figures and tables with `{#fig:id}` or `{#tbl:id}`, then cite them with `[@fig:id]` or `[@tbl:id]`:
+
+```markdown
+See [@tbl:decisions] for a summary of the architectural choices.
+
+| Decision | Choice |
+| --- | --- |
+| Auth | JWT |
+
+Table: Key decisions {#tbl:decisions}
+```
+
+pandoc-crossref automatically numbers all labelled figures and tables and resolves all citations.
+
 ### Bibliography
 
 Add entries to `project.bib`. Cite with `[@Key]` inline:
@@ -226,13 +297,25 @@ Defined in `project.tex`. Default: document title (left), author (right), page n
 
 Configured in `config.yaml` via `geometry` and `colorlinks`/`linkcolor`/`urlcolor`.
 
+### pandoc-crossref labels
+
+Configure label prefixes and titles in `config.yaml`:
+
+```yaml
+figureTitle: "Figure"
+tableTitle: "Table"
+figPrefix: "fig."
+tblPrefix: "tbl."
+autoSectionLabels: true
+```
+
 ---
 
 ## CI/CD
 
 ### `build.yml` — runs on every push
 
-1. Installs pandoc, XeLaTeX, mermaid-filter, markdownlint, codespell
+1. Installs pandoc, pandoc-crossref, XeLaTeX, mermaid-filter, markdownlint, codespell
 2. Lints all markdown files
 3. Spell-checks all markdown files
 4. Builds `project.pdf`
