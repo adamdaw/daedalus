@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     ca-certificates \
     xz-utils \
+    gnupg \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pandoc
@@ -38,9 +39,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome for mermaid-filter
-RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && echo "deb http://dl.google.com/linux/chrome/deb/ stable main" \
-        >> /etc/apt/sources.list.d/google.list \
+RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub \
+    | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
+    && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
+    > /etc/apt/sources.list.d/google-chrome.list \
     && apt-get update && apt-get install -y --no-install-recommends \
         google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
@@ -65,4 +67,4 @@ RUN mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real \
 
 WORKDIR /workspace
 
-CMD ["make", "build"]
+CMD ["make", "all"]

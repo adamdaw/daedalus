@@ -173,9 +173,10 @@ jobs:
       - name: Install PDF utilities
         run: sudo apt-get install -y --no-install-recommends poppler-utils
 
-      - name: Validate Docker PDF output
+      - name: Validate Docker outputs
         run: |
-          test -s project.pdf || { echo "FAIL: Docker build did not produce project.pdf"; exit 1; }
+          test -s project.pdf  || { echo "FAIL: Docker build did not produce project.pdf";  exit 1; }
+          test -s project.html || { echo "FAIL: Docker build did not produce project.html"; exit 1; }
 
           pdfinfo project.pdf
 
@@ -190,5 +191,7 @@ jobs:
           grep -q "Implementation"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Implementation'";    exit 1; }
           grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
           grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
+
+          grep -qi "<h1" project.html || { echo "FAIL: Docker HTML missing heading content"; exit 1; }
 
           echo "All Docker validation checks passed."

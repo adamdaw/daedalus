@@ -32,8 +32,8 @@ PANDOC_FLAGS = \
 	--citeproc \
 	--resource-path=.:$(IMAGES)
 
-.PHONY: build html all clean clean-all check check-pandoc check-proposal watch \
-        lint spellcheck wordcount validate archive init list open open-html \
+.PHONY: build html all clean clean-all check check-pandoc check-filters check-proposal \
+        watch lint spellcheck wordcount validate archive init list open open-html \
         new-section status build-all delete help docker-build docker-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
@@ -41,7 +41,7 @@ build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THE
 		--pdf-engine=xelatex \
 		-o $(OUTPUT)
 
-html: check-pandoc check-proposal ## Build HTML
+html: check-pandoc check-filters check-proposal ## Build HTML
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
 		--to=html5 \
 		--embed-resources \
@@ -61,10 +61,12 @@ clean-all: ## Remove generated output for the root example and every proposal
 		echo "Cleaned $$(basename $$dir)"; \
 	done
 
-check: check-pandoc ## Verify all build dependencies are installed
-	@command -v xelatex         >/dev/null 2>&1 || { echo "Error: xelatex not found. Install texlive-xetex."; exit 1; }
+check-filters:
 	@command -v mermaid-filter  >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter"; exit 1; }
 	@command -v pandoc-crossref >/dev/null 2>&1 || { echo "Error: pandoc-crossref not found. See: https://github.com/lierdakil/pandoc-crossref/releases"; exit 1; }
+
+check: check-pandoc check-filters ## Verify all build dependencies are installed
+	@command -v xelatex >/dev/null 2>&1 || { echo "Error: xelatex not found. Install texlive-xetex."; exit 1; }
 
 check-pandoc:
 	@command -v pandoc >/dev/null 2>&1 || { echo "Error: pandoc not found. See https://pandoc.org/installing.html"; exit 1; }
@@ -271,5 +273,8 @@ delete: ## Delete a proposal and all its contents (requires PROPOSAL=; add CONFI
 docker-build: ## Build the Docker image
 	docker build -t daedalus .
 
-docker-run: docker-build ## Run the build inside Docker
-	docker run --rm -v "$(CURDIR):/workspace" $(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) daedalus
+docker-run: docker-build ## Run the build inside Docker (optional: TARGET=all TARGET=validate)
+	docker run --rm -v "$(CURDIR):/workspace" \
+		$(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) \
+		daedalus \
+		$(if $(TARGET),make $(TARGET))
