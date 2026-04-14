@@ -193,6 +193,61 @@ img {
   height: auto;
 }
 
+/* ─── Horizontal rules ──────────────────────────────────────── */
+hr {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 2rem 0;
+}
+
+/* ─── Definition lists ───────────────────────────────────────── */
+dl {
+  margin: 1.5rem 0;
+}
+
+dt {
+  font-weight: bold;
+  margin-top: 0.75rem;
+}
+
+dd {
+  margin-left: 1.5rem;
+  color: #444;
+}
+
+/* ─── Footnotes and superscripts ─────────────────────────────── */
+sup,
+sub {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+
+sup {
+  top: -0.5em;
+}
+
+sub {
+  bottom: -0.25em;
+}
+
+section.footnotes {
+  border-top: 1px solid #ddd;
+  margin-top: 3rem;
+  padding-top: 1rem;
+  font-size: 0.875rem;
+  color: #555;
+}
+
+section.footnotes ol {
+  padding-left: 1.5rem;
+}
+
+section.footnotes li {
+  margin-bottom: 0.4rem;
+}
+
 /* ─── Print ────────────────────────────────────────────────── */
 @media print {
   body {

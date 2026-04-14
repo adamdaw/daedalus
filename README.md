@@ -165,8 +165,9 @@ Permanently removes `proposals/my-proposal/`. Requires `CONFIRM=yes` to prevent 
 ### Build all proposals
 
 ```bash
-make build-all    # build PDF for every proposal in proposals/
-make clean-all    # remove generated output for root example and all proposals
+make build-all     # build PDF and HTML for every proposal in proposals/
+make validate-all  # run lint + spellcheck for root example and every proposal
+make clean-all     # remove generated output for root example and all proposals
 ```
 
 ### Archive for delivery
@@ -357,7 +358,7 @@ Detects which proposal directories were modified in the push, then builds only t
 
 ### `release.yml` — runs on `v*` tags
 
-Builds the root example PDF and attaches it to the GitHub Release as a downloadable asset. Tag a release with `git tag v1.0 && git push origin v1.0`.
+Builds the root example PDF and HTML and attaches both to the GitHub Release as downloadable assets. Tag a release with `git tag v1.0 && git push origin v1.0`.
 
 ---
 

@@ -33,7 +33,7 @@ PANDOC_FLAGS = \
 	--resource-path=.:$(IMAGES)
 
 .PHONY: build html all clean clean-all check check-pandoc check-filters check-proposal \
-        watch lint spellcheck wordcount validate archive init list open open-html \
+        watch lint spellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help docker-build docker-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
@@ -149,7 +149,7 @@ open-html: ## Open the built HTML in the system browser
 		echo "Cannot open HTML: install xdg-utils (Linux) or use macOS."; exit 1; \
 	fi
 
-new-section: ## Scaffold next numbered section file (requires TITLE="Section Name")
+new-section: check-proposal ## Scaffold next numbered section file (requires TITLE="Section Name")
 	@test -n "$(TITLE)" || { echo "Usage: make new-section TITLE='Section Name' [PROPOSAL=my-proposal]"; exit 1; }
 	@LAST=$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null \
 		| sed 's|.*/\([0-9][0-9]*\)_.*|\1|' \
@@ -199,6 +199,19 @@ build-all: ## Build PDF and HTML for every proposal
 		done; \
 	else \
 		echo "No proposals found. Run: make init NAME=my-proposal"; \
+	fi
+
+validate-all: ## Run lint + spellcheck for root example and every proposal
+	@echo "==> Validating root example..."
+	$(MAKE) validate
+	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
+		for cfg in proposals/*/config.yaml; do \
+			name=$$(basename "$$(dirname "$$cfg")"); \
+			echo "==> Validating $$name..."; \
+			$(MAKE) validate PROPOSAL=$$name || exit 1; \
+		done; \
+	else \
+		echo "No proposals found."; \
 	fi
 
 archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)

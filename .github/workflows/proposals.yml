@@ -9,6 +9,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
   PANDOC_VERSION: 3.1.13
@@ -92,14 +95,15 @@ jobs:
           path: /var/cache/apt/archives
           key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/proposals.yml') }}
 
-      - name: Install XeLaTeX
+      - name: Install XeLaTeX and PDF utilities
         run: |
           sudo apt-get update -q
           sudo apt-get install -y --no-install-recommends \
             texlive-xetex \
             texlive-fonts-recommended \
             texlive-latex-extra \
-            lmodern
+            lmodern \
+            poppler-utils
 
       - name: Cache npm
         uses: actions/cache@v4
@@ -137,10 +141,20 @@ jobs:
 
       - name: Validate outputs
         run: |
-          test -s "proposals/${{ matrix.proposal }}/project.pdf" || \
-            { echo "FAIL: PDF not produced for ${{ matrix.proposal }}"; exit 1; }
-          test -s "proposals/${{ matrix.proposal }}/project.html" || \
-            { echo "FAIL: HTML not produced for ${{ matrix.proposal }}"; exit 1; }
+          PDF="proposals/${{ matrix.proposal }}/project.pdf"
+          HTML="proposals/${{ matrix.proposal }}/project.html"
+
+          test -s "$PDF"  || { echo "FAIL: PDF not produced for ${{ matrix.proposal }}";  exit 1; }
+          test -s "$HTML" || { echo "FAIL: HTML not produced for ${{ matrix.proposal }}"; exit 1; }
+
+          pdfinfo "$PDF"
+
+          PAGES=$(pdfinfo "$PDF" | awk '/^Pages:/{print $2}')
+          echo "Page count: $PAGES"
+          [ "$PAGES" -ge 1 ] || { echo "FAIL: PDF appears empty ($PAGES pages)"; exit 1; }
+
+          grep -qi "<h1" "$HTML" || { echo "FAIL: HTML missing heading content"; exit 1; }
+
           echo "Outputs validated for ${{ matrix.proposal }}."
 
       - name: Upload proposal artifacts

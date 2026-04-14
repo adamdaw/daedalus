@@ -47,7 +47,11 @@
     }{%
       \IfFileExists{logo.png}{%
         \includegraphics[width=0.35\textwidth]{logo.png}\\[2cm]%
-      }{\vspace{3.5cm}}%
+      }{%
+        \IfFileExists{logo.pdf}{%
+          \includegraphics[width=0.35\textwidth]{logo.pdf}\\[2cm]%
+        }{\vspace{3.5cm}}%
+      }%
     }%
     {\Huge\bfseries\@title\par}%
     \ifdefempty{\@subtitle}{}{%
