@@ -129,7 +129,7 @@ jobs:
           echo "All validation checks passed."
 
       - name: Upload PDF artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: proposal-pdf
@@ -143,7 +143,7 @@ jobs:
           echo "HTML validation passed."
 
       - name: Upload HTML artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: proposal-html
