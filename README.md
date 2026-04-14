@@ -48,6 +48,7 @@ make all          # generate both PDF and HTML
 make clean        # remove generated output
 make watch        # rebuild on file changes (requires fswatch or inotify-tools)
 make open         # open the PDF in the system viewer
+make help         # list all available targets
 ```
 
 ### Quality checks
@@ -55,7 +56,9 @@ make open         # open the PDF in the system viewer
 ```bash
 make lint         # run markdownlint on content files
 make spellcheck   # run codespell on content files
+make validate     # run lint + spellcheck (without building)
 make wordcount    # word count per file and total
+make status       # show build state and word count for all proposals
 ```
 
 ### Draft mode
@@ -102,6 +105,7 @@ This runs markdownlint and codespell automatically before every commit.
 
 ```bash
 make init NAME=my-proposal
+make init NAME=my-proposal TITLE="My Architecture Proposal"
 ```
 
 Scaffolds `proposals/my-proposal/` from the `templates/` directory:
@@ -113,6 +117,11 @@ proposals/my-proposal/
   images/            # drop logo.jpg or logo.png here
   markdown/
     01_Introduction.md
+    02_Current_State.md
+    03_Proposed_Solution.md
+    04_Implementation.md
+    05_Risks.md
+    99_References.md
 ```
 
 ### List proposals

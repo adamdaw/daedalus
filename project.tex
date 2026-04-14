@@ -3,8 +3,6 @@
 \usepackage{fancyhdr}
 \usepackage{etoolbox}
 
-\graphicspath{{images/}}
-
 \makeatletter
 
 %%─── Subtitle support ────────────────────────────────────────────────────────
@@ -44,11 +42,11 @@
   \begin{titlepage}%
     \centering%
     \vspace*{1.5cm}%
-    \IfFileExists{images/logo.jpg}{%
-      \includegraphics[width=0.35\textwidth]{images/logo.jpg}\\[2cm]%
+    \IfFileExists{logo.jpg}{%
+      \includegraphics[width=0.35\textwidth]{logo.jpg}\\[2cm]%
     }{%
-      \IfFileExists{images/logo.png}{%
-        \includegraphics[width=0.35\textwidth]{images/logo.png}\\[2cm]%
+      \IfFileExists{logo.png}{%
+        \includegraphics[width=0.35\textwidth]{logo.png}\\[2cm]%
       }{\vspace{3.5cm}}%
     }%
     {\Huge\bfseries\@title\par}%

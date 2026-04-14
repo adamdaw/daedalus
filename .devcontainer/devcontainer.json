@@ -20,5 +20,5 @@
       }
     }
   },
-  "postCreateCommand": "make check && echo 'Daedalus environment ready.'"
+  "postCreateCommand": "pip install pre-commit && pre-commit install && make check && echo 'Daedalus environment ready.'"
 }
