@@ -105,12 +105,16 @@ jobs:
         id: setup-chrome
 
       - name: Install mermaid-filter
-        run: npm install -g mermaid-filter
+        run: npm install -g mermaid-filter markdownlint-cli
+
+      - name: Install Python tools
+        run: pip install codespell
 
       - name: Lint markdown
-        run: |
-          npm install -g markdownlint-cli
-          make lint PROPOSAL=${{ matrix.proposal }}
+        run: make lint PROPOSAL=${{ matrix.proposal }}
+
+      - name: Spell check
+        run: make spellcheck PROPOSAL=${{ matrix.proposal }}
 
       - name: Build PDF
         run: make build PROPOSAL=${{ matrix.proposal }}
@@ -123,6 +127,14 @@ jobs:
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Validate outputs
+        run: |
+          test -s "proposals/${{ matrix.proposal }}/project.pdf" || \
+            { echo "FAIL: PDF not produced for ${{ matrix.proposal }}"; exit 1; }
+          test -s "proposals/${{ matrix.proposal }}/project.html" || \
+            { echo "FAIL: HTML not produced for ${{ matrix.proposal }}"; exit 1; }
+          echo "Outputs validated for ${{ matrix.proposal }}."
 
       - name: Upload proposal artifacts
         uses: actions/upload-artifact@v4

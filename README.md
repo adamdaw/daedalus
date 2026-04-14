@@ -106,6 +106,8 @@ This runs markdownlint and codespell automatically before every commit.
 ```bash
 make init NAME=my-proposal
 make init NAME=my-proposal TITLE="My Architecture Proposal" AUTHOR="Jane Smith"
+# DATE defaults to the current month and year; override with DATE="January 2027"
+make init NAME=my-proposal TITLE="..." AUTHOR="..." DATE="January 2027"
 ```
 
 Scaffolds `proposals/my-proposal/` by copying from `templates/`. The root `markdown/` directory is a complete worked example used to demo the build — it is not a template and is not copied.
@@ -151,6 +153,14 @@ make all   PROPOSAL=my-proposal     # both
 make build PROPOSAL=my-proposal DRAFT=1  # draft watermark
 make open  PROPOSAL=my-proposal     # open PDF in viewer
 ```
+
+### Delete a proposal
+
+```bash
+make delete PROPOSAL=my-proposal CONFIRM=yes
+```
+
+Permanently removes `proposals/my-proposal/`. Requires `CONFIRM=yes` to prevent accidental deletion.
 
 ### Build all proposals
 
@@ -336,10 +346,10 @@ autoSectionLabels: true
 1. Installs pandoc, pandoc-crossref, XeLaTeX, mermaid-filter, markdownlint, codespell
 2. Lints all markdown files
 3. Spell-checks all markdown files
-4. Builds `project.pdf`
-5. Validates PDF structure (page count, section headings)
-6. Uploads PDF as a downloadable artifact (30-day retention)
-7. Builds and tests the Docker image end-to-end
+4. Builds `project.pdf` and validates structure (page count, section headings)
+5. Builds `project.html` and validates it is non-empty
+6. Uploads PDF and HTML as downloadable artifacts (30-day retention)
+7. Builds and tests the Docker image end-to-end (full PDF validation)
 
 ### `proposals.yml` — runs when `proposals/**` changes
 
@@ -354,6 +364,7 @@ Builds the root example PDF and attaches it to the GitHub Release as a downloada
 ## Dependency caching
 
 All CI jobs cache:
-- The pandoc `.deb` installer (keyed by version)
+- The pandoc `.deb` installer (keyed by pandoc version)
+- The pandoc-crossref `.tar.xz` binary (keyed by crossref version)
 - apt package archives (keyed by workflow file hash)
 - npm cache (keyed by workflow file hash)

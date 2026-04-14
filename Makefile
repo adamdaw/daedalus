@@ -34,7 +34,7 @@ PANDOC_FLAGS = \
 
 .PHONY: build html all clean clean-all check check-pandoc check-proposal watch \
         lint spellcheck wordcount validate archive init list open \
-        new-section status build-all help docker-build docker-run
+        new-section status build-all delete help docker-build docker-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -173,12 +173,12 @@ wordcount: ## Print word count per file and total
 	@echo "Word count ($(PROPOSAL_DIR)/markdown/):"
 	@wc -w $(MARKDOWN)
 
-build-all: ## Build PDF for every proposal
+build-all: ## Build PDF and HTML for every proposal
 	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
 		for cfg in proposals/*/config.yaml; do \
 			name=$$(basename "$$(dirname "$$cfg")"); \
 			echo "==> Building $$name..."; \
-			$(MAKE) build PROPOSAL=$$name || exit 1; \
+			$(MAKE) all PROPOSAL=$$name || exit 1; \
 		done; \
 	else \
 		echo "No proposals found. Run: make init NAME=my-proposal"; \
@@ -199,8 +199,8 @@ archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 		project.css; \
 	echo "Created: $${ARCHIVE}"
 
-init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR=)
-	@test -n "$(NAME)" || { echo "Usage: make init NAME=my-proposal [TITLE='My Title'] [AUTHOR='Name']"; exit 1; }
+init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
+	@test -n "$(NAME)" || { echo "Usage: make init NAME=my-proposal [TITLE='My Title'] [AUTHOR='Name'] [DATE='Month Year']"; exit 1; }
 	@test ! -d proposals/$(NAME) || { echo "Error: proposals/$(NAME) already exists"; exit 1; }
 	mkdir -p proposals/$(NAME)/markdown proposals/$(NAME)/images
 	cp templates/config.yaml proposals/$(NAME)/config.yaml
@@ -209,6 +209,12 @@ init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR=)
 	fi
 	@if [ -n "$(AUTHOR)" ]; then \
 		sed -i 's|^author: "Author Name"|author: "$(AUTHOR)"|' proposals/$(NAME)/config.yaml; \
+	fi
+	@if [ -n "$(DATE)" ]; then \
+		sed -i 's|^date: "Month Year"|date: "$(DATE)"|' proposals/$(NAME)/config.yaml; \
+	else \
+		CURRENT_DATE=$$(date +"%B %Y"); \
+		sed -i "s|^date: \"Month Year\"|date: \"$$CURRENT_DATE\"|" proposals/$(NAME)/config.yaml; \
 	fi
 	cp templates/project.bib proposals/$(NAME)/project.bib
 	cp -r templates/markdown/. proposals/$(NAME)/markdown/
@@ -230,6 +236,17 @@ help: ## Show available targets
 	@echo "  PROPOSAL=name    Target a specific proposal in proposals/name/"
 	@echo "  DRAFT=1          Add DRAFT watermark to PDF"
 	@echo "  MERMAID_THEME=x  Mermaid theme: default, dark, forest, neutral"
+
+delete: ## Delete a proposal and all its contents (requires PROPOSAL=; add CONFIRM=yes to skip prompt)
+	@test -n "$(PROPOSAL)" || { echo "Usage: make delete PROPOSAL=my-proposal [CONFIRM=yes]"; exit 1; }
+	@test -d $(PROPOSAL_DIR) || { echo "Error: proposal '$(PROPOSAL)' not found."; exit 1; }
+	@if [ "$(CONFIRM)" != "yes" ]; then \
+		echo "This will permanently delete proposals/$(PROPOSAL)/."; \
+		echo "Run with CONFIRM=yes to proceed: make delete PROPOSAL=$(PROPOSAL) CONFIRM=yes"; \
+		exit 1; \
+	fi
+	rm -rf proposals/$(PROPOSAL)/
+	@echo "Deleted proposals/$(PROPOSAL)/"
 
 docker-build: ## Build the Docker image
 	docker build -t daedalus .
