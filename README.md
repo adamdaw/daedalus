@@ -108,7 +108,9 @@ make init NAME=my-proposal
 make init NAME=my-proposal TITLE="My Architecture Proposal"
 ```
 
-Scaffolds `proposals/my-proposal/` from the `templates/` directory:
+Scaffolds `proposals/my-proposal/` by copying from `templates/`. The root `markdown/` directory is a complete worked example used to demo the build — it is not a template and is not copied.
+
+Each starter section contains placeholder headings and instructional comments. Delete and replace the content; the file names and numbering control document order.
 
 ```
 proposals/my-proposal/
@@ -175,9 +177,9 @@ daedalus/
   .markdownlint.json    # Lint configuration
   .codespellrc          # Spell check configuration
   .pre-commit-config.yaml  # Pre-commit hook definitions
-  markdown/             # Root example content
+  markdown/             # Root example content (a complete sample proposal)
   images/               # Root example images
-  templates/            # Starter files used by make init
+  templates/            # Starter files copied by make init (not a proposal)
   proposals/            # Your proposals (generated output is gitignored)
   .devcontainer/        # VS Code devcontainer config
   .github/workflows/    # CI/CD pipelines
