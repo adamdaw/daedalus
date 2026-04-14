@@ -1,0 +1,24 @@
+{
+  "name": "Daedalus",
+  "build": {
+    "dockerfile": "../Dockerfile",
+    "context": ".."
+  },
+  "remoteUser": "root",
+  "overrideCommand": true,
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "yzhang.markdown-all-in-one",
+        "davidanson.vscode-markdownlint",
+        "bierner.markdown-mermaid"
+      ],
+      "settings": {
+        "editor.wordWrap": "on",
+        "editor.rulers": [100],
+        "files.trimTrailingWhitespace": true
+      }
+    }
+  },
+  "postCreateCommand": "make check && echo 'Daedalus environment ready.'"
+}

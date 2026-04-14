@@ -1,15 +1,45 @@
 \usepackage{fancyvrb,newverbs,titlesec}
 \usepackage{graphicx}
+\usepackage{fancyhdr}
+\usepackage{etoolbox}
 
 \graphicspath{{images/}}
 
-%% Page break before each top-level section (requires titlesec)
+\makeatletter
+
+%%─── Subtitle support ────────────────────────────────────────────────────────
+%% Pandoc calls \subtitle{...} from config.yaml; article class doesn't define
+%% it, so we define it here and store the value for use in \maketitle.
+\providecommand{\subtitle}[1]{\gdef\@subtitle{#1}}
+\gdef\@subtitle{}
+
+%%─── Additional cover page metadata ─────────────────────────────────────────
+%% Override any of these in config.yaml via header-includes, e.g.:
+%%   header-includes:
+%%     - \def\docclient{Acme Corp}
+%%     - \def\docversion{1.0}
+%%     - \def\docclassification{Confidential}
+\providecommand{\docclient}{}
+\providecommand{\docversion}{}
+\providecommand{\docclassification}{}
+
+%%─── Running headers and footers ─────────────────────────────────────────────
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape\@title}
+\fancyhead[R]{\small\@author}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyfoot[C]{\small\thepage}%
+  \renewcommand{\headrulewidth}{0pt}%
+}
+
+%%─── Page break before each top-level section ────────────────────────────────
 \newcommand{\sectionbreak}{\clearpage}
 
-%% Custom cover page
-%% Reads \@title, \@author, \@date from pandoc metadata (title/author/date in config.yaml).
-%% Drop a logo at images/logo.jpg or images/logo.png and it will appear automatically.
-\makeatletter
+%%─── Custom cover page ───────────────────────────────────────────────────────
 \renewcommand{\maketitle}{%
   \begin{titlepage}%
     \centering%
@@ -22,11 +52,25 @@
       }{\vspace{3.5cm}}%
     }%
     {\Huge\bfseries\@title\par}%
+    \ifdefempty{\@subtitle}{}{%
+      \vspace{0.5cm}{\Large\@subtitle\par}%
+    }%
     \vspace{1.5cm}%
     {\large\@author\par}%
     \vspace{0.5cm}%
     {\large\@date\par}%
+    \vspace{1cm}%
+    \ifdefempty{\docclient}{}{%
+      {\normalsize Prepared for: \docclient\par}%
+    }%
+    \ifdefempty{\docversion}{}{%
+      \vspace{0.25cm}{\normalsize Version \docversion\par}%
+    }%
     \vfill%
+    \ifdefempty{\docclassification}{}{%
+      {\small\itshape\docclassification\par}%
+    }%
   \end{titlepage}%
-}%
+}
+
 \makeatother

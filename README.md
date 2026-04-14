@@ -1,6 +1,6 @@
 # Daedalus
 
-A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with table of contents, Mermaid diagrams, bibliography, and a cover page.
+A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with cover page, table of contents, running headers, Mermaid diagrams, and bibliography.
 
 Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), and [mermaid-filter](https://github.com/raghur/mermaid-filter).
 
@@ -12,23 +12,28 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 
 | Tool | Purpose | Install |
 |---|---|---|
-| `pandoc` (3.x) | Markdown → PDF conversion | [pandoc.org/installing](https://pandoc.org/installing.html) |
+| `pandoc` 3.1.12 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra` |
-| `mermaid-filter` | Mermaid diagram rendering | `npm install -g mermaid-filter` |
-| `chromium` | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
+| `mermaid-filter` | Diagram rendering | `npm install -g mermaid-filter` |
+| Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
 
-For mermaid-filter to find Chromium, set:
+For mermaid-filter to find the browser:
 ```bash
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-export PUPPETEER_EXECUTABLE_PATH=$(which chromium)  # or chromium-browser
+export PUPPETEER_EXECUTABLE_PATH=$(which chromium)  # or google-chrome-stable
+```
+
+Verify all dependencies are installed:
+```bash
+make check
 ```
 
 ### Build
 
 ```bash
-make build       # generate project.pdf
-make clean       # remove project.pdf
-make check       # verify all dependencies are installed
+make build       # generate project.pdf from the root example
+make html        # generate project.html (no XeLaTeX required)
+make clean       # remove project.pdf and project.html
 make watch       # rebuild on file changes (requires fswatch or inotify-tools)
 ```
 
@@ -39,109 +44,142 @@ make docker-build   # build the image
 make docker-run     # run the build inside the container
 ```
 
+### VS Code Dev Container
+
+Open this repository in VS Code with the Remote - Containers extension. The devcontainer uses the same Docker image as `make docker-run` — all dependencies are pre-installed and `make check` runs automatically on container start.
+
+---
+
+## Creating a New Proposal
+
+```bash
+make init NAME=my-proposal
+```
+
+This scaffolds `proposals/my-proposal/` from the templates directory:
+
+```
+proposals/my-proposal/
+  config.yaml        # document metadata — edit this first
+  project.bib        # bibliography
+  images/            # drop logo.jpg or logo.png here for cover page logo
+  markdown/
+    01_Introduction.md
+```
+
+Build your proposal:
+```bash
+make build PROPOSAL=my-proposal
+make html  PROPOSAL=my-proposal
+```
+
 ---
 
 ## Project Structure
 
 ```
 daedalus/
-  config.yaml         # Document metadata (title, author, date)
-  markdown/           # Content — numbered files, processed in order
-    01_Introduction.md
-    02_Problem_Description.md
-    99_References.md
-  images/             # Logos and static images
-    logo.jpg          # Cover page logo (optional — drop in and it appears automatically)
-  project.tex         # LaTeX customisation: cover page, margins, fonts, hyperlinks
-  project.css         # CSS overrides for Mermaid diagram rendering
-  project.bib         # BibTeX bibliography (can be exported from Zotero)
-  Makefile            # Build automation
-  Dockerfile          # Containerised build environment
+  config.yaml           # Root example metadata
+  project.tex           # Shared LaTeX template (cover page, headers, styling)
+  project.css           # CSS overrides for Mermaid diagram rendering
+  project.bib           # Root example bibliography
+  Makefile              # Build automation
+  Dockerfile            # Containerised build environment
+  markdown/             # Root example content
+  images/               # Root example images
+  templates/            # Starter files used by `make init`
+    config.yaml
+    project.bib
+    markdown/
+  proposals/            # Generated proposals (PDFs are gitignored)
+  .devcontainer/        # VS Code devcontainer config
+  .github/workflows/    # CI pipeline
 ```
 
 ---
 
 ## Authoring
 
-### Document metadata
-
-Edit `config.yaml` to set the document title, author, and date:
+### Document metadata (`config.yaml`)
 
 ```yaml
 title: "My Architecture Proposal"
+subtitle: "Technical Design Document"
 author: "Jane Smith"
 date: "April 2026"
 ```
 
-These appear on the cover page and in the PDF metadata.
+For additional cover page fields, add `header-includes`:
+
+```yaml
+header-includes:
+  - \def\docclient{Acme Corp}
+  - \def\docversion{1.0}
+  - \def\docclassification{Internal Use Only}
+```
+
+Margin and link colour settings are also in `config.yaml` — see the root example.
 
 ### Content files
 
-Add Markdown files to `markdown/`, prefixed with a number to control order:
+Number Markdown files to control order:
 
 ```
 markdown/
   01_Introduction.md
   02_Current_State.md
   03_Proposed_Solution.md
-  04_Timeline.md
+  04_Implementation.md
+  05_Risks.md
   99_References.md
 ```
 
-Each top-level `#` heading becomes a section in the table of contents and starts on a new page.
+Each `#` heading starts a new page. `##` and `###` headings appear in the table of contents.
 
-### Logo
+### Cover page logo
 
-Drop `logo.jpg` or `logo.png` into `images/`. It will appear automatically on the cover page — no configuration needed.
+Drop `logo.jpg` or `logo.png` into the `images/` directory. It appears on the cover page automatically.
 
 ### Mermaid diagrams
 
-Use fenced code blocks with the `mermaid` language tag:
-
 ````markdown
 ```mermaid
-erDiagram
-    User ||--o{ Order : places
-    Order ||--|{ LineItem : contains
+flowchart TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Do something]
+    B -->|No| D[Do something else]
 ```
 ````
 
-Any diagram type supported by Mermaid works: flowcharts, sequence diagrams, ERDs, Gantt charts, etc.
+Supported types include flowcharts, sequence diagrams, ERDs, Gantt charts, and more.
 
 ### Bibliography
 
-Add references to `project.bib` in BibTeX format (Zotero can export this directly). Cite them inline with `[@key]` and list them in your references section with footnote-style links:
+Add references to `project.bib`. Cite inline with `[@Key]` and list in the references section:
 
 ```markdown
-- Item one [^ref1]
-
-[^ref1]: Description of item one. [@BibKey]
+[^ref1]: Reference description. [@BibKey]
 ```
-
----
-
-## CI / Automated Validation
-
-Every push triggers a GitHub Actions workflow that:
-
-1. Installs pandoc, XeLaTeX, and mermaid-filter on a clean Ubuntu runner
-2. Builds `project.pdf`
-3. Validates the output:
-   - PDF file is non-empty
-   - PDF is parseable (valid structure)
-   - Minimum page count is met
-   - Expected section headings are present in the extracted text
-4. Uploads the built PDF as a downloadable workflow artifact (retained 30 days)
-
-Build status reflects whether the document compiles and contains the expected structure — no manual inspection required for a passing build.
 
 ---
 
 ## Customisation
 
-### Margins and layout
+### Cover page fields
 
-Edit the `geometry` block in `config.yaml`:
+`project.tex` defines the cover page layout. The following fields are supported:
+
+| Source | Field | How to set |
+|---|---|---|
+| `config.yaml` | `title` | `title: "..."` |
+| `config.yaml` | `subtitle` | `subtitle: "..."` |
+| `config.yaml` | `author` | `author: "..."` |
+| `config.yaml` | `date` | `date: "..."` |
+| `header-includes` | Client name | `- \def\docclient{...}` |
+| `header-includes` | Version | `- \def\docversion{...}` |
+| `header-includes` | Classification | `- \def\docclassification{...}` |
+
+### Margins
 
 ```yaml
 geometry:
@@ -151,9 +189,7 @@ geometry:
   - right=2cm
 ```
 
-### Hyperlink colours
-
-Edit the colour fields in `config.yaml`:
+### Link colours
 
 ```yaml
 colorlinks: true
@@ -162,10 +198,22 @@ urlcolor: blue
 filecolor: magenta
 ```
 
-### Mermaid diagram appearance
+### Running headers and footers
 
-Edit `project.css` to override Mermaid's default rendering styles.
+Defined in `project.tex`. By default: document title (left), author (right), page number (centre footer). Edit the `\fancyhead` and `\fancyfoot` commands to customise.
 
-### Cover page
+---
 
-The cover page is defined in `project.tex` as a `\maketitle` override. Modify it to add fields like client name, version, or a custom layout.
+## CI / Automated Validation
+
+Every push triggers two GitHub Actions jobs:
+
+**`build`** — installs pandoc, XeLaTeX, and mermaid-filter on a clean Ubuntu runner, builds `project.pdf`, then validates:
+- PDF is non-empty and parseable
+- Minimum page count (≥ 5)
+- Expected section headings present in extracted text
+- Uploads PDF as a downloadable artifact (retained 30 days)
+
+**`docker`** — builds the Docker image (with layer caching) and runs a full build inside the container to validate the Dockerfile end-to-end.
+
+Dependency downloads are cached (pandoc `.deb`, apt archives, npm) to speed up subsequent runs.

@@ -1,0 +1,11 @@
+# Generated output
+project.pdf
+project.html
+proposals/*/project.pdf
+proposals/*/project.html
+
+# Intermediate files
+*.aux
+*.log
+*.out
+*.toc
