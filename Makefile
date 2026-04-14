@@ -33,7 +33,7 @@ PANDOC_FLAGS = \
 	--resource-path=.:$(IMAGES)
 
 .PHONY: build html all clean clean-all check check-pandoc check-proposal watch \
-        lint spellcheck wordcount validate archive init list open \
+        lint spellcheck wordcount validate archive init list open open-html \
         new-section status build-all delete help docker-build docker-run
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
@@ -96,11 +96,13 @@ list: ## List all proposals with their titles
 
 status: ## Show build state and word count for all proposals
 	@echo "Root example:"
-	@if [ -f project.pdf ]; then \
-		words=$$(wc -w markdown/*.md 2>/dev/null | tail -1 | awk '{print $$1}'); \
-		echo "  [built]     project.pdf  ($$words words)"; \
+	@words=$$(wc -w markdown/*.md 2>/dev/null | tail -1 | awk '{print $$1}'); \
+	if [ -f project.pdf ] && [ -f project.html ]; then \
+		echo "  [pdf+html]  project.pdf + project.html  ($$words words)"; \
+	elif [ -f project.pdf ]; then \
+		echo "  [pdf only]  project.pdf  ($$words words)"; \
 	else \
-		echo "  [not built]"; \
+		echo "  [not built]  ($$words words)"; \
 	fi
 	@echo ""
 	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
@@ -110,10 +112,13 @@ status: ## Show build state and word count for all proposals
 			title=$$(grep '^title:' "$$cfg" | head -1 \
 				| sed 's/title:[[:space:]]*//' | tr -d '"'"'"'); \
 			pdf="proposals/$$name/project.pdf"; \
+			htm="proposals/$$name/project.html"; \
 			words=$$(wc -w "proposals/$$name/markdown/"*.md 2>/dev/null \
 				| tail -1 | awk '{print $$1}'); \
-			if [ -f "$$pdf" ]; then \
-				echo "  [built]     $$name — $$title  ($$words words)"; \
+			if [ -f "$$pdf" ] && [ -f "$$htm" ]; then \
+				echo "  [pdf+html]  $$name — $$title  ($$words words)"; \
+			elif [ -f "$$pdf" ]; then \
+				echo "  [pdf only]  $$name — $$title  ($$words words)"; \
 			else \
 				echo "  [not built] $$name — $$title  ($$words words)"; \
 			fi; \
@@ -132,6 +137,16 @@ open: ## Open the built PDF in the system viewer
 		echo "Cannot open PDF: install xdg-utils (Linux) or use macOS."; exit 1; \
 	fi
 
+open-html: ## Open the built HTML in the system browser
+	@test -f $(HTML_OUT) || { echo "Error: $(HTML_OUT) not found. Run 'make html$(if $(PROPOSAL), PROPOSAL=$(PROPOSAL),)' first."; exit 1; }
+	@if command -v xdg-open >/dev/null 2>&1; then \
+		xdg-open $(HTML_OUT); \
+	elif command -v open >/dev/null 2>&1; then \
+		open $(HTML_OUT); \
+	else \
+		echo "Cannot open HTML: install xdg-utils (Linux) or use macOS."; exit 1; \
+	fi
+
 new-section: ## Scaffold next numbered section file (requires TITLE="Section Name")
 	@test -n "$(TITLE)" || { echo "Usage: make new-section TITLE='Section Name' [PROPOSAL=my-proposal]"; exit 1; }
 	@LAST=$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null \
@@ -146,12 +161,12 @@ new-section: ## Scaffold next numbered section file (requires TITLE="Section Nam
 watch: ## Rebuild on file changes (requires fswatch or inotify-tools)
 	@if command -v fswatch >/dev/null 2>&1; then \
 		echo "Watching for changes (fswatch)..."; \
-		fswatch -o $(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex $(BIB) \
+		fswatch -o $(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex project.css $(BIB) \
 			| xargs -n1 -I{} $(MAKE) build $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
 	elif command -v inotifywait >/dev/null 2>&1; then \
 		echo "Watching for changes (inotifywait)..."; \
 		while inotifywait -r -e modify,create,delete \
-			$(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex $(BIB) 2>/dev/null; do \
+			$(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex project.css $(BIB) 2>/dev/null; do \
 			$(MAKE) build $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
 		done; \
 	else \
@@ -186,6 +201,7 @@ build-all: ## Build PDF and HTML for every proposal
 
 archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 	@test -n "$(PROPOSAL)" || { echo "Usage: make archive PROPOSAL=my-proposal"; exit 1; }
+	@command -v zip >/dev/null 2>&1 || { echo "Error: zip not found. Run: apt install zip / brew install zip"; exit 1; }
 	@test -f $(OUTPUT) || { echo "Error: Run 'make build PROPOSAL=$(PROPOSAL)' first"; exit 1; }
 	@TIMESTAMP=$$(date +%Y%m%d-%H%M%S); \
 	ARCHIVE="proposals/$(PROPOSAL)-$${TIMESTAMP}.zip"; \
@@ -201,6 +217,10 @@ archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 
 init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
 	@test -n "$(NAME)" || { echo "Usage: make init NAME=my-proposal [TITLE='My Title'] [AUTHOR='Name'] [DATE='Month Year']"; exit 1; }
+	@echo "$(NAME)" | grep -qE '^[a-zA-Z0-9_-]+$$' || { \
+		echo "Error: NAME '$(NAME)' is invalid. Use only letters, numbers, hyphens, and underscores."; \
+		exit 1; \
+	}
 	@test ! -d proposals/$(NAME) || { echo "Error: proposals/$(NAME) already exists"; exit 1; }
 	mkdir -p proposals/$(NAME)/markdown proposals/$(NAME)/images
 	cp templates/config.yaml proposals/$(NAME)/config.yaml

@@ -68,6 +68,12 @@ jobs:
             texlive-latex-extra \
             lmodern
 
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: npm-mermaid-filter-${{ hashFiles('.github/workflows/release.yml') }}
+
       - name: Setup Chrome for mermaid-filter
         uses: browser-actions/setup-chrome@v1
         id: setup-chrome
@@ -75,8 +81,8 @@ jobs:
       - name: Install mermaid-filter
         run: npm install -g mermaid-filter
 
-      - name: Build PDF
-        run: make build
+      - name: Build PDF and HTML
+        run: make all
         env:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
@@ -84,5 +90,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: project.pdf
+          files: |
+            project.pdf
+            project.html
           generate_release_notes: true
