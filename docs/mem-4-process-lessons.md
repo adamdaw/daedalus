@@ -124,6 +124,20 @@ dependabot without SHA pins means no protection.
 
 ---
 
+### PL-09 — sed -i is not portable between Linux and macOS
+
+**Date:** 2026-04
+**Source:** daedalus Makefile `init` target
+
+GNU `sed -i 's/foo/bar/' file` works on Linux. BSD `sed` (macOS) requires a backup
+extension argument: `sed -i '' 's/foo/bar/' file`. The difference is invisible until
+someone tries `make init` on a Mac and gets a cryptic error.
+
+**Fix:** Detect the OS with `$(shell uname -s)` and set `SED_I := sed -i ''` on Darwin,
+`SED_I := sed -i` otherwise. Use `$(SED_I)` everywhere in-place sed is needed.
+
+---
+
 ## Documentation Authoring Lessons
 
 ### DL-01 — British English is flagged by codespell

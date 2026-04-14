@@ -36,10 +36,11 @@ Use `make build PROPOSAL=<name>` to produce the PDF.
 
 | Role | Agent | Prompt File | Responsibility |
 | --- | --- | --- | --- |
-| **The Architect** | Human | — | Strategic vision, domain expertise, acceptance authority |
+| **The Architect** | Human | `prompts/00-workflow.md` | Strategic vision, session orchestration, acceptance authority |
 | **Spec Author** | Claude (Builder) | `prompts/01-arch-spec-author.md` | Drafts arc42 sections from requirements and constraints |
 | **Adversary (Spec)** | Sarcasmotron / Gemini | `prompts/02-adversary-arch.md` | Adversarial review of the arc42 document |
 | **ADR Author** | Claude (Builder) | `prompts/03-adr-author.md` | Documents architectural decisions as structured ADRs |
+| **Feedback Triage** | Architect (human) | `prompts/04-feedback-triage.md` | Triages adversarial findings: Accept / Reject / Defer |
 
 ---
 

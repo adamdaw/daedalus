@@ -4,6 +4,12 @@ on:
   push:
     paths:
       - 'proposals/**'
+  workflow_dispatch:
+    inputs:
+      proposal:
+        description: 'Proposal name to build (leave empty to build all)'
+        required: false
+        type: string
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -30,17 +36,33 @@ jobs:
       - name: Detect changed proposals
         id: detect
         run: |
-          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            INPUT="${{ inputs.proposal }}"
+            if [ -n "$INPUT" ]; then
+              PROPOSALS="[\"$INPUT\"]"
+            else
+              PROPOSALS=$(ls -d proposals/*/config.yaml 2>/dev/null \
+                | cut -d'/' -f2 \
+                | grep -v '^\.' \
+                | jq -Rn '[inputs | select(length > 0)]')
+            fi
+          elif git rev-parse HEAD~1 >/dev/null 2>&1; then
             CHANGED=$(git diff --name-only HEAD~1 HEAD)
+            PROPOSALS=$(echo "$CHANGED" \
+              | grep '^proposals/' \
+              | cut -d'/' -f2 \
+              | sort -u \
+              | grep -v '^\.' \
+              | jq -Rn '[inputs | select(length > 0)]')
           else
             CHANGED=$(git ls-files proposals/)
+            PROPOSALS=$(echo "$CHANGED" \
+              | grep '^proposals/' \
+              | cut -d'/' -f2 \
+              | sort -u \
+              | grep -v '^\.' \
+              | jq -Rn '[inputs | select(length > 0)]')
           fi
-          PROPOSALS=$(echo "$CHANGED" \
-            | grep '^proposals/' \
-            | cut -d'/' -f2 \
-            | sort -u \
-            | grep -v '^\.' \
-            | jq -Rn '[inputs | select(length > 0)]')
           echo "proposals=$PROPOSALS" >> $GITHUB_OUTPUT
           echo "Detected: $PROPOSALS"
 
@@ -118,7 +140,7 @@ jobs:
         run: npm install -g mermaid-filter markdownlint-cli@0.44.0
 
       - name: Install Python tools
-        run: pip install codespell
+        run: pip install codespell==2.3.0
 
       - name: Lint markdown
         run: make lint PROPOSAL=${{ matrix.proposal }}
@@ -151,6 +173,15 @@ jobs:
           PAGES=$(pdfinfo "$PDF" | awk '/^Pages:/{print $2}')
           echo "Page count: $PAGES"
           [ "$PAGES" -ge 1 ] || { echo "FAIL: PDF appears empty ($PAGES pages)"; exit 1; }
+
+          pdftotext "$PDF" - > /tmp/pdf-text.txt
+          grep -q "Introduction"      /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Introduction'";      exit 1; }
+          grep -q "Context"           /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Context'";           exit 1; }
+          grep -q "Solution Strategy" /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Solution Strategy'"; exit 1; }
+          grep -q "Building Block"    /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Building Block'";    exit 1; }
+          grep -q "Deployment"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Deployment'";        exit 1; }
+          grep -q "Risks"             /tmp/pdf-text.txt || { echo "FAIL: Missing section 'Risks'";             exit 1; }
+          grep -q "References"        /tmp/pdf-text.txt || { echo "FAIL: Missing section 'References'";        exit 1; }
 
           grep -qi "<h1" "$HTML" || { echo "FAIL: HTML missing heading content"; exit 1; }
 

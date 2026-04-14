@@ -81,8 +81,17 @@ jobs:
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
         id: setup-chrome
 
-      - name: Install mermaid-filter
-        run: npm install -g mermaid-filter
+      - name: Install Node.js tools
+        run: npm install -g mermaid-filter markdownlint-cli@0.44.0
+
+      - name: Install Python tools
+        run: pip install codespell==2.3.0
+
+      - name: Lint markdown
+        run: make lint
+
+      - name: Spell check
+        run: make spellcheck
 
       - name: Build PDF and HTML
         run: make all
@@ -120,4 +129,5 @@ jobs:
           files: |
             project.pdf
             project.html
+            project.docx
           generate_release_notes: true

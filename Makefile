@@ -1,6 +1,14 @@
 PANDOC_VERSION   := 3.1.13
 CROSSREF_VERSION := 0.3.17.1
 
+# Portable in-place sed: BSD sed (macOS) requires an extension argument; GNU sed does not.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+  SED_I := sed -i ''
+else
+  SED_I := sed -i
+endif
+
 # Mermaid diagram theme. Override with: make build MERMAID_THEME=dark
 MERMAID_THEME ?= default
 export MERMAID_FILTER_THEME = $(MERMAID_THEME)
@@ -64,7 +72,7 @@ docx: check-pandoc check-filters check-proposal ## Build Word document (DOCX)
 		--to=docx \
 		-o $(DOCX_OUT)
 
-all: build html ## Build both PDF and HTML
+all: build html docx ## Build PDF, HTML, and DOCX
 
 clean: ## Remove generated output for the current target (root or PROPOSAL=)
 	rm -f $(OUTPUT) $(HTML_OUT) $(DOCX_OUT)
@@ -180,12 +188,12 @@ watch: ## Rebuild on file changes (requires fswatch or inotify-tools)
 	@if command -v fswatch >/dev/null 2>&1; then \
 		echo "Watching for changes (fswatch)..."; \
 		fswatch -o $(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex project.css $(BIB) \
-			| xargs -n1 -I{} $(MAKE) build $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
+			| xargs -n1 -I{} $(MAKE) all $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
 	elif command -v inotifywait >/dev/null 2>&1; then \
 		echo "Watching for changes (inotifywait)..."; \
 		while inotifywait -r -e modify,create,delete \
 			$(PROPOSAL_DIR)/markdown/ $(CONFIG) project.tex project.css $(BIB) 2>/dev/null; do \
-			$(MAKE) build $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
+			$(MAKE) all $(if $(PROPOSAL),PROPOSAL=$(PROPOSAL),); \
 		done; \
 	else \
 		echo "Error: install fswatch (macOS: brew install fswatch) or inotify-tools (Linux: apt install inotify-tools)"; \
@@ -257,16 +265,16 @@ init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
 	mkdir -p proposals/$(NAME)/markdown proposals/$(NAME)/images
 	cp templates/config.yaml proposals/$(NAME)/config.yaml
 	@if [ -n "$(TITLE)" ]; then \
-		sed -i 's|^title: "Proposal Title"|title: "$(TITLE)"|' proposals/$(NAME)/config.yaml; \
+		$(SED_I) 's|^title: "Proposal Title"|title: "$(TITLE)"|' proposals/$(NAME)/config.yaml; \
 	fi
 	@if [ -n "$(AUTHOR)" ]; then \
-		sed -i 's|^author: "Author Name"|author: "$(AUTHOR)"|' proposals/$(NAME)/config.yaml; \
+		$(SED_I) 's|^author: "Author Name"|author: "$(AUTHOR)"|' proposals/$(NAME)/config.yaml; \
 	fi
 	@if [ -n "$(DATE)" ]; then \
-		sed -i 's|^date: "Month Year"|date: "$(DATE)"|' proposals/$(NAME)/config.yaml; \
+		$(SED_I) 's|^date: "Month Year"|date: "$(DATE)"|' proposals/$(NAME)/config.yaml; \
 	else \
 		CURRENT_DATE=$$(date +"%B %Y"); \
-		sed -i "s|^date: \"Month Year\"|date: \"$$CURRENT_DATE\"|" proposals/$(NAME)/config.yaml; \
+		$(SED_I) "s|^date: \"Month Year\"|date: \"$$CURRENT_DATE\"|" proposals/$(NAME)/config.yaml; \
 	fi
 	cp templates/project.bib proposals/$(NAME)/project.bib
 	cp -r templates/markdown/. proposals/$(NAME)/markdown/
