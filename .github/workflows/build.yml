@@ -86,6 +86,11 @@ jobs:
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
         id: setup-chrome
 
+      - name: Configure puppeteer no-sandbox (Ubuntu 24.04 AppArmor)
+        run: |
+          echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
+          echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
+
       - name: Install Node.js tools
         run: npm install -g mermaid-filter markdownlint-cli@0.44.0
 

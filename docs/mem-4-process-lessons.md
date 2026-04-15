@@ -142,6 +142,31 @@ steps (`pip install codespell==2.3.0`) do not need it.
 
 ---
 
+### PL-11 — Ubuntu 24.04 AppArmor blocks Chrome sandbox in GitHub Actions
+
+**Date:** 2026-04
+**Source:** daedalus build.yml — mermaid-filter / puppeteer on ubuntu-24.04 runner
+
+Ubuntu 24.04 (and 23.10+) restricts unprivileged user namespaces via AppArmor. Chrome's
+zygote process requires a usable sandbox to launch and crashes with:
+`FATAL: No usable sandbox!`
+
+This affects any CI job that calls puppeteer/Chrome headlessly (mermaid-filter, Playwright, etc.)
+on an `ubuntu-24.04` runner. The `ubuntu-22.04` runner was not affected.
+
+**Fix:** Create a puppeteer launch config that passes `--no-sandbox` and point
+`MERMAID_FILTER_PUPPETEER_CONFIG` at it via `$GITHUB_ENV`:
+```yaml
+- name: Configure puppeteer no-sandbox (Ubuntu 24.04 AppArmor)
+  run: |
+    echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
+    echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
+```
+In Docker, wrap the Chrome binary to always inject `--no-sandbox --disable-setuid-sandbox`
+(already done in the Dockerfile via the wrapper script).
+
+---
+
 ### PL-09 — sed -i is not portable between Linux and macOS
 
 **Date:** 2026-04
