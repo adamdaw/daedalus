@@ -4,6 +4,8 @@
 
 A document generation pipeline for [arc42](https://arc42.org) architectural documentation. Write content in Markdown using the arc42 template structure, run `make all`, get a professional PDF, HTML, and DOCX — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 
+Includes a structured authoring workflow for requirements elicitation ([ISO/IEC/IEEE 29148:2018](https://www.iso.org/standard/72089.html)) and section-by-section architecture gathering — available as interactive [Claude Code](https://docs.anthropic.com/en/docs/claude-code) commands or standalone bash scripts.
+
 Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) + [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
 
 ---
@@ -22,7 +24,8 @@ implementation decision is documented with its rationale and authoritative refer
 | **arc42** | [arc42.org](https://arc42.org) | Document template structure — all 11 sections |
 | **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
 | **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
-| **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios |
+| **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios, `/req-03` non-functional requirements |
+| **ISO/IEC/IEEE 29148:2018** | [iso.org/standard/72089](https://www.iso.org/standard/72089.html) | Requirements specification structure — `requirements.md` template, `/req-*` commands |
 
 ### Pipeline & Tooling
 
@@ -100,6 +103,7 @@ make spellcheck   # run codespell on content files
 make validate     # run lint + spellcheck (without building)
 make wordcount    # word count per file and total
 make status       # show build state and word count for all proposals
+make version      # print installed versions of all build tools
 ```
 
 ### Draft mode
@@ -168,9 +172,11 @@ Each starter section contains placeholder headings and instructional comments. D
 
 ```
 proposals/my-proposal/
-  config.yaml        # document metadata — edit this first
-  project.bib        # bibliography
-  images/            # drop logo.jpg, logo.png, or logo.pdf here
+  config.yaml          # document metadata — edit this first
+  project.bib          # bibliography
+  brief.md             # architecture elicitation skeleton (arc42)
+  requirements.md      # requirements specification skeleton (ISO 29148)
+  images/              # drop logo.jpg, logo.png, or logo.pdf here
   markdown/
     01_Introduction_and_Goals.md
     02_Constraints.md
@@ -240,28 +246,128 @@ make archive PROPOSAL=my-proposal
 
 ---
 
+## Authoring Workflow
+
+Daedalus provides a structured path from blank proposal to finished document, aligned with
+[ISO/IEC/IEEE 29148:2018](https://www.iso.org/standard/72089.html) for requirements engineering
+and [arc42](https://arc42.org) for architecture documentation. Two paths are available — one
+AI-assisted (using [Claude Code](https://docs.anthropic.com/en/docs/claude-code)), one fully
+manual. Both produce the same structured artifacts.
+
+### AI-assisted (Claude Code)
+
+Sixteen slash commands guide interactive elicitation — five for requirements (`/req-01` through
+`/req-05`) and eleven for architecture (`/gather-01` through `/gather-11`). Each command is
+**resumable**: if a section already has content, it asks whether to add, update, or replace.
+
+```bash
+make init NAME=my-proposal
+cd proposals/my-proposal
+
+# 1. Requirements elicitation (ISO/IEC/IEEE 29148:2018)
+#    /req-01  Stakeholders, purpose, scope
+#    /req-02  Business + functional requirements (user stories, MoSCoW, INVEST)
+#    /req-03  Non-functional requirements (ISO/IEC 25010 quality model)
+#    /req-04  Constraints, assumptions, dependencies
+#    /req-05  Acceptance criteria (BDD Given/When/Then) + traceability matrix
+#    → requirements.md
+
+# 2. Architecture elicitation (arc42 sections 1–11)
+#    /gather-01 through /gather-11 — one command per arc42 section
+#    Each references the relevant standard: C4 Model, UML 2.5, ISO 31000, OWASP, etc.
+#    → brief.md
+
+# 3. Spec authoring — Claude writes arc42 sections from brief.md + requirements.md
+# 4. Adversarial review — a second agent challenges every decision
+# 5. Triage — accept, reject, or defer each finding
+
+make all PROPOSAL=my-proposal  # → PDF + HTML + DOCX
+```
+
+The full VSDD (Verified Software Design Document) prompt roster is in `prompts/`. See
+`prompts/05-elicitation.md` for the elicitation methodology and `prompts/06-req-author.md`
+for an alternative synthesis path (provide raw material — meeting notes, emails, briefs — and
+it produces a structured `requirements.md`, flagging gaps and contradictions).
+
+### Non-AI fallback
+
+Interactive bash scripts provide the same structured elicitation without requiring Claude Code
+or any AI service. Answers flow through the same artifact format (`requirements.md` →
+`brief.md` → arc42 markdown).
+
+```bash
+make init NAME=my-proposal
+
+make gather-requirements PROPOSAL=my-proposal  # interactive requirements → requirements.md
+make gather-brief PROPOSAL=my-proposal         # interactive architecture → brief.md
+make assemble PROPOSAL=my-proposal             # assemble arc42 markdown from artifacts
+make validate-artifacts PROPOSAL=my-proposal   # validate artifact structure
+
+make all PROPOSAL=my-proposal                  # → PDF + HTML + DOCX
+```
+
+The non-AI path is also used in CI — `make test-elicitation` exercises the full pipeline
+end-to-end using fixture data in `test/fixtures/`.
+
+---
+
 ## Project Structure
 
 ```
 daedalus/
-  config.yaml           # Root example metadata
-  project.tex           # Shared LaTeX template (cover page, headers, fonts)
-  project.css           # Mermaid CSS overrides
-  project.bib           # Root example bibliography
-  draft.tex             # Draft watermark (loaded when DRAFT=1)
-  Makefile              # Build automation
-  Dockerfile            # Containerised build environment
-  package.json          # Node.js tool version pins (source of truth for npm tools)
-  .markdownlint.yaml    # Lint configuration (YAML enables inline comments)
-  .codespellrc          # Spell check configuration
+  config.yaml              # Root example metadata
+  project.tex              # Shared LaTeX template (cover page, headers, fonts)
+  project.css              # HTML stylesheet (light + dark mode, print)
+  project.bib              # Root example bibliography
+  draft.tex                # Draft watermark (loaded when DRAFT=1)
+  Makefile                 # Build automation (~40 targets)
+  Dockerfile               # Containerised build environment (Ubuntu 24.04)
+  package.json             # Node.js tool version pins (source of truth for npm tools)
+  requirements-dev.txt     # Python tool pins (source of truth for codespell)
+  filters/
+    diagram.lua            # Vendored pandoc-ext/diagram Lua filter (v1.2.0)
+  markdown/                # Root example content (a complete sample proposal)
+  images/                  # Root example images
+  templates/               # Skeleton copied into each new proposal by make init
+    config.yaml            # Document metadata template
+    project.bib            # Bibliography template
+    brief.md               # Architecture elicitation skeleton (arc42)
+    requirements.md        # Requirements specification skeleton (ISO 29148)
+    markdown/              # 11 empty arc42 sections + 99_References
+  proposals/               # Your proposals (generated output is gitignored)
+  prompts/                 # VSDD agent prompt files
+    00-workflow.md         # Architect — session start, phase mapping, handoff protocol
+    01-arch-spec-author.md # Spec Author — write or revise arc42 document
+    02-adversary-arch.md   # Adversary — full adversarial review of all 11 sections
+    03-adr-author.md       # ADR Author — write or audit Architecture Decision Records
+    04-feedback-triage.md  # Architect — triage adversarial findings
+    05-elicitation.md      # Reference — arc42 elicitation methodology
+    06-req-author.md       # Requirements Author — synthesise raw material into requirements.md
+  docs/                    # VSDD knowledge base
+    mem-1-project-context.md   # Authority hierarchy, agent roles, phase gates
+    mem-2-vsdd-reference.md    # VSDD pipeline, convergence signal, anti-patterns
+    mem-3-pipeline-standards.md # Section standards, diagram conventions
+    mem-4-process-lessons.md   # Build lessons, documentation lessons, constraints
+    pipeline-decisions.md      # Every significant decision with rationale and reference
+  scripts/                 # Elicitation and validation automation
+    gather-requirements.sh # Non-AI requirements elicitation (ISO 29148)
+    gather-brief.sh        # Non-AI architecture elicitation (arc42)
+    assemble.sh            # Assemble arc42 markdown from elicitation artifacts
+    validate-artifacts.sh  # Validate requirements.md and brief.md structure
+    validate-jsonc.py      # JSONC validation for devcontainer.json
+  test/fixtures/           # CI fixture data for elicitation pipeline tests
+  .claude/commands/        # Claude Code slash commands (/req-01–05, /gather-01–11)
+  .devcontainer/           # VS Code Dev Container config
+  .github/
+    workflows/             # CI/CD pipelines (build, proposals, release, codeql)
+    dependabot.yml         # Weekly version bump PRs (Actions, Docker, npm, pip)
+    CODEOWNERS             # Auto-assigns reviewer on all PRs
+    ISSUE_TEMPLATE/        # Bug report and feature request templates
+    pull_request_template.md
+  .markdownlint.yaml       # Lint configuration (YAML enables inline comments)
+  .codespellrc             # Spell check configuration
   .pre-commit-config.yaml  # Pre-commit hook definitions
-  markdown/             # Root example content (a complete sample proposal)
-  images/               # Root example images
-  templates/            # Skeleton copied into each new proposal by make init
-  proposals/            # Your proposals (generated output is gitignored)
-  scripts/              # Pre-commit helper scripts (validate-jsonc.py)
-  .devcontainer/        # VS Code devcontainer config
-  .github/workflows/    # CI/CD pipelines
+  .editorconfig            # Consistent formatting across editors
 ```
 
 ---
@@ -421,7 +527,8 @@ autoSectionLabels: true
 5. Builds `project.html` and validates it is non-empty
 6. Builds `project.docx` and validates it is non-empty
 7. Uploads PDF, HTML, and DOCX as downloadable artifacts (30-day retention)
-8. Builds and validates the Docker image end-to-end, then pushes to GHCR
+8. Tests the non-AI elicitation pipeline end-to-end using fixture data (`make test-elicitation`)
+9. Builds and validates the Docker image end-to-end, then pushes to GHCR
 
 Can also be triggered manually from the GitHub Actions UI (`workflow_dispatch`).
 
@@ -442,6 +549,12 @@ artifacts, then attaches them to the GitHub Release. Tag a release with:
 ```bash
 git tag v1.0 && git push origin v1.0
 ```
+
+### `codeql.yml` — runs on every push, PR, and weekly cron
+
+[CodeQL](https://codeql.github.com/) static analysis targeting GitHub Actions YAML for
+script injection vulnerabilities. Uses `continue-on-error` for SARIF upload (requires
+GitHub Advanced Security on private repos).
 
 ---
 
