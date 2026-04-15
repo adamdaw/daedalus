@@ -212,11 +212,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      # id-token: write and attestations: write are required for SLSA build provenance.
-      # SLSA Level 2 attestation links the built image to the exact source commit and workflow run.
-      # Reference: https://slsa.dev | https://github.com/actions/attest-build-provenance
-      id-token: write
-      attestations: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -323,18 +318,6 @@ jobs:
           echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "Pushed ghcr.io/${{ github.repository }}:latest"
           echo "Pushed ghcr.io/${{ github.repository }}:${{ github.sha }}"
-
-      - name: Generate SLSA provenance attestation
-        # Attaches a signed SLSA Level 2 provenance statement to the image in GHCR.
-        # The attestation links the published image digest back to the specific source
-        # commit and GitHub Actions workflow run, enabling consumers to verify build integrity.
-        # Reference: https://slsa.dev | https://github.com/actions/attest-build-provenance
-        if: github.event_name != 'pull_request'
-        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
-        with:
-          subject-name: ghcr.io/${{ github.repository }}
-          subject-digest: ${{ steps.push.outputs.digest }}
-          push-to-registry: true
 
       - name: Push versioned Docker tag (on version tags)
         # When a vN.N.N tag is pushed, publish a human-readable version tag alongside the
