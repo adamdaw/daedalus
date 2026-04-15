@@ -45,7 +45,7 @@ PANDOC_FLAGS = \
 	--css project.css \
 	--bibliography $(BIB) \
 	--citeproc \
-	--resource-path=.:$(IMAGES)
+	--resource-path=$(CURDIR):$(CURDIR)/$(IMAGES)
 
 # Flags for DOCX — excludes LaTeX-specific options (-H, -V subparagraph, --css)
 DOCX_FLAGS = \
@@ -55,7 +55,7 @@ DOCX_FLAGS = \
 	--toc \
 	--bibliography $(BIB) \
 	--citeproc \
-	--resource-path=.:$(IMAGES)
+	--resource-path=$(CURDIR):$(CURDIR)/$(IMAGES)
 
 .PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
         watch lint spellcheck wordcount validate validate-all archive init list open open-html \

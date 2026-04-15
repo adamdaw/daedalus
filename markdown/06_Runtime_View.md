@@ -68,5 +68,5 @@ sequenceDiagram
     Notif->>Email: Send transactional email
     Email-->>Notif: 202 Accepted
     Notif->>SQS: Delete message
-    Note right of SQS: On failure: message returns to queue\nafter visibility timeout.\nDead-letter queue after 3 attempts.
+    Note right of SQS: On failure: message returns to queue<br/>after visibility timeout.<br/>Dead-letter queue after 3 attempts.
 ```
