@@ -120,10 +120,17 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
 # Reference — https://github.com/mermaid-js/mermaid-cli
 # Reference — https://github.com/pandoc-ext/diagram
-COPY package.json /tmp/npm-pins/package.json
-RUN cd /tmp/npm-pins \
-    && npm install --no-fund --no-audit --prefix /usr/local \
-    && rm -rf /tmp/npm-pins
+# package.json is copied to the prefix directory (/usr/local) because npm --prefix
+# reads the package.json from <prefix>/package.json, not from the working directory.
+# After install, package.json and the generated package-lock.json are removed so the
+# prefix directory is not polluted. Packages go to /usr/local/lib/node_modules/;
+# bin symlinks go to /usr/local/bin/ — equivalent to 'npm install -g'.
+# --include=dev: devDependencies are installed regardless of NODE_ENV, which could be
+# set to 'production' in some build environments and would otherwise skip them.
+COPY package.json /usr/local/package.json
+RUN npm install --no-fund --no-audit --include=dev --prefix /usr/local \
+    && rm /usr/local/package.json \
+    && rm -f /usr/local/package-lock.json
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source
