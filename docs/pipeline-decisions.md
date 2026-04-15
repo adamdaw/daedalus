@@ -808,6 +808,26 @@ registry — consumers pulling `:latest` always get a scanned image.
 (no actionable remediation exists). Together these settings block publishable vulnerabilities
 while avoiding alert fatigue from issues that cannot be resolved by upgrading packages.
 
+### `.trivyignore` — targeted CVE suppression
+
+The `.trivyignore` file lists CVEs that are suppressed with a documented justification.
+Each entry uses Trivy's targeted ignore format (Trivy >= 0.53.0):
+
+```
+CVE-XXXX-NNNNN target:<artifact-path>
+```
+
+The `target:` constraint limits suppression to a specific artifact path, leaving all other
+instances of the same CVE active. A CVE is added to `.trivyignore` only when:
+1. The affected package is a system-level dependency (e.g., npm's own internal node_modules)
+   that cannot be upgraded through our build toolchain
+2. The attack vector is not applicable in our build pipeline
+3. The fix is not yet available in the upstream package manager's published releases
+
+Each `.trivyignore` entry includes a documented rationale and a condition for removal.
+
+**Reference:** Trivy ignore format — https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore-format
+
 ### OpenSSF Scorecard signal
 
 The OpenSSF Scorecard "Vulnerabilities" check awards points when a project uses a

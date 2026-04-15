@@ -297,8 +297,11 @@ jobs:
         # exit-code: 1 fails CI on CRITICAL or HIGH unfixed vulnerabilities — ensuring no
         # known high-severity vulnerabilities ship in the published image.
         # ignore-unfixed: true suppresses CVEs with no available fix (no actionable remediation).
+        # trivyignores: .trivyignore — suppresses targeted CVEs with documented justifications
+        # (see .trivyignore for the rationale for each entry).
         # OpenSSF Scorecard "Vulnerabilities" check — https://securityscorecards.dev
         # Reference: https://github.com/aquasecurity/trivy-action
+        # Reference: https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore-format
         uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
         with:
           image-ref: daedalus:latest
@@ -306,6 +309,7 @@ jobs:
           exit-code: '1'
           ignore-unfixed: true
           severity: CRITICAL,HIGH
+          trivyignores: .trivyignore
 
       - name: Push to GHCR
         if: github.event_name != 'pull_request'
