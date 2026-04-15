@@ -15,9 +15,10 @@ You are gathering information for **Section 08 — Cross-cutting Concepts** of a
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 08 — Cross-cutting Concepts` block. If Status is not `empty`, or if content is populated beyond the skeleton, show the existing content and ask: "Section 08 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 08` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 05 (Non-Functional Requirements) and extract any requirements in the Security, Reliability, or Maintainability categories. Show: "Security-related requirements from requirements.md: [list]. These should be addressed in the cross-cutting concepts."
+3. Extract the `## 08 — Cross-cutting Concepts` block. If Status is not `empty`, or if content is populated beyond the skeleton, show the existing content and ask: "Section 08 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 08` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 

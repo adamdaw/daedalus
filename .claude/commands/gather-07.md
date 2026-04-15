@@ -14,9 +14,10 @@ You are gathering information for **Section 07 — Deployment View** of an arc42
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 07 — Deployment View` block. If Status is not `empty`, or if content is populated beyond the skeleton, show the existing content and ask: "Section 07 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 07` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 06 (Constraints) for any deployment-relevant constraints (e.g., "AWS only", "on-premises requirement").
+3. Extract the `## 07 — Deployment View` block. If Status is not `empty`, or if content is populated beyond the skeleton, show the existing content and ask: "Section 07 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 07` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
@@ -45,6 +46,11 @@ Describe the pipeline: source control → CI build → test → artefact → dep
 - Any approval gates or manual steps
 - Rollback strategy"
 
+**Deployment Diagram**
+"I'll draft a Mermaid deployment diagram showing the production environment topology."
+
+Generate a `flowchart TD` with subgraphs for network boundaries (e.g., VPC, availability zones), compute nodes, data stores, and external connections. Include in the output format after the Infrastructure section.
+
 ## Output format
 
 Replace the `## 07 — Deployment View` block with:
@@ -63,6 +69,12 @@ Replace the `## 07 — Deployment View` block with:
 
 ### Infrastructure
 [user's answer — cloud/platform/compute/networking]
+
+### Deployment Diagram
+```mermaid
+flowchart TD
+    [generated from infrastructure — subgraphs for network boundaries, compute nodes, data stores, external connections]
+```
 
 ### Deployment Process
 [user's answer — pipeline, config management, rollback]

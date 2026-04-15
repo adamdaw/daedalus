@@ -15,14 +15,15 @@ You are gathering information for **Section 11 — Risks and Technical Debt** of
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 11 — Risks and Technical Debt` block. If Status is not `empty`, or if tables have entries beyond the header, show the existing content and ask: "Section 11 already has content — would you like to (a) add more entries, (b) update existing ones, or (c) replace entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 11` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 07 (Assumptions and Dependencies). Unverified assumptions are risk sources; dependencies that could be delayed or unavailable are also risks. Show: "From requirements.md, these assumptions and dependencies may represent risks: [list items where 'Impact if Wrong' column is populated]."
+3. Extract the `## 11 — Risks and Technical Debt` block. If Status is not `empty`, or if tables have entries beyond the header, show the existing content and ask: "Section 11 already has content — would you like to (a) add more entries, (b) update existing ones, or (c) replace entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 11` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
 **Risks**
-"What are the top 3–5 risks to this project or system?
+"The assumptions and dependencies from requirements.md are good starting candidates for the risk register. What additional risks should be captured?
 
 For each risk:
 - A brief description of what could go wrong

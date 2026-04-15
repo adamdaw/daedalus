@@ -13,9 +13,10 @@ You are gathering information for **Section 05 — Building Block View** of an a
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 05 — Building Block View` block. If Status is not `empty`, or if tables are populated beyond the header, show the existing content and ask: "Section 05 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 05` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read it for context — note any functional requirements that imply specific containers or components (e.g., a "notification system" implies a notification service container).
+3. Extract the `## 05 — Building Block View` block. If Status is not `empty`, or if tables are populated beyond the header, show the existing content and ask: "Section 05 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 05` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
@@ -29,6 +30,18 @@ In C4 terms, a container is anything that runs separately: a web application, a 
 
 **Interactions**
 "How do these containers communicate with each other? Describe the key interactions — which container calls or sends messages to which, and what protocol or mechanism is used (REST, gRPC, async message queue, database read, etc.)."
+
+**Container Diagram**
+"Based on the containers and interactions you described, I'll draft a Mermaid C4 Container diagram showing the containers and their communication paths."
+
+Generate a `flowchart TD` from the gathered containers and interactions. Include it in the output format before the Level 1 table:
+```markdown
+### Container Diagram
+```mermaid
+flowchart TD
+    [generated from containers and interactions]
+```
+```
 
 **Level 2 — Components (optional)**
 "Are any containers complex enough to warrant zooming in to show their internal components?
@@ -44,6 +57,12 @@ Replace the `## 05 — Building Block View` block with:
 <!-- arc42 §5 — https://docs.arc42.org/section-5/ -->
 <!-- C4 Model — Container (Level 2), Component (Level 3) — https://c4model.com -->
 <!-- Status: complete -->
+
+### Container Diagram
+```mermaid
+flowchart TD
+    [generated from containers and interactions]
+```
 
 ### Level 1 — Containers
 | Container | Technology | Responsibility |

@@ -16,14 +16,17 @@ fully-formed Section 09 entries. Technology decisions from Section 04 are good s
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 09 — Architecture Decisions` block. If Status is not `empty`, or if the decision log has entries, show the existing content and ask: "Section 09 already has content — would you like to (a) add more decisions, (b) update existing ones, or (c) replace entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 09` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 06 (Constraints) — constraints often drive architectural decisions and provide context for ADRs.
+   Also read `brief.md` Section 04 (Solution Strategy) — each technology decision listed there should have a corresponding ADR.
+   Show: "Technology decisions from Section 04 that need ADRs: [list from §04 Technology Decisions table]. Constraints from requirements.md that provide decision context: [list from §06]."
+3. Extract the `## 09 — Architecture Decisions` block. If Status is not `empty`, or if the decision log has entries, show the existing content and ask: "Section 09 already has content — would you like to (a) add more decisions, (b) update existing ones, or (c) replace entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 09` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
 **Decision Identification**
-"What are the 3–5 most significant architectural decisions made for this system?
+"The technology decisions from Section 04 are good starting candidates for ADRs. Are there additional significant decisions beyond those?
 
 Significant decisions are ones that:
 - Were difficult or contentious to make

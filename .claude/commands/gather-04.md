@@ -13,18 +13,21 @@ You are gathering information for **Section 04 — Solution Strategy** of an arc
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 04 — Solution Strategy` block. If Status is not `empty`, or if fields are populated beyond the skeleton, show the existing content and ask: "Section 04 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
-3. If Section 01 is empty or has no quality goals, note: "You may want to run /gather-01 first — Section 04 asks you to link decisions to quality goals."
-4. Ask the questions below one topic at a time. Wait for each answer before continuing.
-5. Write the structured output back into the `## 04` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 05 (Non-Functional Requirements). Show: "Non-functional requirements from requirements.md that should inform technology decisions: [list NFRs with their measurable criteria]."
+   If `requirements.md` does not exist, proceed without cross-reference.
+3. Extract the `## 04 — Solution Strategy` block. If Status is not `empty`, or if fields are populated beyond the skeleton, show the existing content and ask: "Section 04 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
+4. If Section 01 is empty or has no quality goals, note: "You may want to run /gather-01 first — Section 04 asks you to link decisions to quality goals."
+5. Ask the questions below one topic at a time. Wait for each answer before continuing.
+6. Write the structured output back into the `## 04` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
 **Technology Decisions**
-"What are the key technology decisions that have been made (or are being made) for this system? For each decision:
+"What are the key technology decisions that have been made (or are being made) for this system? For each decision, link it to a quality goal from Section 01 and/or a non-functional requirement from requirements.md.
+
 - What was decided (e.g., 'Use PostgreSQL as the primary data store')
 - Why (the rationale)
-- Which quality goal from Section 01 it addresses
+- Which quality goal from Section 01 and/or NFR from requirements.md it addresses
 
 These are the decisions significant enough to document — ones that constrain the architecture or would be hard to reverse."
 

@@ -16,10 +16,11 @@ You are gathering information for **Section 10 — Quality Requirements** of an 
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 10 — Quality Requirements` block. If Status is not `empty`, or if the scenarios table has entries, show the existing content and ask: "Section 10 already has content — would you like to (a) add more scenarios, (b) update existing ones, or (c) replace entirely?"
-3. Check whether Section 01 has quality goals defined. If not, note: "Section 01 has no quality goals yet — consider running /gather-01 first. I can still gather scenarios if you tell me your quality goals now."
-4. Ask the questions below one topic at a time. Wait for each answer before continuing.
-5. Write the structured output back into the `## 10` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 05 (Non-Functional Requirements) — each NFR should map to a quality scenario with a quantified response measure. Show: "Non-functional requirements from requirements.md: [show NFR table rows]. Each of these should be covered by a quality scenario in this section."
+3. Extract the `## 10 — Quality Requirements` block. If Status is not `empty`, or if the scenarios table has entries, show the existing content and ask: "Section 10 already has content — would you like to (a) add more scenarios, (b) update existing ones, or (c) replace entirely?"
+4. Check whether Section 01 has quality goals defined. If not, note: "Section 01 has no quality goals yet — consider running /gather-01 first. I can still gather scenarios if you tell me your quality goals now."
+5. Ask the questions below one topic at a time. Wait for each answer before continuing.
+6. Write the structured output back into the `## 10` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
@@ -29,7 +30,7 @@ You are gathering information for **Section 10 — Quality Requirements** of an 
 **Quality Scenarios**
 For each quality goal (working through them one at a time):
 
-"Let's define a measurable scenario for '[quality goal]'.
+"Let's ensure each NFR from requirements.md has a corresponding quality scenario. For '[NFR description]', define the six-part ATAM scenario.
 
 A quality scenario needs six parts (ATAM format):
 1. **Stimulus Source** — who or what triggers the scenario? (e.g., a user, an automated process, a failure event)

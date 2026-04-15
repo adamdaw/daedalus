@@ -12,9 +12,11 @@ You are gathering information for **Section 03 — Context and Scope** of an arc
 ## Procedure
 
 1. Read `brief.md` in the current directory. If it does not exist, read `templates/brief.md` and write it as `brief.md`.
-2. Extract the `## 03 — Context and Scope` block. If Status is not `empty`, or if any tables contain rows beyond the header, show the existing content and ask: "Section 03 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
-3. Ask the questions below one topic at a time. Wait for each answer before continuing.
-4. Write the structured output back into the `## 03` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
+2. If `requirements.md` exists, read Section 01 (Purpose/Scope — specifically the "Out of scope" field) and Section 02 (Stakeholders — as candidate external actors). Show: "From requirements.md: out of scope is [text]. Stakeholders who may also be external actors: [list]. I'll use these as starting points."
+   If `requirements.md` does not exist, proceed without cross-reference.
+3. Extract the `## 03 — Context and Scope` block. If Status is not `empty`, or if any tables contain rows beyond the header, show the existing content and ask: "Section 03 already has content — would you like to (a) update specific fields, or (b) replace it entirely?"
+4. Ask the questions below one topic at a time. Wait for each answer before continuing.
+5. Write the structured output back into the `## 03` block of `brief.md`. Update the Status comment to `complete`. Do not modify any other section.
 
 ## Questions
 
@@ -37,6 +39,16 @@ Examples: payment gateways, identity providers, message queues, third-party APIs
 
 This defines the boundary — it is as important as what the system does."
 
+**Context Diagram**
+"Based on the actors and systems you described, I'll draft a Mermaid C4 System Context diagram. The diagram will show your system as the central element, with external actors and systems around it."
+
+Generate a Mermaid `flowchart TD` from the gathered data:
+- The system as a central subgraph
+- Each external actor as a node with an arrow to the system
+- Each external system as a node with arrows showing data flow direction
+
+Include the diagram in the output format as a fenced code block before the External Actors table.
+
 ## Output format
 
 Replace the `## 03 — Context and Scope` block with:
@@ -46,6 +58,12 @@ Replace the `## 03 — Context and Scope` block with:
 <!-- arc42 §3 — https://docs.arc42.org/section-3/ -->
 <!-- C4 Model — System Context (Level 1) — https://c4model.com -->
 <!-- Status: complete -->
+
+### Context Diagram
+```mermaid
+flowchart TD
+    [generated from gathered actors and systems]
+```
 
 ### External Actors
 | Actor | Role | Interaction with System |
