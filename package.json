@@ -5,7 +5,7 @@
     "node": ">=22"
   },
   "devDependencies": {
-    "markdownlint-cli": "0.44.0",
+    "markdownlint-cli": "0.48.0",
     "mermaid-filter": "1.4.7"
   }
 }
