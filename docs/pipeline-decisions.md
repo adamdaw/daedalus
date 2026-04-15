@@ -173,8 +173,12 @@ at job startup).
 
 ### pandoc-ext/diagram Lua filter (vendored at `filters/diagram.lua`)
 
-Mermaid diagram rendering was migrated from the unmaintained `mermaid-filter@1.4.7` (last
-release December 2023, CVEs in transitive dependencies with no upstream fix) to
+**Do not use `mermaid-filter`.** The package is unmaintained (last release December 2023),
+has CVEs in transitive dependencies with no upstream fix path, and has been fully replaced
+in this project. Any future diagram tooling changes must go through `pandoc-ext/diagram` +
+`@mermaid-js/mermaid-cli`.
+
+Mermaid diagram rendering was migrated from `mermaid-filter@1.4.7` to
 `pandoc-ext/diagram` v1.2.0 + `@mermaid-js/mermaid-cli` v11.12.0.
 
 The Lua filter is vendored (copied verbatim from the upstream tagged release) rather than

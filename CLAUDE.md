@@ -123,7 +123,7 @@ dependabot PR, verify the SHA comment matches the expected version tag.
 ```
 daedalus/
   markdown/             Root example (complete arc42 worked example — Acme Commerce)
-  templates/            Skeleton copied by make init into proposals/
+  templates/            Skeletons copied by make init: config.yaml, project.bib, markdown/, brief.md
   proposals/            User proposals (gitignored output files)
   images/               Root example images (logo.jpg/png/pdf drop-in)
   project.tex           Shared LaTeX header (cover page, fancyhdr, logo detection)
@@ -132,7 +132,9 @@ daedalus/
   draft.tex             Draft watermark (loaded with DRAFT=1)
   Dockerfile            Ubuntu 24.04 build environment
   docs/                 VSDD knowledge base (mem-1 through mem-4)
-  prompts/              Agent prompt files for the VSDD workflow
+  prompts/              Agent prompt files for the VSDD workflow (00–05)
+  templates/brief.md    Structured elicitation skeleton — copied into each new proposal by make init
+  .claude/commands/     Slash commands: gather-01 through gather-11 (one per arc42 section)
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
   SECURITY.md           Coordinated vulnerability disclosure policy
@@ -236,6 +238,38 @@ The `prompts/` directory contains the agent prompts for the full VSDD workflow. 
 | 04 | `prompts/04-feedback-triage.md` | Architect (triage) | 4 — Accept / Reject / Defer adversarial findings |
 
 **Session start sequence:** Load Prompt 00 → assess document state → pick the right next prompt.
+
+---
+
+## Elicitation Commands (`/gather-*`)
+
+The `.claude/commands/` directory contains 11 Claude Code slash commands — one per arc42
+section — for structured elicitation before running Prompt 01.
+
+| Command | Section | Standards |
+| --- | --- | --- |
+| `/gather-01` | Introduction and Goals | arc42 §1, ISO/IEC 25010, SMART |
+| `/gather-02` | Constraints | arc42 §2, Conway's Law |
+| `/gather-03` | Context and Scope | arc42 §3, C4 Model Level 1 |
+| `/gather-04` | Solution Strategy | arc42 §4 |
+| `/gather-05` | Building Block View | arc42 §5, C4 Model Levels 2–3 |
+| `/gather-06` | Runtime View | arc42 §6, UML 2.5 |
+| `/gather-07` | Deployment View | arc42 §7, C4 Deployment, Twelve-Factor |
+| `/gather-08` | Cross-cutting Concepts | arc42 §8, OWASP Top 10, Twelve-Factor |
+| `/gather-09` | Architecture Decisions | arc42 §9, Nygard ADR format |
+| `/gather-10` | Quality Requirements | arc42 §10, ISO/IEC 25010, ATAM |
+| `/gather-11` | Risks and Technical Debt | arc42 §11, ISO 31000, Fowler Debt Quadrant |
+
+**Workflow:**
+
+1. `make init NAME=my-proposal` — scaffolds the proposal and copies `templates/brief.md`
+2. `cd proposals/my-proposal` — work from the proposal directory
+3. `/gather-01` through `/gather-11` — run each command in order or as needed; each writes
+   structured output back into `brief.md` and marks the section `Status: complete`
+4. Pass the completed `brief.md` to Prompt 01 as primary input
+
+Each command is **resumable** — if a section already has content it asks whether to add,
+update, or replace before proceeding.
 
 ---
 

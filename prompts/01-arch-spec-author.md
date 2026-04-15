@@ -21,9 +21,16 @@ If any of these are not in context, request them before proceeding.
 ## Your Task
 
 The Architect will provide one of:
+- A `brief.md` file (preferred) — structured elicitation output from the `/gather-*` commands
 - A requirements description (natural language)
 - A requirements PDF or document reference
 - A partially completed arc42 document for completion
+
+**If `brief.md` is present:** read it first. It is the primary input — each section maps
+directly to the corresponding arc42 section. Sections with `Status: complete` contain
+structured, validated answers to the ATAM/ISO 31000/arc42 questions; treat them as
+authoritative. Sections with `Status: empty` require authoring from context or by asking the
+Architect.
 
 You will produce a **complete arc42 architectural specification** across all 11 sections plus
 References, formatted for the daedalus pipeline (Markdown files, BibTeX citations, Mermaid
