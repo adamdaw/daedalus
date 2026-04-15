@@ -2,7 +2,7 @@
 
 [![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml)
 
-A document generation pipeline for architectural proposal documents. Write content in Markdown, run `make build`, get a professional PDF — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
+A document generation pipeline for [arc42](https://arc42.org) architectural documentation. Write content in Markdown using the arc42 template structure, run `make all`, get a professional PDF, HTML, and DOCX — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 
 Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [mermaid-filter](https://github.com/raghur/mermaid-filter), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
 
@@ -17,10 +17,10 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 | `pandoc` 3.1.13 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
 | `pandoc-crossref` 0.3.17.1 | Figure/table cross-references | [releases](https://github.com/lierdakil/pandoc-crossref/releases) |
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
-| `mermaid-filter` | Diagram rendering | `npm install -g mermaid-filter` |
+| `mermaid-filter` 1.4.7 | Diagram rendering | `npm install -g mermaid-filter@1.4.7` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
-| `markdownlint-cli` | Markdown linting (optional) | `npm install -g markdownlint-cli` |
-| `codespell` | Spell checking (optional) | `pip install codespell` |
+| `markdownlint-cli` 0.44.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.44.0` |
+| `codespell` 2.3.0 | Spell checking (optional) | `pip install codespell==2.3.0` |
 
 pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:
 
@@ -206,6 +206,7 @@ daedalus/
   draft.tex             # Draft watermark (loaded when DRAFT=1)
   Makefile              # Build automation
   Dockerfile            # Containerised build environment
+  package.json          # Node.js tool version pins (source of truth for npm tools)
   .markdownlint.json    # Lint configuration
   .codespellrc          # Spell check configuration
   .pre-commit-config.yaml  # Pre-commit hook definitions
@@ -372,8 +373,9 @@ autoSectionLabels: true
 3. Spell-checks all markdown files
 4. Builds `project.pdf` and validates structure (page count, arc42 section headings)
 5. Builds `project.html` and validates it is non-empty
-6. Uploads PDF and HTML as downloadable artifacts (30-day retention)
-7. Builds and validates the Docker image end-to-end, then pushes to GHCR
+6. Builds `project.docx` and validates it is non-empty
+7. Uploads PDF, HTML, and DOCX as downloadable artifacts (30-day retention)
+8. Builds and validates the Docker image end-to-end, then pushes to GHCR
 
 Can also be triggered manually from the GitHub Actions UI (`workflow_dispatch`).
 
@@ -381,7 +383,7 @@ Can also be triggered manually from the GitHub Actions UI (`workflow_dispatch`).
 
 Detects which proposal directories were modified in the push, then builds and validates
 only those proposals in parallel (matrix strategy). Each proposal is checked against
-all arc42 section headings. Uploads PDF and HTML for each as artifacts.
+all arc42 section headings. Uploads PDF, HTML, and DOCX for each as artifacts.
 
 Supports manual trigger: optionally specify a single `proposal` name to rebuild, or
 leave empty to rebuild all proposals.
@@ -402,8 +404,8 @@ git tag v1.0 && git push origin v1.0
 All CI jobs cache:
 - The pandoc `.deb` installer (keyed by pandoc version)
 - The pandoc-crossref `.tar.xz` binary (keyed by crossref version)
-- apt package archives (keyed by workflow file hash)
-- npm cache (keyed by workflow file hash)
+- apt package archives (stable key `apt-ubuntu-24.04-texlive-v1`, shared across all workflows; bump the suffix if packages change)
+- npm global cache (keyed by tool versions, e.g. `npm-mermaid-filter-1.4.7-markdownlint-0.44.0`; shared across all workflows)
 
 ---
 
@@ -414,7 +416,7 @@ All CI jobs cache:
 Install mermaid-filter and ensure the browser path is set:
 
 ```bash
-npm install -g mermaid-filter
+npm install -g mermaid-filter@1.4.7
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 export PUPPETEER_EXECUTABLE_PATH=$(which chromium || which google-chrome)
 ```
@@ -444,10 +446,11 @@ echo $PUPPETEER_EXECUTABLE_PATH
 $PUPPETEER_EXECUTABLE_PATH --version
 ```
 
-If running as root (e.g., in Docker), Chrome requires `--no-sandbox`. The Dockerfile wraps the binary automatically; for local root environments, set:
+If running as root (e.g., in Docker), Chrome requires `--no-sandbox`. The Dockerfile wraps the binary automatically. For local root environments or Ubuntu 24.04+ (AppArmor sandbox restriction), create a puppeteer config file and point `MERMAID_FILTER_PUPPETEER_CONFIG` at it:
 
 ```bash
-export MERMAID_FILTER_PUPPETEER_ARGS='{"args":["--no-sandbox"]}'
+echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
+export MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json
 ```
 
 ### `xelatex not found`
