@@ -86,7 +86,7 @@ clean-all: ## Remove generated output for the root example and every proposal
 	done
 
 check-filters:
-	@command -v mermaid-filter  >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter"; exit 1; }
+	@command -v mermaid-filter  >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter@1.4.7"; exit 1; }
 	@command -v pandoc-crossref >/dev/null 2>&1 || { echo "Error: pandoc-crossref not found. See: https://github.com/lierdakil/pandoc-crossref/releases"; exit 1; }
 
 check: check-pandoc check-filters ## Verify all build dependencies are installed
@@ -219,7 +219,7 @@ wordcount: ## Print word count per file and total
 	@echo "Word count ($(PROPOSAL_DIR)/markdown/):"
 	@wc -w $(MARKDOWN)
 
-build-all: ## Build PDF and HTML for every proposal
+build-all: ## Build PDF, HTML, and DOCX for every proposal
 	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
 		for cfg in proposals/*/config.yaml; do \
 			name=$$(basename "$$(dirname "$$cfg")"); \

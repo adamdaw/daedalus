@@ -119,7 +119,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /var/cache/apt/archives
-          key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/proposals.yml') }}
+          key: apt-ubuntu-24.04-texlive-v1
 
       - name: Install XeLaTeX and PDF utilities
         run: |
@@ -170,13 +170,21 @@ jobs:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
+      - name: Build DOCX
+        run: make docx PROPOSAL=${{ matrix.proposal }}
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
       - name: Validate outputs
         run: |
           PDF="proposals/${{ matrix.proposal }}/project.pdf"
           HTML="proposals/${{ matrix.proposal }}/project.html"
+          DOCX="proposals/${{ matrix.proposal }}/project.docx"
 
           test -s "$PDF"  || { echo "FAIL: PDF not produced for ${{ matrix.proposal }}";  exit 1; }
           test -s "$HTML" || { echo "FAIL: HTML not produced for ${{ matrix.proposal }}"; exit 1; }
+          test -s "$DOCX" || { echo "FAIL: DOCX not produced for ${{ matrix.proposal }}"; exit 1; }
 
           pdfinfo "$PDF"
 
@@ -204,4 +212,5 @@ jobs:
           path: |
             proposals/${{ matrix.proposal }}/project.pdf
             proposals/${{ matrix.proposal }}/project.html
+            proposals/${{ matrix.proposal }}/project.docx
           retention-days: 30

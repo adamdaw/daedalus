@@ -13,8 +13,8 @@ produces a professional PDF, HTML, and optionally DOCX — with cover page, TOC,
 headers, Mermaid diagrams, cross-references, and bibliography.
 
 **Stack:** Pandoc 3.1.13 → XeLaTeX (PDF) / HTML5 / DOCX. Filters: pandoc-crossref 0.3.17.1,
-mermaid-filter (npm). CI: GitHub Actions. Container: Docker (Ubuntu 24.04). Linting:
-markdownlint-cli 0.44.0 + codespell 2.3.0.
+mermaid-filter@1.4.7 (npm). CI: GitHub Actions. Container: Docker (Ubuntu 24.04). Linting:
+markdownlint-cli@0.44.0 + codespell 2.3.0. *(Keep tool versions here in sync with `package.json`.)*
 
 **VSDD role:** Daedalus produces the spec artifact layer in a VSDD workflow. The arc42
 document it generates IS the formal specification — Section 1 is the behavioral contract,
@@ -67,8 +67,9 @@ source of truth — dependabot opens PRs when a new version is available; update
 install commands in Dockerfile and CI to match when accepting.
 
 ### markdownlint-cli@0.44.0
-Pinned to match `.pre-commit-config.yaml`. Update both together. The CI npm install and
-Dockerfile both pin this version.
+Pinned across four places — update all together: `package.json` (source of truth),
+`.pre-commit-config.yaml`, CI npm install commands, and Dockerfile. Dependabot opens PRs
+against `package.json`; when accepting, update the other three to match.
 
 ### codespell 2.3.0
 Pinned to match `.pre-commit-config.yaml`. Update both together. The CI pip install and

@@ -65,7 +65,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: /var/cache/apt/archives
-          key: apt-${{ runner.os }}-texlive-${{ hashFiles('.github/workflows/build.yml') }}
+          key: apt-ubuntu-24.04-texlive-v1
 
       - name: Install XeLaTeX and PDF utilities
         run: |
@@ -116,6 +116,12 @@ jobs:
           PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
           PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
+      - name: Build DOCX
+        run: make docx
+        env:
+          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
       - name: Validate PDF
         run: |
           test -s project.pdf || { echo "FAIL: PDF not generated or is empty"; exit 1; }
@@ -157,6 +163,19 @@ jobs:
         with:
           name: proposal-html
           path: project.html
+          retention-days: 30
+
+      - name: Validate DOCX
+        run: |
+          test -s project.docx || { echo "FAIL: DOCX not generated or is empty"; exit 1; }
+          echo "DOCX validation passed."
+
+      - name: Upload DOCX artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: proposal-docx
+          path: project.docx
           retention-days: 30
 
   docker:
@@ -204,6 +223,7 @@ jobs:
         run: |
           test -s project.pdf  || { echo "FAIL: Docker build did not produce project.pdf";  exit 1; }
           test -s project.html || { echo "FAIL: Docker build did not produce project.html"; exit 1; }
+          test -s project.docx || { echo "FAIL: Docker build did not produce project.docx"; exit 1; }
 
           pdfinfo project.pdf
 
