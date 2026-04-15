@@ -106,20 +106,6 @@ RUN curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub \
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
-# Install Node.js tools from package.json using --prefix /usr/local.
-# --prefix /usr/local installs packages into /usr/local/lib/node_modules/ and creates
-# bin symlinks in /usr/local/bin/ — equivalent to 'npm install -g' but in a project
-# context so that package.json's 'overrides' field is honoured.
-# 'overrides' forces picomatch to 4.0.4, patching CVE-2026-33671 (ReDoS) in the
-# transitive picomatch@4.0.3 dependency pulled in by puppeteer.
-# --no-fund: suppresses funding messages in build logs (addressed by Dependabot PRs, not here).
-# --no-audit: suppresses audit output in build logs (same rationale).
-# @mermaid-js/mermaid-cli replaces the unmaintained mermaid-filter; diagram rendering is now
-# handled by filters/diagram.lua (pandoc-ext/diagram Lua filter) which invokes mmdc via
-# the MERMAID_BIN environment variable.
-# Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
-# Reference — https://github.com/mermaid-js/mermaid-cli
-# Reference — https://github.com/pandoc-ext/diagram
 # Install Node.js tools from package.json with npm overrides applied.
 # 'npm install -g pkg@version' has no package.json project context, so 'overrides' is
 # not honoured. Instead: install locally (which reads package.json and applies overrides),

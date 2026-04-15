@@ -849,33 +849,31 @@ the Docker publish step satisfies this check.
 **Reference:** SLSA (Supply-chain Levels for Software Artifacts) — https://slsa.dev  
 **Reference:** actions/attest-build-provenance — https://github.com/actions/attest-build-provenance
 
-### What it provides
+### Status: deferred until repository is public
 
-After pushing the Docker image to GHCR, `actions/attest-build-provenance` generates and
-signs a SLSA Level 2 provenance statement and attaches it to the image in the registry as
-an OCI referrer. The attestation records:
+`actions/attest-build-provenance` requires either a public repository or a GitHub
+Organization account. This is a private user-owned repository; the step fails with
+"Feature not available for user-owned private repositories."
+
+The step and its associated permissions (`id-token: write`, `attestations: write`) have
+been removed from the docker job in `build.yml`. Build provenance is captured via OCI
+image labels (`org.opencontainers.image.created` and `.revision`).
+
+When the repository is made public, re-add to the docker job:
+1. Permissions: `id-token: write` and `attestations: write`
+2. Digest capture in the push step (see git history)
+3. The attestation step using `actions/attest-build-provenance`
+
+### What it will provide
+
+Once re-enabled, `actions/attest-build-provenance` will generate and sign a SLSA Level 2
+provenance statement attached to the image in GHCR as an OCI referrer. The attestation records:
 - The exact image digest (sha256:...)
 - The GitHub repository, ref, and commit SHA
 - The Actions workflow run ID and trigger event
 
-Consumers can verify the attestation with `gh attestation verify` to confirm the image was
-built from the expected source commit by the expected workflow, not by an outside party.
-
-### Permissions required
-
-SLSA attestation signing requires two additional GitHub Actions permissions on the docker job:
-- `id-token: write` — allows the job to request an OIDC token for Sigstore signing
-- `attestations: write` — allows the job to write the attestation to the GitHub Packages OCI registry
-
-These are not granted by the workflow-level `permissions: {}` default; they are declared
-explicitly on the docker job following the least-privilege pattern.
-
-### Image digest captured from push output
-
-The attestation requires the exact registry digest (assigned by GHCR at push time, not
-predictable before push). The push step captures it via
-`docker inspect --format='{{index .RepoDigests 0}}'` and writes it to `$GITHUB_OUTPUT`
-for consumption by the attestation step.
+Consumers can verify with `gh attestation verify` to confirm the image was built from the
+expected source commit by the expected workflow.
 
 ---
 
