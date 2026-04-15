@@ -69,6 +69,12 @@ Troubleshooting section), and CONTRIBUTING.md (dependency table). `package.json`
 of truth — Dependabot opens PRs when a new version is available; update the npm install commands
 in Dockerfile, CI, README.md, and CONTRIBUTING.md to match when accepting.
 
+`package.json` also contains an `overrides` section that pins `picomatch` to `4.0.4` to fix
+CVE-2026-33671 in the transitive dependency chain. The Dockerfile uses `npm install --prefix
+/usr/local` (not `npm install -g`) so that `overrides` are respected. When updating mmdc,
+check whether the new version's puppeteer dependency still requires the picomatch override —
+remove it once the upstream ships picomatch >= 4.0.4.
+
 ### filters/diagram.lua (pandoc-ext/diagram v1.2.0)
 Vendored Lua filter at `filters/diagram.lua`. Pinned to pandoc-ext/diagram v1.2.0. To upgrade:
 download `diagram.lua` from the new release tag at https://github.com/pandoc-ext/diagram and

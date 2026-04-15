@@ -108,6 +108,24 @@ outside the build). `--no-cache-dir` prevents the cache from entering the image.
 
 **Reference:** https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#run
 
+### npm `overrides` to patch transitive CVEs; `--prefix /usr/local` to apply them in Docker
+
+`npm install -g` does not honour `package.json`'s `overrides` field — it installs a single
+named package without a project context. To force a transitive dependency to a patched version
+in the Docker image, the Dockerfile uses `npm install --prefix /usr/local` from a `COPY`-ed
+`package.json` instead of `npm install -g`. With `--prefix /usr/local`, npm installs into
+`/usr/local/lib/node_modules/` and creates bin symlinks in `/usr/local/bin/` (equivalent to
+`npm install -g`), and the project-context `overrides` field is respected.
+
+The `package.json` `overrides` section pins `picomatch` to `4.0.4` to fix CVE-2026-33671
+(ReDoS via crafted extglob patterns). `picomatch@4.0.3` is a transitive dependency of
+`puppeteer`, itself a dependency of `@mermaid-js/mermaid-cli`.
+
+This pattern follows the same principle as `requirements-dev.txt` for Python: a single
+authoritative file pins and constrains all tool versions, and Dependabot tracks it.
+
+**Reference:** npm overrides — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
+
 ### `npm install --no-fund --no-audit`
 
 `--no-fund` suppresses the funding messages that appear in npm output. `--no-audit` suppresses
