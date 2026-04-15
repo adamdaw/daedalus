@@ -13,5 +13,5 @@
 #
 # Reference: pip constraints files — https://pip.pypa.io/en/stable/user_guide/#constraints-files
 # Reference: Dependabot pip ecosystem — https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem
-codespell==2.3.0
+codespell==2.4.2
 pre-commit==4.5.1
