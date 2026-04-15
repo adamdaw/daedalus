@@ -8,21 +8,21 @@ own RDS PostgreSQL instance. SQS is a regional managed service with no single po
 
 ```mermaid
 flowchart TD
-    Internet([Internet]) --> APIGW[AWS API Gateway]
+    Internet([Internet]) --> APIGW[API Gateway]
 
     subgraph VPC["AWS VPC (eu-west-1)"]
         subgraph AZ1["Availability Zone A"]
-            AuthA[Auth Service\nECS Task]
-            OrderA[Order Service\nECS Task]
-            ProductA[Product Service\nECS Task]
-            NotifA[Notification Service\nECS Task]
+            AuthA[Auth]
+            OrderA[Order]
+            ProductA[Product]
+            NotifA[Notification]
         end
 
         subgraph AZ2["Availability Zone B"]
-            AuthB[Auth Service\nECS Task]
-            OrderB[Order Service\nECS Task]
-            ProductB[Product Service\nECS Task]
-            NotifB[Notification Service\nECS Task]
+            AuthB[Auth]
+            OrderB[Order]
+            ProductB[Product]
+            NotifB[Notification]
         end
 
         subgraph Data["Data Layer (Multi-AZ)"]
@@ -42,6 +42,9 @@ flowchart TD
     OrderA & OrderB --> OrderDB
     ProductA & ProductB --> ProductDB
 ```
+
+All services run on ECS Fargate. Each box above represents an ECS task; the two availability
+zones provide redundancy.
 
 ## Deployment Environments
 

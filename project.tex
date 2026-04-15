@@ -1,7 +1,15 @@
-\usepackage{fancyvrb,titlesec}
+\usepackage{fancyvrb}
+\usepackage[nobottomtitles*]{titlesec}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
 \usepackage{etoolbox}
+
+%%─── Typographic safety ─────────────────────────────────────────────────────
+%% nobottomtitles* (above): pushes headings that would land in the bottom 20%
+%% of the text area to the next page — prevents widow headings.
+%% emergencystretch: allows TeX to add up to 2em of inter-word space as a last
+%% resort, preventing inline code and long words from overflowing into margins.
+\emergencystretch=2em
 
 \makeatletter
 

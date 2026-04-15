@@ -41,8 +41,9 @@ Environment-specific configuration (database endpoints, feature flags, external 
 is stored in AWS Systems Manager Parameter Store. Services read configuration at startup;
 a restart is required for configuration changes to take effect.
 
-Feature flags are managed via Parameter Store with a naming convention of
-`/acme/{service}/{env}/feature/{flag-name}`.
+Feature flags are managed via Parameter Store with a naming convention of:
+
+    /acme/{service}/{env}/feature/{flag-name}
 
 ## Data Management
 
