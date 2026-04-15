@@ -22,8 +22,8 @@
 proposals/
 
 # Node and Python
+# package.json is included (Dockerfile COPYs it to install npm tools with overrides)
 node_modules
-package.json
 package-lock.json
 __pycache__
 
