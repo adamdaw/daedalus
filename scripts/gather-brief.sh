@@ -20,6 +20,28 @@
 
 set -euo pipefail
 
+if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+    cat <<'HELPEOF'
+Usage: bash scripts/gather-brief.sh [OUTPUT_FILE]
+
+Interactively gather architecture information for an arc42 brief covering
+all 11 sections. If requirements.md exists in the current directory,
+constraints and stakeholders are sourced from it to avoid duplication.
+
+Arguments:
+  OUTPUT_FILE    Path to write brief.md (default: brief.md)
+
+Standards:
+  arc42 — https://arc42.org
+  C4 Model — https://c4model.com
+  ISO 31000 — https://www.iso.org/iso-31000-risk-management.html
+
+Non-AI fallback for /gather-01 through /gather-11.
+Pipe fixture answers for CI: grep -v '^#' test/fixtures/brief-answers.txt | bash scripts/gather-brief.sh
+HELPEOF
+    exit 0
+fi
+
 OUTPUT="${1:-brief.md}"
 HAS_REQ=false
 [[ -f "requirements.md" ]] && HAS_REQ=true

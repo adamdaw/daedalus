@@ -14,9 +14,29 @@
 
 set -euo pipefail
 
+if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+    cat <<'HELPEOF'
+Usage: bash scripts/gather-requirements.sh [OUTPUT_FILE]
+
+Interactively gather requirements for an ISO/IEC/IEEE 29148:2018 specification.
+Prompts for stakeholders, business/functional/non-functional requirements,
+constraints, assumptions, acceptance criteria, and traceability matrix.
+
+Arguments:
+  OUTPUT_FILE    Path to write requirements.md (default: requirements.md)
+
+Standards:
+  ISO/IEC/IEEE 29148:2018 — https://www.iso.org/standard/72089.html
+  MoSCoW (DSDM) — prioritisation method
+  BDD Given/When/Then — https://cucumber.io/docs/bdd/better-gherkin/
+
+Non-AI fallback for /req-01 through /req-05 and Prompt 06.
+Pipe fixture answers for CI: grep -v '^#' test/fixtures/requirements-answers.txt | bash scripts/gather-requirements.sh
+HELPEOF
+    exit 0
+fi
+
 OUTPUT="${1:-requirements.md}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-TEMPLATE="${SCRIPT_DIR}/../templates/requirements.md"
 
 # ---------------------------------------------------------------------------
 # Helpers

@@ -1,3 +1,7 @@
+# Recipes use bash features (arrays, [[ ]]); declare explicitly per GNU Make conventions.
+# Reference: https://www.gnu.org/software/make/manual/html_node/Choosing-the-Shell.html
+SHELL := /bin/bash
+
 # Default target: show help rather than running a build on bare 'make'.
 # GNU Make .DEFAULT_GOAL — https://www.gnu.org/software/make/manual/make.html#index-.DEFAULT_005fGOAL
 .DEFAULT_GOAL := help
@@ -58,9 +62,9 @@ DOCX_FLAGS = \
 	--resource-path=$(CURDIR):$(CURDIR)/$(IMAGES)
 
 .PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
-        watch lint spellcheck wordcount validate validate-all archive init list open open-html \
+        watch lint spellcheck shellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help version docker-build docker-run docker-pull-run \
-        gather-requirements gather-brief assemble validate-artifacts test-elicitation \
+        gather-requirements gather-brief assemble validate-artifacts test-elicitation test-scripts \
         progress ready
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
@@ -222,7 +226,11 @@ spellcheck: ## Run codespell on content files
 	@command -v codespell >/dev/null 2>&1 || { echo "Error: codespell not found. Run: pip install --constraint requirements-dev.txt codespell"; exit 1; }
 	codespell $(PROPOSAL_DIR)/markdown/
 
-validate: lint spellcheck ## Run lint + spellcheck without building
+shellcheck: ## Lint shell scripts with ShellCheck (https://www.shellcheck.net)
+	@command -v shellcheck >/dev/null 2>&1 || { echo "Error: shellcheck not found. Run: apt-get install shellcheck"; exit 1; }
+	shellcheck scripts/*.sh
+
+validate: lint spellcheck shellcheck ## Run lint + spellcheck + shellcheck without building
 
 wordcount: ## Print word count per file and total
 	@echo "Word count ($(PROPOSAL_DIR)/markdown/):"
@@ -347,6 +355,10 @@ ready: ## Validate artifacts are complete and consistent (pre-authoring gate)
 	else \
 		bash scripts/validate-artifacts.sh --ready; \
 	fi
+
+test-scripts: ## Run bats unit tests for shell scripts (https://github.com/bats-core/bats-core)
+	@command -v bats >/dev/null 2>&1 || { echo "Error: bats not found. Run: apt-get install bats"; exit 1; }
+	bats test/scripts/*.bats
 
 test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI required)
 	@echo "=== Elicitation pipeline test ==="

@@ -60,6 +60,8 @@ Key tools and version pins (update all together — see `CLAUDE.md` Critical Con
 | @mermaid-js/mermaid-cli | 11.12.0 | `npm install -g @mermaid-js/mermaid-cli@11.12.0` |
 | markdownlint-cli | 0.48.0 | `npm install -g markdownlint-cli@0.48.0` |
 | codespell | `requirements-dev.txt` | `pip install --constraint requirements-dev.txt codespell` (use a venv on Ubuntu 24.04+) |
+| ShellCheck | latest | `apt-get install shellcheck` / [shellcheck.net](https://www.shellcheck.net/) |
+| bats | latest | `apt-get install bats` / [github.com/bats-core](https://github.com/bats-core/bats-core) |
 
 ---
 
@@ -90,6 +92,11 @@ make lint              # markdownlint on content/markdown/**/*.md
 make spellcheck        # codespell on content/markdown/**/*.md
 make validate          # lint + spellcheck (both in one command)
 make validate-all      # lint + spellcheck across all proposals
+```
+
+```bash
+make shellcheck    # ShellCheck static analysis on scripts/*.sh
+make test-scripts  # bats unit tests for shell scripts
 ```
 
 **British English.** Write all prose in British English (`organisation`, `colour`, `analyse`,

@@ -16,6 +16,28 @@
 
 set -euo pipefail
 
+if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+    cat <<'HELPEOF'
+Usage: bash scripts/assemble.sh [--proposal NAME] [--requirements FILE] [--brief FILE] [--output DIR]
+
+Assemble arc42 markdown files from requirements.md and brief.md elicitation
+artifacts. Generates 12 files (sections 01–11 + 99_References).
+
+Options:
+  --proposal NAME          Use proposals/NAME/ as source and output
+  --requirements FILE      Path to requirements.md (default: requirements.md)
+  --brief FILE             Path to brief.md (default: brief.md)
+  --output DIR             Output directory (default: markdown/)
+
+Standards:
+  arc42 — https://arc42.org (all 11 sections)
+  ISO/IEC/IEEE 29148:2018 — requirements integration
+
+Non-AI fallback for Prompt 01 (spec authoring).
+HELPEOF
+    exit 0
+fi
+
 REQUIREMENTS="requirements.md"
 BRIEF="brief.md"
 OUTDIR="markdown"
@@ -218,5 +240,6 @@ done
 } | write_file "99_References.md" "$(cat)"
 
 echo ""
-echo "Assembled $(ls "${OUTDIR}"/*.md | wc -l) files into ${OUTDIR}/"
+file_count=$(find "${OUTDIR}" -maxdepth 1 -name '*.md' | wc -l)
+echo "Assembled ${file_count} files into ${OUTDIR}/"
 echo "Output is draft quality — review and refine before publishing."

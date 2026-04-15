@@ -106,6 +106,8 @@ make ready        # validate artifacts are ready for spec authoring
 make wordcount    # word count per file and total
 make status       # show build state and word count for all proposals
 make version      # print installed versions of all build tools
+make shellcheck   # lint shell scripts with ShellCheck
+make test-scripts # run bats unit tests for shell scripts
 ```
 
 ### Draft mode

@@ -42,11 +42,13 @@ LABEL org.opencontainers.image.title="Daedalus" \
 # apt-get install to prevent the package index from being baked into the image layer.
 # Reference — https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    make \
+    bats \
     ca-certificates \
-    xz-utils \
+    curl \
     gnupg \
+    make \
+    shellcheck \
+    xz-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Install pandoc — download with curl and verify SHA-256 before executing.

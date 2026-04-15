@@ -20,6 +20,28 @@ while [[ $# -gt 0 ]]; do
         --requirements) REQUIREMENTS="$2"; shift 2 ;;
         --brief)        BRIEF="$2";        shift 2 ;;
         --ready)        READY=true;        shift ;;
+        -h|--help)
+            cat <<'HELPEOF'
+Usage: bash scripts/validate-artifacts.sh [--requirements FILE] [--brief FILE] [--ready]
+
+Validate the structure and completeness of requirements.md and brief.md.
+
+Options:
+  --requirements FILE    Path to requirements.md (default: requirements.md)
+  --brief FILE           Path to brief.md (default: brief.md)
+  --ready                Enable cross-document consistency checks (pre-authoring gate)
+
+Checks:
+  Basic: 9 required sections in requirements.md, 11 in brief.md, Status markers
+  Ready: Must requirements have acceptance criteria, quality goals have scenarios,
+         technology decisions have ADRs, RTM completeness
+
+Standards:
+  ISO/IEC/IEEE 29148:2018 — https://www.iso.org/standard/72089.html
+  arc42 §1–11 — https://docs.arc42.org
+HELPEOF
+            exit 0
+            ;;
         *) echo "Usage: $0 [--requirements FILE] [--brief FILE] [--ready]" >&2; exit 1 ;;
     esac
 done

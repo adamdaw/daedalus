@@ -37,6 +37,8 @@ make lint                     # markdownlint on content
 make spellcheck               # codespell on content
 make validate                 # lint + spellcheck
 make validate-all             # lint + spellcheck across all proposals
+make shellcheck               # lint shell scripts with ShellCheck
+make test-scripts              # run bats unit tests for shell scripts
 make check                    # verify all build dependencies are installed
 make docker-run               # run make all inside locally-built Docker image
 make docker-pull-run          # pull pre-built image from GHCR and run (faster)
@@ -141,7 +143,8 @@ daedalus/
   .claude/commands/     Slash commands: start-proposal, elicit, gather-01 through gather-11, req-01 through req-05
   scripts/              Pipeline and elicitation scripts (bash + Python)
   scripts/progress.sh           Elicitation progress dashboard
-  test/fixtures/        requirements-answers.txt, brief-answers.txt — CI fixture answers for Task Tracker
+  test/fixtures/        CI fixture answers for Task Tracker (requirements-answers.txt, brief-answers.txt)
+  test/scripts/         bats unit tests for shell scripts (progress, validate-artifacts, assemble)
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
   SECURITY.md           Coordinated vulnerability disclosure policy
@@ -225,6 +228,8 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **PEP 668** | [peps.python.org/pep-0668](https://peps.python.org/pep-0668/) | Python tools installed in isolated venv, not `--break-system-packages` |
 | **CommonMark** | [spec.commonmark.org](https://spec.commonmark.org/0.31.2/) | Trailing whitespace preserved in `.md` files (hard line break §2.2) |
 | **GitHub community health** | [docs.github.com — community health](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions) | `CONTRIBUTING.md`, `SECURITY.md` |
+| **ShellCheck** | [shellcheck.net](https://www.shellcheck.net/) | Static analysis for shell scripts — pre-commit, CI, `make shellcheck` |
+| **bats-core** | [github.com/bats-core/bats-core](https://github.com/bats-core/bats-core) | Bash Automated Testing System — TAP-compliant unit tests for `scripts/` |
 
 Every significant pipeline decision is documented with its rationale and authoritative reference in
 [`docs/pipeline-decisions.md`](../docs/pipeline-decisions.md).

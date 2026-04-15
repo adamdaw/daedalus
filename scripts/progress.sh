@@ -116,7 +116,7 @@ render_artifact() {
     local total=${#nums[@]}
 
     if [[ ! -f "$file" ]]; then
-        printf "${BOLD}%s${RESET} (%s):  ${DIM}Not started${RESET}\n\n" "$label" "$(basename "$file")"
+        printf '%s%s%s (%s):  %sNot started%s\n\n' "$BOLD" "$label" "$RESET" "$(basename "$file")" "$DIM" "$RESET"
         if [[ -z "$NEXT_NUM" ]]; then
             NEXT_NUM="${nums[0]}"
             NEXT_TYPE="$label"
@@ -131,7 +131,7 @@ render_artifact() {
         local st
         st=$(get_status "$file" "${nums[$i]}")
         statuses+=("$st")
-        [[ "$st" == "complete" ]] && ((complete++)) || true
+        if [[ "$st" == "complete" ]]; then ((complete++)); fi
         # Track first incomplete for next-step
         if [[ -z "$NEXT_NUM" && "$st" != "complete" ]]; then
             NEXT_NUM="${nums[$i]}"
@@ -146,8 +146,8 @@ render_artifact() {
     [[ $complete -eq $total ]] && colour="$GREEN"
     [[ $complete -gt 0 && $complete -lt $total ]] && colour="$YELLOW"
 
-    printf "${BOLD}%s${RESET} (%s):  ${colour}%d/%d complete${RESET}  [%s]\n" \
-        "$label" "$(basename "$file")" "$complete" "$total" "$bar"
+    printf '%s%s%s (%s):  %s%d/%d complete%s  [%s]\n' \
+        "$BOLD" "$label" "$RESET" "$(basename "$file")" "$colour" "$complete" "$total" "$RESET" "$bar"
 
     # Section grid (2 columns)
     local col=0
@@ -162,7 +162,7 @@ render_artifact() {
 
         local entry_text
         entry_text=$(printf "%s %s %s" "$icon" "${nums[$i]}" "${names[$i]}")
-        printf "  ${marker}%s${RESET}" "$entry_text"
+        printf '  %s%s%s' "$marker" "$entry_text" "$RESET"
 
         ((col++)) || true
         if (( col % 2 == 0 )); then
@@ -188,10 +188,10 @@ render_artifact "Architecture" "$BRIEF_FILE" \
 
 # ── Next step recommendation ────────────────────────────────────────────────
 if [[ -z "$NEXT_NUM" ]]; then
-    printf "${GREEN}${BOLD}Elicitation complete!${RESET}\n"
-    printf "  Next: ${CYAN}make ready${RESET} to validate consistency, then Prompt 01 for spec authoring.\n"
+    printf '%s%sElicitation complete!%s\n' "$GREEN" "$BOLD" "$RESET"
+    printf '  Next: %smake ready%s to validate consistency, then Prompt 01 for spec authoring.\n' "$CYAN" "$RESET"
 else
-    printf "${BOLD}Next step:${RESET}\n"
+    printf '%sNext step:%s\n' "$BOLD" "$RESET"
 
     if [[ "$NEXT_TYPE" == "Requirements" ]]; then
         # Look up the command and name for this section
@@ -203,8 +203,8 @@ else
                 break
             fi
         done
-        printf "  AI:     ${CYAN}%s${RESET}  %s\n" "$next_cmd" "$next_name"
-        printf "  Non-AI: ${CYAN}make gather-requirements${RESET}\n"
+        printf '  AI:     %s%s%s  %s\n' "$CYAN" "$next_cmd" "$RESET" "$next_name"
+        printf '  Non-AI: %smake gather-requirements%s\n' "$CYAN" "$RESET"
     else
         next_name=""
         for ((i=0; i<${#BRIEF_NUMS[@]}; i++)); do
@@ -213,8 +213,8 @@ else
                 break
             fi
         done
-        printf "  AI:     ${CYAN}/gather-%s${RESET}  %s\n" "$NEXT_NUM" "$next_name"
-        printf "  Non-AI: ${CYAN}make gather-brief${RESET}\n"
+        printf '  AI:     %s/gather-%s%s  %s\n' "$CYAN" "$NEXT_NUM" "$RESET" "$next_name"
+        printf '  Non-AI: %smake gather-brief%s\n' "$CYAN" "$RESET"
     fi
 fi
 

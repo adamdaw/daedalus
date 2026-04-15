@@ -141,6 +141,11 @@ jobs:
       - name: Spell check
         run: make spellcheck
 
+      - name: Lint shell scripts (ShellCheck)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck scripts/*.sh
+
       - name: Build PDF
         run: make build
 
@@ -218,8 +223,16 @@ jobs:
           persist-credentials: false
           fetch-depth: 1
 
-      - name: Make scripts executable
-        run: chmod +x scripts/gather-requirements.sh scripts/gather-brief.sh scripts/assemble.sh scripts/validate-artifacts.sh scripts/progress.sh
+      - name: Install test tools and make scripts executable
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck bats
+          chmod +x scripts/*.sh
+
+      - name: Lint shell scripts (ShellCheck)
+        run: shellcheck scripts/*.sh
+
+      - name: Run bats unit tests
+        run: bats test/scripts/*.bats
 
       - name: Run gather-requirements (non-AI fallback — Prompt 06 / /req-* commands)
         # Strips comment lines (starting with #) from the fixture before piping to the script.

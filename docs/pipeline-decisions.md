@@ -975,3 +975,43 @@ ignore-words-list = term1,term2
 
 **Reference:** codespell builtin dictionaries — https://github.com/codespell-project/codespell#usage  
 **Reference:** jj-vcs/jj@93368f1 — example of a project that explicitly enables `en-GB_to_en-US` to enforce American English
+
+---
+
+### ShellCheck for shell script analysis
+
+**Decision:** All shell scripts in `scripts/` are analysed with ShellCheck (https://www.shellcheck.net/)
+on every commit (pre-commit hook) and in CI.
+
+**Rationale:** The non-AI elicitation path runs entirely through bash scripts — they must be
+production-grade. ShellCheck catches quoting errors, unused variables, non-portable constructs,
+and other common shell scripting mistakes that manual review often misses.
+
+**References:**
+- ShellCheck — https://www.shellcheck.net/
+- Shell Script Best Practices — https://sharats.me/posts/shell-script-best-practices/
+- shellcheck-py (pre-commit integration) — https://github.com/shellcheck-py/shellcheck-py
+
+**Applied in:** `.pre-commit-config.yaml` (shellcheck-py hook), `.github/workflows/build.yml`
+(CI steps in build and test-elicitation jobs), `Dockerfile` (apt-get install), `Makefile`
+(`shellcheck` target, part of `validate`).
+
+---
+
+### bats-core for shell script testing
+
+**Decision:** Shell scripts are unit-tested with bats-core (https://github.com/bats-core/bats-core),
+the Bash Automated Testing System. Tests are TAP-compliant and run in CI.
+
+**Rationale:** The non-AI elicitation pipeline (`gather-requirements.sh`, `gather-brief.sh`,
+`assemble.sh`, `validate-artifacts.sh`, `progress.sh`) is the primary interface for teams
+without Claude Code. Unit tests verify each script's argument parsing, output format, edge
+cases (missing files, empty sections), and cross-script integration.
+
+**References:**
+- bats-core — https://github.com/bats-core/bats-core
+- TAP (Test Anything Protocol) — https://testanything.org
+- Bash Best Practices — https://bertvv.github.io/cheat-sheets/Bash.html
+
+**Applied in:** `test/scripts/*.bats` (test files), `.github/workflows/build.yml`
+(test-elicitation job), `Dockerfile` (apt-get install), `Makefile` (`test-scripts` target).

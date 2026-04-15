@@ -34,6 +34,14 @@ repos:
         args: ["--config", ".markdownlint.yaml"]
         files: "(markdown|proposals/.+/markdown)/.*\\.md$"
 
+  # Shell script linting — https://github.com/shellcheck-py/shellcheck-py
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        name: shellcheck
+        files: "^scripts/.*\\.sh$"
+
   # Spell checking — https://github.com/codespell-project/codespell
   # Uses language: system (local hook) rather than a repo-pinned rev:.
   #
