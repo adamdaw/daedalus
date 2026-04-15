@@ -9,7 +9,6 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Version pins — keep in sync with Makefile and all three CI workflows.
 ARG PANDOC_VERSION=3.1.13
 ARG CROSSREF_VERSION=0.3.17.1
-ARG NPM_VERSION=11.12.1
 
 # SHA-256 digests for supply-chain integrity.
 # Declared as ARGs so version upgrades require explicitly updating both the version and the
@@ -86,19 +85,6 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get update && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade npm to 11.x — the npm@10.x bundled by NodeSource with Node.js 22 transitively
-# includes picomatch@4.0.3 (CVE-2026-33671 ReDoS). npm@11.x's dependency chain
-# (glob@13.x → minimatch@10.x → brace-expansion) no longer includes picomatch at all.
-# After upgrading, the old npm directory is removed to eliminate the vulnerable package;
-# /usr/bin/npm and /usr/bin/npx are redirected to the new installation.
-# Note: removing /usr/lib/node_modules/npm is intentional in this immutable Docker image —
-# the upgraded npm lives at /usr/local/lib/node_modules/npm (installed by npm install -g).
-# Reference — npm changelog: https://github.com/npm/cli/releases
-RUN npm install -g npm@${NPM_VERSION} \
-    && rm -rf /usr/lib/node_modules/npm \
-    && ln -sf /usr/local/bin/npm /usr/bin/npm \
-    && ln -sf /usr/local/bin/npx /usr/bin/npx
-
 # Install Google Chrome for @mermaid-js/mermaid-cli (mmdc).
 # Google Chrome (not Ubuntu's chromium-browser) is used for reliable Puppeteer compatibility;
 # the Puppeteer team tests against Chrome and maintains the executable path contract.
@@ -154,8 +140,17 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # overrides in package.json force picomatch to 4.0.4, patching CVE-2026-33671 in the
 # picomatch@4.0.3 transitive dependency pulled in by puppeteer.
 #
+# package.json also pins npm@11.x as a devDependency. NodeSource bundles npm@10.x with
+# Node.js 22; npm@10.x transitively includes picomatch@4.0.3 in its own internal tree.
+# npm@11.x's dependency chain (glob@13.x → minimatch@10.x → brace-expansion) no longer
+# includes picomatch. Installing npm@11.x via the local install step (rather than
+# 'npm install -g npm@11.x') avoids a MODULE_NOT_FOUND error in npm@10.x's arborist
+# when it tries to upgrade itself globally. After copying, the old npm directory is
+# removed and /usr/bin/npm and /usr/bin/npx are redirected to the new installation.
+#
 # Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
 # Reference — npm install: https://docs.npmjs.com/cli/v10/commands/npm-install
+# Reference — npm changelog: https://github.com/npm/cli/releases
 COPY package.json /tmp/npm-install/package.json
 RUN cd /tmp/npm-install \
     && npm install --no-fund --no-audit --include=dev \
@@ -164,7 +159,10 @@ RUN cd /tmp/npm-install \
          bin_name=$(basename "$bin_link"); \
          ln -sf "/usr/local/lib/node_modules/.bin/${bin_name}" "/usr/local/bin/${bin_name}"; \
        done \
-    && rm -rf /tmp/npm-install
+    && rm -rf /tmp/npm-install \
+    && rm -rf /usr/lib/node_modules/npm \
+    && ln -sf /usr/local/bin/npm /usr/bin/npm \
+    && ln -sf /usr/local/bin/npx /usr/bin/npx
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source

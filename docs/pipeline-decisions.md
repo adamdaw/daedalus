@@ -134,28 +134,32 @@ authoritative file pins and constrains all tool versions, and Dependabot tracks 
 ### npm upgrade to 11.x to eliminate picomatch from npm's internal dependency tree
 
 NodeSource ships Node.js 22 with npm@10.x bundled. npm@10.x transitively includes
-`picomatch@4.0.3` (CVE-2026-33671) somewhere in its own bundled dependency tree
+`picomatch@4.0.3` (CVE-2026-33671) in its own internal bundle
 (`/usr/lib/node_modules/npm/node_modules/picomatch/`). This path is not patchable via
 `package.json` overrides — overrides only apply to packages we install, not to npm's
 own internal bundle.
 
 npm@11.x's dependency chain (glob@13.x → minimatch@10.x → brace-expansion) no longer
-includes picomatch. The Dockerfile upgrades npm immediately after the NodeSource install:
+includes picomatch. `npm@11.x` is added to `package.json` as a devDependency and
+installed via the established local-install-then-copy mechanism. At the end of that step:
 
 ```dockerfile
-RUN npm install -g npm@${NPM_VERSION} \
-    && rm -rf /usr/lib/node_modules/npm \
-    && ln -sf /usr/local/bin/npm /usr/bin/npm \
-    && ln -sf /usr/local/bin/npx /usr/bin/npx
+&& rm -rf /usr/lib/node_modules/npm \
+&& ln -sf /usr/local/bin/npm /usr/bin/npm \
+&& ln -sf /usr/local/bin/npx /usr/bin/npx
 ```
+
+Using `npm install -g npm@11.x` (the naive approach) fails because npm@10.x's arborist
+is missing `promise-retry` on the global install code path. The local install avoids
+this entirely — npm@10.x can install npm@11.x as a package without triggering the
+broken global-install arborist code path.
 
 Removing `/usr/lib/node_modules/npm` is intentional: in an immutable Docker image there is no
 subsequent `apt-get upgrade nodejs` that would reinstate it, and leaving the directory would
 leave the vulnerable picomatch in the image despite the upgrade. `/usr/bin/npm` and
 `/usr/bin/npx` are redirected to the new installation at `/usr/local/bin/`.
 
-`NPM_VERSION` is declared as a build ARG alongside `PANDOC_VERSION` and `CROSSREF_VERSION`
-so version upgrades are explicit and auditable.
+Pinning npm in `package.json` means Dependabot tracks it alongside the other tool versions.
 
 **Reference:** npm changelog — https://github.com/npm/cli/releases
 

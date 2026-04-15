@@ -6,7 +6,8 @@
   },
   "devDependencies": {
     "@mermaid-js/mermaid-cli": "11.12.0",
-    "markdownlint-cli": "0.48.0"
+    "markdownlint-cli": "0.48.0",
+    "npm": "11.12.1"
   },
   "overrides": {
     "picomatch": "4.0.4"
