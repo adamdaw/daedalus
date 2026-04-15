@@ -131,6 +131,34 @@ authoritative file pins and constrains all tool versions, and Dependabot tracks 
 **Reference:** npm overrides — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides  
 **Reference:** npm install — https://docs.npmjs.com/cli/v10/commands/npm-install
 
+### npm upgrade to 11.x to eliminate picomatch from npm's internal dependency tree
+
+NodeSource ships Node.js 22 with npm@10.x bundled. npm@10.x transitively includes
+`picomatch@4.0.3` (CVE-2026-33671) somewhere in its own bundled dependency tree
+(`/usr/lib/node_modules/npm/node_modules/picomatch/`). This path is not patchable via
+`package.json` overrides — overrides only apply to packages we install, not to npm's
+own internal bundle.
+
+npm@11.x's dependency chain (glob@13.x → minimatch@10.x → brace-expansion) no longer
+includes picomatch. The Dockerfile upgrades npm immediately after the NodeSource install:
+
+```dockerfile
+RUN npm install -g npm@${NPM_VERSION} \
+    && rm -rf /usr/lib/node_modules/npm \
+    && ln -sf /usr/local/bin/npm /usr/bin/npm \
+    && ln -sf /usr/local/bin/npx /usr/bin/npx
+```
+
+Removing `/usr/lib/node_modules/npm` is intentional: in an immutable Docker image there is no
+subsequent `apt-get upgrade nodejs` that would reinstate it, and leaving the directory would
+leave the vulnerable picomatch in the image despite the upgrade. `/usr/bin/npm` and
+`/usr/bin/npx` are redirected to the new installation at `/usr/local/bin/`.
+
+`NPM_VERSION` is declared as a build ARG alongside `PANDOC_VERSION` and `CROSSREF_VERSION`
+so version upgrades are explicit and auditable.
+
+**Reference:** npm changelog — https://github.com/npm/cli/releases
+
 ### `npm install --no-fund --no-audit`
 
 `--no-fund` suppresses the funding messages that appear in npm output. `--no-audit` suppresses
@@ -807,26 +835,6 @@ registry — consumers pulling `:latest` always get a scanned image.
 `ignore-unfixed: true` suppresses CVEs that have no available fix in the package manager
 (no actionable remediation exists). Together these settings block publishable vulnerabilities
 while avoiding alert fatigue from issues that cannot be resolved by upgrading packages.
-
-### `.trivyignore` — targeted CVE suppression
-
-The `.trivyignore` file lists CVEs that are suppressed with a documented justification.
-Each entry uses Trivy's targeted ignore format (Trivy >= 0.53.0):
-
-```
-CVE-XXXX-NNNNN target:<artifact-path>
-```
-
-The `target:` constraint limits suppression to a specific artifact path, leaving all other
-instances of the same CVE active. A CVE is added to `.trivyignore` only when:
-1. The affected package is a system-level dependency (e.g., npm's own internal node_modules)
-   that cannot be upgraded through our build toolchain
-2. The attack vector is not applicable in our build pipeline
-3. The fix is not yet available in the upstream package manager's published releases
-
-Each `.trivyignore` entry includes a documented rationale and a condition for removal.
-
-**Reference:** Trivy ignore format — https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore-format
 
 ### OpenSSF Scorecard signal
 

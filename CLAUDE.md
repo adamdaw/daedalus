@@ -70,10 +70,14 @@ of truth — Dependabot opens PRs when a new version is available; update the np
 in Dockerfile, CI, README.md, and CONTRIBUTING.md to match when accepting.
 
 `package.json` also contains an `overrides` section that pins `picomatch` to `4.0.4` to fix
-CVE-2026-33671 in the transitive dependency chain. The Dockerfile uses `npm install --prefix
-/usr/local` (not `npm install -g`) so that `overrides` are respected. When updating mmdc,
+CVE-2026-33671 in the transitive dependency chain pulled in via puppeteer. When updating mmdc,
 check whether the new version's puppeteer dependency still requires the picomatch override —
 remove it once the upstream ships picomatch >= 4.0.4.
+
+The Dockerfile also upgrades npm from the NodeSource-bundled npm@10.x to `NPM_VERSION` (11.x)
+immediately after the NodeSource install, removing the old npm directory to eliminate a second
+instance of picomatch@4.0.3 in npm's own internal dependency tree. `NPM_VERSION` is declared
+as a build ARG at the top of the Dockerfile alongside `PANDOC_VERSION` and `CROSSREF_VERSION`.
 
 ### filters/diagram.lua (pandoc-ext/diagram v1.2.0)
 Vendored Lua filter at `filters/diagram.lua`. Pinned to pandoc-ext/diagram v1.2.0. To upgrade:
@@ -153,7 +157,7 @@ daedalus/
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `build.yml` | Every push / PR / `workflow_dispatch` | lint → spellcheck → build PDF+HTML+DOCX → validate → upload artifacts; Docker job builds, validates, Trivy scans, pushes to GHCR with SLSA provenance; version tag push also publishes `:vN.N.N` Docker tag |
+| `build.yml` | Every push / PR / `workflow_dispatch` | lint → spellcheck → build PDF+HTML+DOCX → validate → upload artifacts; Docker job builds, validates, Trivy scans, and pushes to GHCR; version tag push also publishes `:vN.N.N` Docker tag |
 | `proposals.yml` | Push to `proposals/**` / `workflow_dispatch` | Detects changed proposals (or uses manual input); builds + validates each in matrix; arc42 heading checks |
 | `release.yml` | Push of `v*` tag | lint → spellcheck → build PDF+HTML+DOCX → **validate all three** → attach to GitHub Release |
 | `codeql.yml` | Every push / PR / weekly cron | CodeQL static analysis on GitHub Actions YAML for script injection; `continue-on-error` for SARIF upload (requires GHAS) |
@@ -202,7 +206,7 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
 | **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 verification of pandoc and pandoc-crossref downloads |
 | **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, Trivy scanning, least-privilege permissions |
-| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA Level 2 provenance attestation on published Docker images |
+| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA provenance attestation — deferred until repo is public (GitHub limitation for private user repos) |
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates on commit (pre-commit + commit-msg hooks) |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting `##` targets |
