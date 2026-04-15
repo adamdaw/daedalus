@@ -228,7 +228,7 @@ spellcheck: ## Run codespell on content files
 
 shellcheck: ## Lint shell scripts with ShellCheck (https://www.shellcheck.net)
 	@command -v shellcheck >/dev/null 2>&1 || { echo "Error: shellcheck not found. Run: apt-get install shellcheck"; exit 1; }
-	shellcheck scripts/*.sh
+	shellcheck -x scripts/*.sh scripts/lib/*.sh
 
 validate: lint spellcheck shellcheck ## Run lint + spellcheck + shellcheck without building
 

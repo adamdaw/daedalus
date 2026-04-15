@@ -42,32 +42,9 @@ OUTPUT="${1:-requirements.md}"
 # Helpers
 # ---------------------------------------------------------------------------
 
-# Print prompt to stderr, read answer from stdin
-ask() {
-    printf '%s ' "$1" >&2
-    local val
-    IFS= read -r val
-    printf '%s' "$val"
-}
-
-# Read multi-line input until a line containing only 'EOF'
-ask_multiline() {
-    printf '%s\n(End with EOF on its own line)\n' "$1" >&2
-    local out=""
-    local line
-    while IFS= read -r line; do
-        [[ "$line" == "EOF" ]] && break
-        out="${out}${line}"$'\n'
-    done
-    printf '%s' "$out"
-}
-
-# Ask yes/no, return 0 for yes, 1 for no. Default = no.
-ask_yn() {
-    local answer
-    answer=$(ask "$1 [y/N]:")
-    [[ "$answer" =~ ^[Yy] ]]
-}
+# Source shared I/O library
+# shellcheck source=scripts/lib/input.sh
+source "${BASH_SOURCE[0]%/*}/lib/input.sh"
 
 # Write a complete requirements.md from collected variables.
 # Called once at the end after all sections are gathered.
@@ -182,220 +159,252 @@ REQEOF
 # §01 — Purpose and Scope
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §01 Purpose and Scope ===" >&2
+gather_req_01() {
+    echo "" >&2
+    echo "=== §01 Purpose and Scope ===" >&2
 
-SYS_NAME=$(ask "System name:")
-SYS_PURPOSE=$(ask "Purpose (one sentence — what the system does and for whom):")
-SYS_IN_SCOPE=$(ask "In scope (what the system includes):")
-SYS_OUT_SCOPE=$(ask "Out of scope (what is explicitly excluded):")
+    SYS_NAME=$(ask "System name:")
+    SYS_PURPOSE=$(ask "Purpose (one sentence — what the system does and for whom):")
+    SYS_IN_SCOPE=$(ask "In scope (what the system includes):")
+    SYS_OUT_SCOPE=$(ask "Out of scope (what is explicitly excluded):")
+}
 
 # ---------------------------------------------------------------------------
 # §02 — Stakeholders
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §02 Stakeholders ===" >&2
-echo "Enter each stakeholder. Leave Role blank to finish." >&2
+gather_req_02() {
+    echo "" >&2
+    echo "=== §02 Stakeholders ===" >&2
+    echo "Enter each stakeholder. Leave Role blank to finish." >&2
 
-STK_ROWS=""
-stk_idx=1
-while true; do
-    role=$(ask "  Role:")
-    [[ -z "$role" ]] && break
-    ctx=$(ask "  Organisation / Context:")
-    goals=$(ask "  Goals:")
-    pri=$(ask "  Priority [High/Medium/Low]:")
-    STK_ROWS="${STK_ROWS}| STK-$(printf '%02d' $stk_idx) | ${role} | ${ctx} | ${goals} | ${pri} |"$'\n'
-    ((stk_idx++))
-    ask_yn "  Add another stakeholder?" || break
-done
+    STK_ROWS=""
+    stk_idx=1
+    while true; do
+        role=$(ask "  Role:")
+        [[ -z "$role" ]] && break
+        ctx=$(ask "  Organisation / Context:")
+        goals=$(ask "  Goals:")
+        pri=$(ask "  Priority [High/Medium/Low]:")
+        STK_ROWS="${STK_ROWS}| STK-$(printf '%02d' $stk_idx) | ${role} | ${ctx} | ${goals} | ${pri} |"$'\n'
+        ((stk_idx++))
+        ask_yn "  Add another stakeholder?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §03 — Business Requirements
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §03 Business Requirements ===" >&2
-echo "Enter each business goal. Leave Goal blank to finish." >&2
+gather_req_03() {
+    echo "" >&2
+    echo "=== §03 Business Requirements ===" >&2
+    echo "Enter each business goal. Leave Goal blank to finish." >&2
 
-BR_ROWS=""
-br_idx=1
-while true; do
-    goal=$(ask "  Goal:")
-    [[ -z "$goal" ]] && break
-    criterion=$(ask "  Success criterion:")
-    pri=$(ask "  Priority [M/S/C/W]:")
-    BR_ROWS="${BR_ROWS}| BR-$(printf '%02d' $br_idx) | ${goal} | ${criterion} | ${pri} |"$'\n'
-    ((br_idx++))
-    ask_yn "  Add another goal?" || break
-done
+    BR_ROWS=""
+    br_idx=1
+    while true; do
+        goal=$(ask "  Goal:")
+        [[ -z "$goal" ]] && break
+        criterion=$(ask "  Success criterion:")
+        pri=$(ask "  Priority [M/S/C/W]:")
+        BR_ROWS="${BR_ROWS}| BR-$(printf '%02d' $br_idx) | ${goal} | ${criterion} | ${pri} |"$'\n'
+        ((br_idx++))
+        ask_yn "  Add another goal?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §04 — Functional Requirements
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §04 Functional Requirements ===" >&2
-echo "Enter feature areas first (blank to finish), then stories per area." >&2
+gather_req_04() {
+    echo "" >&2
+    echo "=== §04 Functional Requirements ===" >&2
+    echo "Enter feature areas first (blank to finish), then stories per area." >&2
 
-FR_CONTENT=""
-fr_idx=1
+    FR_CONTENT=""
+    fr_idx=1
 
-while true; do
-    area=$(ask "Feature area name (blank to finish):")
-    [[ -z "$area" ]] && break
-
-    FR_CONTENT="${FR_CONTENT}### ${area}"$'\n'
-    FR_CONTENT="${FR_CONTENT}| ID | User Story | Priority |"$'\n'
-    FR_CONTENT="${FR_CONTENT}| --- | --- | --- |"$'\n'
-
-    echo "  Stories for '${area}' (leave 'As a...' blank to finish this area):" >&2
     while true; do
-        story=$(ask "    As a:")
-        [[ -z "$story" ]] && break
-        wants=$(ask "    I want:")
-        so_that=$(ask "    so that:")
-        pri=$(ask "    Priority [M/S/C/W]:")
-        FR_CONTENT="${FR_CONTENT}| FR-$(printf '%02d' $fr_idx) | As a ${story}, I want ${wants}, so that ${so_that} | ${pri} |"$'\n'
-        ((fr_idx++))
-        ask_yn "    Add another story?" || break
+        area=$(ask "Feature area name (blank to finish):")
+        [[ -z "$area" ]] && break
+
+        FR_CONTENT="${FR_CONTENT}### ${area}"$'\n'
+        FR_CONTENT="${FR_CONTENT}| ID | User Story | Priority |"$'\n'
+        FR_CONTENT="${FR_CONTENT}| --- | --- | --- |"$'\n'
+
+        echo "  Stories for '${area}' (leave 'As a...' blank to finish this area):" >&2
+        while true; do
+            story=$(ask "    As a:")
+            [[ -z "$story" ]] && break
+            wants=$(ask "    I want:")
+            so_that=$(ask "    so that:")
+            pri=$(ask "    Priority [M/S/C/W]:")
+            FR_CONTENT="${FR_CONTENT}| FR-$(printf '%02d' $fr_idx) | As a ${story}, I want ${wants}, so that ${so_that} | ${pri} |"$'\n'
+            ((fr_idx++))
+            ask_yn "    Add another story?" || break
+        done
+        FR_CONTENT="${FR_CONTENT}"$'\n'
+        ask_yn "Add another feature area?" || break
     done
-    FR_CONTENT="${FR_CONTENT}"$'\n'
-    ask_yn "Add another feature area?" || break
-done
+}
 
 # ---------------------------------------------------------------------------
 # §05 — Non-Functional Requirements
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §05 Non-Functional Requirements ===" >&2
-echo "ISO 25010 categories: Performance Efficiency, Reliability, Security," >&2
-echo "Maintainability, Usability, Compatibility, Portability" >&2
-echo "Leave Category blank to finish." >&2
+gather_req_05() {
+    echo "" >&2
+    echo "=== §05 Non-Functional Requirements ===" >&2
+    echo "ISO 25010 categories: Performance Efficiency, Reliability, Security," >&2
+    echo "Maintainability, Usability, Compatibility, Portability" >&2
+    echo "Leave Category blank to finish." >&2
 
-NFR_ROWS=""
-nfr_idx=1
-while true; do
-    cat=$(ask "  ISO 25010 Category:")
-    [[ -z "$cat" ]] && break
-    desc=$(ask "  Description:")
-    measure=$(ask "  Measurable criterion:")
-    pri=$(ask "  Priority [M/S/C/W]:")
-    NFR_ROWS="${NFR_ROWS}| NFR-$(printf '%02d' $nfr_idx) | ${cat} | ${desc} | ${measure} | ${pri} |"$'\n'
-    ((nfr_idx++))
-    ask_yn "  Add another NFR?" || break
-done
+    NFR_ROWS=""
+    nfr_idx=1
+    while true; do
+        cat=$(ask "  ISO 25010 Category:")
+        [[ -z "$cat" ]] && break
+        desc=$(ask "  Description:")
+        measure=$(ask "  Measurable criterion:")
+        pri=$(ask "  Priority [M/S/C/W]:")
+        NFR_ROWS="${NFR_ROWS}| NFR-$(printf '%02d' $nfr_idx) | ${cat} | ${desc} | ${measure} | ${pri} |"$'\n'
+        ((nfr_idx++))
+        ask_yn "  Add another NFR?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §06 — Constraints
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §06 Technical Constraints ===" >&2
-echo "Leave Constraint blank to finish." >&2
+gather_req_06() {
+    echo "" >&2
+    echo "=== §06 Technical Constraints ===" >&2
+    echo "Leave Constraint blank to finish." >&2
 
-TC_ROWS=""
-tc_idx=1
-while true; do
-    con=$(ask "  Constraint:")
-    [[ -z "$con" ]] && break
-    rat=$(ask "  Rationale:")
-    TC_ROWS="${TC_ROWS}| TC-$(printf '%02d' $tc_idx) | ${con} | ${rat} |"$'\n'
-    ((tc_idx++))
-    ask_yn "  Add another technical constraint?" || break
-done
+    TC_ROWS=""
+    tc_idx=1
+    while true; do
+        con=$(ask "  Constraint:")
+        [[ -z "$con" ]] && break
+        rat=$(ask "  Rationale:")
+        TC_ROWS="${TC_ROWS}| TC-$(printf '%02d' $tc_idx) | ${con} | ${rat} |"$'\n'
+        ((tc_idx++))
+        ask_yn "  Add another technical constraint?" || break
+    done
 
-echo "" >&2
-echo "=== §06 Organisational Constraints ===" >&2
+    echo "" >&2
+    echo "=== §06 Organisational Constraints ===" >&2
 
-OC_ROWS=""
-oc_idx=1
-while true; do
-    con=$(ask "  Constraint:")
-    [[ -z "$con" ]] && break
-    rat=$(ask "  Rationale:")
-    OC_ROWS="${OC_ROWS}| OC-$(printf '%02d' $oc_idx) | ${con} | ${rat} |"$'\n'
-    ((oc_idx++))
-    ask_yn "  Add another organisational constraint?" || break
-done
+    OC_ROWS=""
+    oc_idx=1
+    while true; do
+        con=$(ask "  Constraint:")
+        [[ -z "$con" ]] && break
+        rat=$(ask "  Rationale:")
+        OC_ROWS="${OC_ROWS}| OC-$(printf '%02d' $oc_idx) | ${con} | ${rat} |"$'\n'
+        ((oc_idx++))
+        ask_yn "  Add another organisational constraint?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §07 — Assumptions and Dependencies
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §07 Assumptions and Dependencies ===" >&2
-echo "Leave Description blank to finish." >&2
+gather_req_07() {
+    echo "" >&2
+    echo "=== §07 Assumptions and Dependencies ===" >&2
+    echo "Leave Description blank to finish." >&2
 
-AD_ROWS=""
-ad_a_idx=1
-ad_d_idx=1
-while true; do
-    type=$(ask "  Type [Assumption/Dependency]:")
-    [[ -z "$type" ]] && break
-    desc=$(ask "  Description:")
-    impact=$(ask "  Impact if wrong / unavailable:")
-    if [[ "$type" =~ ^[Aa] ]]; then
-        id="A-$(printf '%02d' $ad_a_idx)"
-        ((ad_a_idx++))
-    else
-        id="D-$(printf '%02d' $ad_d_idx)"
-        ((ad_d_idx++))
-    fi
-    AD_ROWS="${AD_ROWS}| ${id} | ${type} | ${desc} | ${impact} |"$'\n'
-    ask_yn "  Add another?" || break
-done
+    AD_ROWS=""
+    ad_a_idx=1
+    ad_d_idx=1
+    while true; do
+        type=$(ask "  Type [Assumption/Dependency]:")
+        [[ -z "$type" ]] && break
+        desc=$(ask "  Description:")
+        impact=$(ask "  Impact if wrong / unavailable:")
+        if [[ "$type" =~ ^[Aa] ]]; then
+            id="A-$(printf '%02d' $ad_a_idx)"
+            ((ad_a_idx++))
+        else
+            id="D-$(printf '%02d' $ad_d_idx)"
+            ((ad_d_idx++))
+        fi
+        AD_ROWS="${AD_ROWS}| ${id} | ${type} | ${desc} | ${impact} |"$'\n'
+        ask_yn "  Add another?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §08 — Acceptance Criteria
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §08 Acceptance Criteria ===" >&2
-echo "Enter BDD Given/When/Then for each Must/Should requirement." >&2
-echo "Leave Requirement ref blank to finish." >&2
+gather_req_08() {
+    echo "" >&2
+    echo "=== §08 Acceptance Criteria ===" >&2
+    echo "Enter BDD Given/When/Then for each Must/Should requirement." >&2
+    echo "Leave Requirement ref blank to finish." >&2
 
-AC_ROWS=""
-ac_idx=1
-while true; do
-    ref=$(ask "  Requirement ref (e.g. FR-01):")
-    [[ -z "$ref" ]] && break
-    given=$(ask "  Given:")
-    when=$(ask "  When:")
-    then_=$(ask "  Then:")
-    method=$(ask "  Verification [Test/Inspection/Demonstration/Analysis]:")
-    AC_ROWS="${AC_ROWS}| AC-$(printf '%02d' $ac_idx) | ${ref} | ${given} | ${when} | ${then_} | ${method} |"$'\n'
-    ((ac_idx++))
-    ask_yn "  Add another?" || break
-done
+    AC_ROWS=""
+    ac_idx=1
+    while true; do
+        ref=$(ask "  Requirement ref (e.g. FR-01):")
+        [[ -z "$ref" ]] && break
+        given=$(ask "  Given:")
+        when=$(ask "  When:")
+        then_=$(ask "  Then:")
+        method=$(ask "  Verification [Test/Inspection/Demonstration/Analysis]:")
+        AC_ROWS="${AC_ROWS}| AC-$(printf '%02d' $ac_idx) | ${ref} | ${given} | ${when} | ${then_} | ${method} |"$'\n'
+        ((ac_idx++))
+        ask_yn "  Add another?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
 # §09 — Requirements Traceability Matrix
 # ---------------------------------------------------------------------------
 
-echo "" >&2
-echo "=== §09 Requirements Traceability Matrix ===" >&2
-echo "Map each requirement to arc42 sections." >&2
-echo "arc42: §1=Intro §2=Constraints §3=Context §4=Strategy §5=Blocks §6=Runtime" >&2
-echo "       §7=Deployment §8=Crosscutting §9=ADRs §10=Quality §11=Risks" >&2
-echo "Leave Requirement ID blank to finish." >&2
+gather_req_09() {
+    echo "" >&2
+    echo "=== §09 Requirements Traceability Matrix ===" >&2
+    echo "Map each requirement to arc42 sections." >&2
+    echo "arc42: §1=Intro §2=Constraints §3=Context §4=Strategy §5=Blocks §6=Runtime" >&2
+    echo "       §7=Deployment §8=Crosscutting §9=ADRs §10=Quality §11=Risks" >&2
+    echo "Leave Requirement ID blank to finish." >&2
 
-RTM_ROWS=""
-while true; do
-    req_id=$(ask "  Requirement ID:")
-    [[ -z "$req_id" ]] && break
-    summary=$(ask "  Summary:")
-    sections=$(ask "  arc42 section(s) (e.g. §1, §6):")
-    RTM_ROWS="${RTM_ROWS}| ${req_id} | ${summary} | ${sections} | Traced |"$'\n'
-    ask_yn "  Add another?" || break
-done
+    RTM_ROWS=""
+    while true; do
+        req_id=$(ask "  Requirement ID:")
+        [[ -z "$req_id" ]] && break
+        summary=$(ask "  Summary:")
+        sections=$(ask "  arc42 section(s) (e.g. §1, §6):")
+        RTM_ROWS="${RTM_ROWS}| ${req_id} | ${summary} | ${sections} | Traced |"$'\n'
+        ask_yn "  Add another?" || break
+    done
+}
 
 # ---------------------------------------------------------------------------
-# Write output
+# Main
 # ---------------------------------------------------------------------------
 
+# Source-only mode: export functions without executing the main flow.
+# return works when sourced; exit is the fallback for direct execution.
+# shellcheck disable=SC2317
+if [[ "${1-}" == "--source-only" ]]; then return 0 2>/dev/null || exit 0; fi
+
+gather_req_01
+gather_req_02
+gather_req_03
+gather_req_04
+gather_req_05
+gather_req_06
+gather_req_07
+gather_req_08
+gather_req_09
 write_output
 echo "" >&2
 echo "Written to ${OUTPUT}" >&2
