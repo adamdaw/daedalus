@@ -101,6 +101,8 @@ make help         # list all available targets
 make lint         # run markdownlint on content files
 make spellcheck   # run codespell on content files
 make validate     # run lint + spellcheck (without building)
+make progress     # show elicitation completion dashboard
+make ready        # validate artifacts are ready for spec authoring
 make wordcount    # word count per file and total
 make status       # show build state and word count for all proposals
 make version      # print installed versions of all build tools
@@ -264,24 +266,15 @@ Sixteen slash commands guide interactive elicitation — five for requirements (
 make init NAME=my-proposal
 cd proposals/my-proposal
 
-# 1. Requirements elicitation (ISO/IEC/IEEE 29148:2018)
-#    /req-01  Stakeholders, purpose, scope
-#    /req-02  Business + functional requirements (user stories, MoSCoW, INVEST)
-#    /req-03  Non-functional requirements (ISO/IEC 25010 quality model)
-#    /req-04  Constraints, assumptions, dependencies
-#    /req-05  Acceptance criteria (BDD Given/When/Then) + traceability matrix
-#    → requirements.md
+# Option A: Guided start-to-finish (recommended for new users)
+/start-proposal
 
-# 2. Architecture elicitation (arc42 sections 1–11)
-#    /gather-01 through /gather-11 — one command per arc42 section
-#    Each references the relevant standard: C4 Model, UML 2.5, ISO 31000, OWASP, etc.
-#    → brief.md
+# Option B: Step-by-step with progress tracking
+/elicit                        # shows progress, runs next step automatically
 
-# 3. Spec authoring — Claude writes arc42 sections from brief.md + requirements.md
-# 4. Adversarial review — a second agent challenges every decision
-# 5. Triage — accept, reject, or defer each finding
-
-make all PROPOSAL=my-proposal  # → PDF + HTML + DOCX
+# Option C: Individual commands
+/req-01 through /req-05        # → requirements.md
+/gather-01 through /gather-11  # → brief.md (cross-references requirements.md)
 ```
 
 The full VSDD (Verified Software Design Document) prompt roster is in `prompts/`. See
@@ -300,8 +293,9 @@ make init NAME=my-proposal
 
 make gather-requirements PROPOSAL=my-proposal  # interactive requirements → requirements.md
 make gather-brief PROPOSAL=my-proposal         # interactive architecture → brief.md
+make progress PROPOSAL=my-proposal             # show completion dashboard
+make ready PROPOSAL=my-proposal                # validate cross-document consistency
 make assemble PROPOSAL=my-proposal             # assemble arc42 markdown from artifacts
-make validate-artifacts PROPOSAL=my-proposal   # validate artifact structure
 
 make all PROPOSAL=my-proposal                  # → PDF + HTML + DOCX
 ```
@@ -354,9 +348,10 @@ daedalus/
     gather-brief.sh        # Non-AI architecture elicitation (arc42)
     assemble.sh            # Assemble arc42 markdown from elicitation artifacts
     validate-artifacts.sh  # Validate requirements.md and brief.md structure
+    progress.sh            # Elicitation progress dashboard
     validate-jsonc.py      # JSONC validation for devcontainer.json
   test/fixtures/           # CI fixture data for elicitation pipeline tests
-  .claude/commands/        # Claude Code slash commands (/req-01–05, /gather-01–11)
+  .claude/commands/        # Claude Code slash commands (/start-proposal, /elicit, /req-01–05, /gather-01–11)
   .devcontainer/           # VS Code Dev Container config
   .github/
     workflows/             # CI/CD pipelines (build, proposals, release, codeql)

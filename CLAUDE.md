@@ -41,6 +41,10 @@ make check                    # verify all build dependencies are installed
 make docker-run               # run make all inside locally-built Docker image
 make docker-pull-run          # pull pre-built image from GHCR and run (faster)
 make version                  # print installed versions of all build tools
+make progress                 # show elicitation progress dashboard
+make progress PROPOSAL=name   # show progress for a specific proposal
+make ready                    # validate artifacts are ready for spec authoring
+make ready PROPOSAL=name      # validate a specific proposal
 ```
 
 ---
@@ -134,8 +138,9 @@ daedalus/
   docs/                 VSDD knowledge base (mem-1 through mem-4)
   prompts/              Agent prompt files for the VSDD workflow (00–05)
   templates/brief.md    Structured elicitation skeleton — copied into each new proposal by make init
-  .claude/commands/     Slash commands: gather-01 through gather-11, req-01 through req-05
+  .claude/commands/     Slash commands: start-proposal, elicit, gather-01 through gather-11, req-01 through req-05
   scripts/              Pipeline and elicitation scripts (bash + Python)
+  scripts/progress.sh           Elicitation progress dashboard
   test/fixtures/        requirements-answers.txt, brief-answers.txt — CI fixture answers for Task Tracker
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
@@ -275,7 +280,7 @@ Prompt 06 ─────────┘
 
 ```
 gather-requirements.sh ─┐
-                         ├─→ requirements.md → brief.md → assemble.sh → arc42 markdown → make build
+                         ├─→ requirements.md → brief.md → make ready → assemble.sh → arc42 markdown → make build
 gather-brief.sh ─────────┘
 ```
 
@@ -285,6 +290,8 @@ gather-brief.sh ─────────┘
 | `scripts/gather-brief.sh` | `make gather-brief` | `/gather-*` commands |
 | `scripts/assemble.sh` | `make assemble` | Prompt 01 |
 | `scripts/validate-artifacts.sh` | `make validate-artifacts` | Manual review |
+| `scripts/progress.sh` | `make progress` | — |
+| — | `make ready` | — |
 
 All scripts read from stdin — pipe fixture answers for CI: `grep -v '^#' test/fixtures/requirements-answers.txt | bash scripts/gather-requirements.sh`. The `test-elicitation` CI job in `build.yml` exercises the full non-AI path end-to-end using the Task Tracker fixtures in `test/fixtures/`.
 
@@ -294,6 +301,15 @@ All scripts read from stdin — pipe fixture answers for CI: `grep -v '^#' test/
 
 The `.claude/commands/` directory contains 11 Claude Code slash commands — one per arc42
 section — for structured elicitation before running Prompt 01.
+
+### Orchestration Commands
+
+| Command | Description |
+| --- | --- |
+| `/start-proposal` | Entry point for new users — scaffolds proposal, offers import, guides through full elicitation |
+| `/elicit` | Orchestrator — reads both files, shows progress, runs the next incomplete step automatically |
+
+Both commands are AI-only. The non-AI equivalent is: `make init` → `make gather-requirements` → `make gather-brief` → `make ready` → `make assemble` → `make build`.
 
 | Command | Section | Standards |
 | --- | --- | --- |
@@ -319,6 +335,10 @@ section — for structured elicitation before running Prompt 01.
 
 Each command is **resumable** — if a section already has content it asks whether to add,
 update, or replace before proceeding.
+
+All `/gather-*` commands now read `requirements.md` (if present) and show imported data
+before asking questions — stakeholders, constraints, NFRs, and assumptions are carried
+forward automatically, eliminating duplicate data entry.
 
 ---
 
