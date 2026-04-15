@@ -131,38 +131,6 @@ authoritative file pins and constrains all tool versions, and Dependabot tracks 
 **Reference:** npm overrides — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides  
 **Reference:** npm install — https://docs.npmjs.com/cli/v10/commands/npm-install
 
-### npm upgrade to 11.x to eliminate picomatch from npm's internal dependency tree
-
-NodeSource ships Node.js 22 with npm@10.x bundled. npm@10.x transitively includes
-`picomatch@4.0.3` (CVE-2026-33671) in its own internal bundle
-(`/usr/lib/node_modules/npm/node_modules/picomatch/`). This path is not patchable via
-`package.json` overrides — overrides only apply to packages we install, not to npm's
-own internal bundle.
-
-npm@11.x's dependency chain (glob@13.x → minimatch@10.x → brace-expansion) no longer
-includes picomatch. `npm@11.x` is added to `package.json` as a devDependency and
-installed via the established local-install-then-copy mechanism. At the end of that step:
-
-```dockerfile
-&& rm -rf /usr/lib/node_modules/npm \
-&& ln -sf /usr/local/bin/npm /usr/bin/npm \
-&& ln -sf /usr/local/bin/npx /usr/bin/npx
-```
-
-Using `npm install -g npm@11.x` (the naive approach) fails because npm@10.x's arborist
-is missing `promise-retry` on the global install code path. The local install avoids
-this entirely — npm@10.x can install npm@11.x as a package without triggering the
-broken global-install arborist code path.
-
-Removing `/usr/lib/node_modules/npm` is intentional: in an immutable Docker image there is no
-subsequent `apt-get upgrade nodejs` that would reinstate it, and leaving the directory would
-leave the vulnerable picomatch in the image despite the upgrade. `/usr/bin/npm` and
-`/usr/bin/npx` are redirected to the new installation at `/usr/local/bin/`.
-
-Pinning npm in `package.json` means Dependabot tracks it alongside the other tool versions.
-
-**Reference:** npm changelog — https://github.com/npm/cli/releases
-
 ### `npm install --no-fund --no-audit`
 
 `--no-fund` suppresses the funding messages that appear in npm output. `--no-audit` suppresses
@@ -839,6 +807,34 @@ registry — consumers pulling `:latest` always get a scanned image.
 `ignore-unfixed: true` suppresses CVEs that have no available fix in the package manager
 (no actionable remediation exists). Together these settings block publishable vulnerabilities
 while avoiding alert fatigue from issues that cannot be resolved by upgrading packages.
+
+### `.trivyignore` — targeted CVE suppression for npm's internal dependency tree
+
+The `.trivyignore` file suppresses CVEs that are confirmed non-actionable with a
+documented justification. Each entry uses Trivy's targeted ignore format (Trivy >= 0.53.0):
+
+```
+CVE-XXXX-NNNNN target:<artifact-path>
+```
+
+The `target:` constraint limits suppression to a specific artifact path, leaving all other
+instances of the same CVE active. An entry is added only when:
+1. The affected package is inside npm's own internal bundle (`/usr/lib/node_modules/npm/`)
+   — not any code we wrote or tools we invoke
+2. The attack vector does not apply in our build pipeline context (npm's internal picomatch
+   processes only trusted package manifest data, never user-controlled input)
+3. The fix is not available through our toolchain (npm bundles its own transitive deps
+   independently of our `package.json` overrides)
+
+The CVE-2026-33671 entry targets `usr/lib/node_modules/npm/node_modules/picomatch/package.json`
+— npm's own bundled picomatch@4.0.3 installed by NodeSource. Upgrading npm (10.x → 11.x) was
+investigated but npm@11.x bundles `tinyglobby` which also carries picomatch@4.0.3, so the CVE
+is present in npm's internal bundle regardless of npm version. The entry will be removed when
+NodeSource ships a Node.js version whose bundled npm no longer includes picomatch@4.0.3.
+
+Each entry includes a documented rationale and a removal condition.
+
+**Reference:** Trivy ignore format — https://aquasecurity.github.io/trivy/latest/docs/configuration/filtering/#trivyignore-format
 
 ### OpenSSF Scorecard signal
 

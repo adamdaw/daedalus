@@ -74,13 +74,13 @@ CVE-2026-33671 in the transitive dependency chain pulled in via puppeteer. When 
 check whether the new version's puppeteer dependency still requires the picomatch override —
 remove it once the upstream ships picomatch >= 4.0.4.
 
-`package.json` also pins `npm@11.x` as a devDependency. NodeSource bundles npm@10.x with
-Node.js 22, which transitively includes picomatch@4.0.3 in its own internal tree. npm@11.x
-does not include picomatch. The Dockerfile installs npm@11.x via the same local-install-then-copy
-mechanism used for all other tools, then removes `/usr/lib/node_modules/npm` (old npm) and
-redirects `/usr/bin/npm` to the new installation. This avoids `npm install -g npm@11.x`, which
-fails due to a missing `promise-retry` in npm@10.x's arborist on the global install code path.
-Dependabot tracks the `npm` version in `package.json` alongside the other tool pins.
+The NodeSource-bundled npm@10.x carries picomatch@4.0.3 (CVE-2026-33671) in its own internal
+bundle — not patchable via `package.json` overrides, which only apply to packages we install.
+npm@11.x was investigated but bundles `tinyglobby` which also carries picomatch@4.0.3. A
+targeted `.trivyignore` entry suppresses the CVE at `usr/lib/node_modules/npm/node_modules/picomatch/`
+with documented justification; see `.trivyignore` and the "targeted CVE suppression" section
+in `docs/pipeline-decisions.md`. The entry will be removed when NodeSource ships a Node.js
+version whose bundled npm no longer includes picomatch@4.0.3.
 
 ### filters/diagram.lua (pandoc-ext/diagram v1.2.0)
 Vendored Lua filter at `filters/diagram.lua`. Pinned to pandoc-ext/diagram v1.2.0. To upgrade:

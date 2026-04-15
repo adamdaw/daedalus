@@ -140,17 +140,8 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # overrides in package.json force picomatch to 4.0.4, patching CVE-2026-33671 in the
 # picomatch@4.0.3 transitive dependency pulled in by puppeteer.
 #
-# package.json also pins npm@11.x as a devDependency. NodeSource bundles npm@10.x with
-# Node.js 22; npm@10.x transitively includes picomatch@4.0.3 in its own internal tree.
-# npm@11.x's dependency chain (glob@13.x → minimatch@10.x → brace-expansion) no longer
-# includes picomatch. Installing npm@11.x via the local install step (rather than
-# 'npm install -g npm@11.x') avoids a MODULE_NOT_FOUND error in npm@10.x's arborist
-# when it tries to upgrade itself globally. After copying, the old npm directory is
-# removed and /usr/bin/npm and /usr/bin/npx are redirected to the new installation.
-#
 # Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
 # Reference — npm install: https://docs.npmjs.com/cli/v10/commands/npm-install
-# Reference — npm changelog: https://github.com/npm/cli/releases
 COPY package.json /tmp/npm-install/package.json
 RUN cd /tmp/npm-install \
     && npm install --no-fund --no-audit --include=dev \
@@ -159,10 +150,7 @@ RUN cd /tmp/npm-install \
          bin_name=$(basename "$bin_link"); \
          ln -sf "/usr/local/lib/node_modules/.bin/${bin_name}" "/usr/local/bin/${bin_name}"; \
        done \
-    && rm -rf /tmp/npm-install \
-    && rm -rf /usr/lib/node_modules/npm \
-    && ln -sf /usr/local/bin/npm /usr/bin/npm \
-    && ln -sf /usr/local/bin/npx /usr/bin/npx
+    && rm -rf /tmp/npm-install
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source
