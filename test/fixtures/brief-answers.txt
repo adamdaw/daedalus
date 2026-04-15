@@ -1,0 +1,307 @@
+# Fixture answers for scripts/gather-brief.sh
+# System: Task Tracker — assumes requirements.md is already populated
+# (gather-brief.sh detects requirements.md and skips requirements/constraints)
+# Each line is one stdin read() call in the script.
+# Blank lines represent pressing Enter (default / stop-loop).
+# Lines beginning with # are NOT part of the fixture — they are comments for humans.
+# To use: grep -v '^#' brief-answers.txt | gather-brief.sh
+
+# §01 System Overview (multiline, end with EOF)
+Task Tracker is a web application and REST API for personal task management.
+Users create and organise tasks with titles, descriptions, due dates, and tags.
+An email notification system sends reminders before deadlines. An admin console
+allows operators to manage users and monitor system health.
+EOF
+
+# §02 Conventions (requirements.md handles constraints)
+# Convention 1
+REST API endpoints follow the JSON:API specification for consistent request/response structure
+Reduces client implementation effort and enables generic tooling
+y
+# Convention 2
+All database migrations use Flyway with sequential versioning
+Ensures reproducible schema state across environments
+
+# §03 Context Diagram (Mermaid, end with EOF)
+flowchart TD
+    User([End User]) -->|HTTPS| WebApp[Task Tracker Web App]
+    Admin([System Admin]) -->|HTTPS| WebApp
+    WebApp -->|REST/JSON| API[Task Tracker API]
+    API -->|SMTP| Email[SendGrid Email Service]
+EOF
+
+# §03 External Actors — 2 then stop
+End User
+Registered individual managing their personal tasks
+Creates, updates, and completes tasks; receives email reminders
+y
+System Administrator
+Operations team member responsible for platform health
+Manages user accounts, monitors health metrics, performs incident response
+
+
+# §03 External Systems — 1 then stop
+SendGrid
+Third-party transactional email delivery service
+Task reminder notifications and password reset emails
+
+
+# §03 Out of Scope
+Mobile native apps, billing and subscription management, team collaboration features
+
+# §04 Technology Decisions — 3 then stop
+REST API with JSON over HTTPS
+Widely understood, strong client ecosystem, compatible with all target platforms
+Reliability, Security
+y
+PostgreSQL for persistent storage
+Organisational standard; strong ACID compliance, JSONB for flexible task metadata
+Reliability
+y
+JWT for stateless authentication
+Eliminates session store as a single point of failure; horizontally scalable
+Reliability, Security
+
+
+# §04 Architectural Approach (multiline, end with EOF)
+Three-tier web application: React single-page application, Node.js/Express REST API,
+PostgreSQL database. All tiers are containerised and deployed on AWS ECS Fargate.
+The architecture is deliberately simple — a monolith-first approach to minimise
+operational complexity at initial scale. The API is the sole integration point
+for both the web app and future clients.
+EOF
+
+# §04 How strategy achieves quality goals (multiline, end with EOF)
+Performance: stateless JWT auth eliminates session lookup latency; PostgreSQL connection
+pooling via PgBouncer keeps query times predictable.
+Reliability: ECS Fargate with health checks and auto-restart covers process failure;
+RDS Multi-AZ covers database failure.
+Security: TLS termination at the ALB; bcrypt password hashing; JWT with short expiry.
+EOF
+
+# §05 Container Diagram (Mermaid, end with EOF)
+flowchart TD
+    User([User]) -->|HTTPS| ALB[Application Load Balancer]
+    ALB --> WebApp[React Web App\nECS Fargate]
+    ALB --> API[Express REST API\nECS Fargate]
+    API --> DB[(PostgreSQL\nRDS Multi-AZ)]
+    API --> Email[SendGrid API]
+EOF
+
+# §05 Level 1 Containers — 3 then stop
+React Web App
+React + TypeScript, served from S3/CloudFront
+Delivers the browser-based user interface
+y
+Express REST API
+Node.js + Express, containerised on ECS Fargate
+Handles all business logic and data access
+y
+PostgreSQL Database
+AWS RDS Multi-AZ, PostgreSQL 16
+Persists users, tasks, tags, and notification state
+
+
+# §05 Level 2 Components — skip
+# (leave Container blank to skip)
+
+
+# §06 Key Scenarios — 2 then stop
+Create Task
+Demonstrates the primary user action and validates API → DB integration
+# Sequence diagram for Create Task (Mermaid, end with EOF)
+sequenceDiagram
+    actor User
+    participant WebApp as Web App
+    participant API as REST API
+    participant DB as PostgreSQL
+
+    User->>WebApp: Fill in task form and click Save
+    WebApp->>API: POST /tasks {title, description, dueDate}
+    API->>DB: INSERT INTO tasks ...
+    DB-->>API: task_id
+    API-->>WebApp: 201 Created {taskId, ...}
+    WebApp-->>User: Task appears in list
+EOF
+y
+API returns 503 when database is unavailable
+Validates graceful degradation and meaningful error responses to the client
+# Sequence diagram for 503 failure case (Mermaid, end with EOF)
+sequenceDiagram
+    actor User
+    participant WebApp as Web App
+    participant API as REST API
+    participant DB as PostgreSQL
+
+    User->>WebApp: Any action requiring data
+    WebApp->>API: Any authenticated request
+    API->>DB: Query attempt
+    DB-->>API: Connection refused
+    API-->>WebApp: 503 Service Unavailable {error: "Database unavailable"}
+    WebApp-->>User: Error banner: "Service temporarily unavailable. Please try again shortly."
+EOF
+
+
+# §07 Environments — 3 then stop
+Development
+Local development on developer machines
+Uses Docker Compose; SQLite replaces RDS; no email sending (console output only)
+y
+Staging
+Pre-production validation and UAT
+Full AWS stack at reduced scale (single-AZ RDS); uses SendGrid sandbox mode
+y
+Production
+Live system serving end users
+Full AWS stack; RDS Multi-AZ; real SendGrid sending; CloudWatch alerting enabled
+
+
+# §07 Infrastructure (multiline, end with EOF)
+AWS us-east-1. ECS Fargate for compute (no EC2 management). RDS PostgreSQL Multi-AZ
+for the database. Application Load Balancer for TLS termination and routing.
+S3 + CloudFront for the React SPA static assets. ECR for container images.
+Route 53 for DNS. ACM for TLS certificates.
+Infrastructure defined in Terraform, stored in the same monorepo under infra/.
+EOF
+
+# §07 Deployment Process (multiline, end with EOF)
+Trigger: merge to main branch.
+Pipeline: GitHub Actions — lint -> unit tests -> build Docker image -> push to ECR ->
+deploy to ECS Fargate (rolling update, 100% minimum healthy).
+Configuration: environment variables injected at runtime from AWS Secrets Manager
+(Twelve-Factor Factor III — config in the environment).
+Approval gate: none for staging; production deployment requires one manual approval
+in the GitHub Actions workflow.
+Rollback: ECS keeps the previous task definition; rollback is a one-command ECS
+update to the previous revision.
+EOF
+
+# §08 Security (multiline, end with EOF)
+Authentication: JWT Bearer tokens (15-minute access token + 7-day refresh token).
+Authorisation: ownership-based — users can only read/write their own tasks; admin
+role enforced via JWT claim checked on every admin endpoint.
+Data protection: bcrypt (cost factor 12) for passwords; TLS 1.3 in transit;
+RDS encryption at rest using AWS KMS.
+OWASP Top 10 mitigations: parameterised queries (A03 Injection); Content-Security-Policy
+header (A03 XSS); rate limiting on auth endpoints (A04 Insecure Design).
+EOF
+
+# §08 Observability (multiline, end with EOF)
+Logging: structured JSON logs (Twelve-Factor XI), shipped to CloudWatch Logs.
+Log levels: ERROR for exceptions, WARN for recoverable failures, INFO for business events.
+Metrics: CloudWatch custom metrics for API latency (p50/p95/p99), error rate,
+active users. Collected via the CloudWatch agent on ECS.
+Tracing: AWS X-Ray for distributed tracing on the API service.
+Alerting: CloudWatch Alarms — p95 latency >500ms, error rate >1%, RDS CPU >80%.
+PagerDuty integration for on-call escalation.
+EOF
+
+# §08 Error Handling (multiline, end with EOF)
+Errors returned as JSON {error: string, code: string} with appropriate HTTP status codes.
+Retries: exponential backoff with jitter for SendGrid calls (max 3 attempts).
+Circuit breaker: if SendGrid fails 3 consecutive times, email sending is disabled
+for 60 seconds and tasks are queued for retry.
+User-facing messages: generic "Something went wrong" for 5xx errors; specific
+validation messages for 4xx errors.
+EOF
+
+# §08 Domain Model (multiline, end with EOF)
+User: a registered account. Used by: API (auth, task ownership), Admin Console.
+Task: a unit of work with title, description, due date, status, and tags.
+  Core entity — used by all containers.
+Tag: a label that can be applied to multiple tasks for organisation.
+  Used by: API, Web App.
+Notification: a scheduled email reminder linked to a task's due date.
+  Used by: API, notification worker.
+EOF
+
+# §09 ADRs — 2 then stop
+Use JWT for stateless authentication
+# Context (multiline, end with EOF)
+We need user authentication. Options considered: server-side sessions (Redis),
+JWT tokens, OAuth2 with an external provider. The system has no existing session
+store and must be horizontally scalable without sticky sessions.
+EOF
+We will use JWT Bearer tokens with a 15-minute access token lifetime and
+7-day refresh tokens stored in httpOnly cookies.
+# Positive consequences (multiline, end with EOF)
+Stateless — any API instance can validate a token without shared state.
+No session store dependency — eliminates a component.
+EOF
+# Negative consequences (multiline, end with EOF)
+Tokens cannot be invalidated before expiry without a blocklist.
+Short access token lifetime means frequent refresh requests.
+EOF
+y
+Use PostgreSQL as the primary data store
+# Context (multiline, end with EOF)
+We need persistent storage for users, tasks, and related data. Options: PostgreSQL,
+MySQL, MongoDB, DynamoDB. The data is relational (users own tasks, tasks have tags).
+The organisation mandates a supported database with existing DBA expertise.
+EOF
+We will use PostgreSQL 16 on AWS RDS Multi-AZ as the sole persistent data store.
+# Positive consequences (multiline, end with EOF)
+Strong ACID compliance for task state transitions.
+JSONB support for flexible task metadata without schema changes.
+Organisational support and DBA expertise available.
+EOF
+# Negative consequences (multiline, end with EOF)
+Single database is a scalability ceiling at high write volumes.
+RDS Multi-AZ adds cost compared to single-instance.
+EOF
+
+
+# §10 Quality Tree — 3 then stop
+API Response Time
+QS-01
+High
+y
+System Availability
+QS-02
+High
+y
+Data Security
+QS-03
+High
+
+
+# §10 Quality Scenarios — 3 then stop
+QS-01
+API Response Time
+100 concurrent users submit authenticated API requests
+Normal load, production environment
+API processes each request and returns a response
+p95 response time <=300ms measured by k6 load test
+y
+QS-02
+System Availability
+Scheduled maintenance or unexpected process failure occurs
+Production environment, any time of day
+System recovers automatically without data loss
+99.5% uptime over any rolling 30-day window; RTO <=5 minutes
+y
+QS-03
+Data Security
+Unauthenticated request attempts to access another user's task
+Production environment, normal operation
+API rejects the request
+HTTP 401 or 403 returned; no task data disclosed; incident logged
+
+
+# §11 Risks — 2 then stop
+SendGrid service outage disrupts email notifications and password reset
+M
+H
+Queue email notifications locally; provide in-app notification as fallback; document manual password reset procedure for ops
+y
+PostgreSQL RDS failure causes full service outage
+L
+H
+RDS Multi-AZ provides automatic failover; RTO <=5 minutes; daily automated snapshots for RPO <=24 hours
+
+
+# §11 Technical Debt — 1 then stop
+No integration test suite — only unit tests exist at launch
+Prudent x Deliberate
+Add integration test suite covering the 5 highest-risk API endpoints in Q4 2026; tracked in backlog
+

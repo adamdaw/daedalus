@@ -1,0 +1,203 @@
+# Fixture answers for scripts/gather-requirements.sh
+# System: Task Tracker — a REST API + web app for personal task management
+# Each line is one stdin read() call in the script.
+# Blank lines represent pressing Enter (default / stop-loop).
+# Lines beginning with # are NOT part of the fixture — they are comments for humans.
+# To use: grep -v '^#' requirements-answers.txt | gather-requirements.sh
+
+# §01 Purpose and Scope
+Task Tracker
+A personal task management platform for creating, organising, and tracking tasks with deadlines and tags.
+REST API, web frontend, user authentication, task CRUD, email notifications, admin console
+Mobile native apps, billing and payment processing
+
+# §02 Stakeholders — 3 stakeholders then stop
+End User
+General public
+Create and manage tasks efficiently to stay organised
+High
+y
+System Administrator
+Operations team
+Monitor system health and manage user accounts
+Medium
+y
+Product Owner
+Management
+System meets business goals and is delivered on schedule
+High
+
+# §03 Business Requirements — 2 goals then stop
+Users can manage their tasks end-to-end from creation to completion
+Registered users have created, updated, and completed at least one task in their first session
+M
+y
+System is reliably available during working hours
+Less than 1 hour unplanned downtime per calendar month
+M
+
+# §04 Functional areas — 3 areas
+User Authentication
+
+# Stories for User Authentication — 3 then stop
+new user
+register with email and password
+access the system
+M
+y
+registered user
+log in with valid credentials
+view my task list
+M
+y
+registered user
+reset my password via a link sent to my email
+regain access if locked out
+S
+
+# More areas?
+y
+Task Management
+
+# Stories for Task Management — 3 then stop
+user
+create a task with a title, description, and due date
+track what I need to do
+M
+y
+user
+mark a task as complete
+record my progress
+M
+y
+user
+filter my tasks by status and due date
+focus on what needs attention next
+S
+
+# More areas?
+y
+Notifications
+
+# Stories for Notifications — 1 then stop
+user
+receive an email reminder 24 hours before a task is due
+avoid missing deadlines
+S
+
+# More areas?
+
+
+# §05 NFRs — 4 then stop
+Performance Efficiency
+API response time under normal load
+p95 response time <= 300ms under 100 concurrent users
+M
+y
+Reliability
+System availability
+99.5% uptime measured over a rolling 30-day window
+M
+y
+Security
+Data protection in transit and at rest
+All passwords hashed with bcrypt, all data in transit over TLS 1.3
+M
+y
+Usability
+Accessibility compliance
+WCAG 2.1 AA verified by automated axe-core scan on every release
+S
+
+
+# §06 Technical Constraints — 2 then stop
+Must deploy to AWS
+Existing AWS organisation account is the only approved cloud provider
+y
+Must use PostgreSQL for relational data
+Organisational standard database; existing DBA expertise
+
+
+# §06 Organisational Constraints — 2 then stop
+Must comply with GDPR
+EU users' personal data is in scope; DPO sign-off required
+y
+Initial release by Q3 2026
+Contractual commitment to early adopters
+
+
+# §07 Assumptions and Dependencies — 2 entries then stop
+Assumption
+SendGrid email API supports the webhook events required for delivery confirmation
+Email notification feature must be descoped if assumption is wrong
+y
+Dependency
+SendGrid transactional email API
+Transactional email for notifications and password reset; fallback is in-app notifications only
+
+
+# §08 Acceptance Criteria — 3 then stop
+FR-01
+User is on the registration page and has not previously registered
+User submits a valid email address and a password of at least 8 characters including one number
+Account is created and user receives a confirmation email within 60 seconds
+Test
+y
+FR-02
+User is on the login page with a confirmed account
+User submits valid credentials
+User is redirected to the task list within 2 seconds and a valid JWT session is active
+Test
+y
+NFR-01
+System is running under normal conditions with 100 concurrent authenticated users
+Any user submits an authenticated API request
+p95 response time is <=300ms as measured by a k6 load test
+Analysis
+
+
+# §09 RTM — 7 entries then stop
+FR-01
+User registration
+§1, §6
+y
+FR-02
+User login
+§1, §6
+y
+FR-03
+Password reset
+§1, §6
+y
+FR-04
+Create task
+§1, §5, §6
+y
+FR-05
+Complete task
+§1, §6
+y
+FR-06
+Filter tasks
+§1, §5, §6
+y
+FR-07
+Email reminders
+§1, §6, §7
+y
+NFR-01
+API performance
+§1, §10
+y
+NFR-02
+System availability
+§1, §10, §11
+y
+NFR-03
+Data security
+§1, §8, §10
+y
+NFR-04
+Accessibility
+§1, §10
+

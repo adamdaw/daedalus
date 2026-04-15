@@ -134,7 +134,9 @@ daedalus/
   docs/                 VSDD knowledge base (mem-1 through mem-4)
   prompts/              Agent prompt files for the VSDD workflow (00–05)
   templates/brief.md    Structured elicitation skeleton — copied into each new proposal by make init
-  .claude/commands/     Slash commands: gather-01 through gather-11 (one per arc42 section)
+  .claude/commands/     Slash commands: gather-01 through gather-11, req-01 through req-05
+  scripts/              Pipeline and elicitation scripts (bash + Python)
+  test/fixtures/        requirements-answers.txt, brief-answers.txt — CI fixture answers for Task Tracker
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
   SECURITY.md           Coordinated vulnerability disclosure policy
@@ -261,13 +263,30 @@ per ISO/IEC/IEEE 29148:2018. Run these before or alongside the `/gather-*` comma
 material (meeting notes, emails, briefs) and it produces a structured `requirements.md`,
 flagging gaps, contradictions, and untestable requirements.
 
-**Full workflow:**
+**Full workflow (AI path):**
 
 ```
 /req-* commands  ─┐
                    ├─→ requirements.md → (context for /gather-*) → brief.md → Prompt 01 → arc42
 Prompt 06 ─────────┘
 ```
+
+**Non-AI fallback (no Claude required):**
+
+```
+gather-requirements.sh ─┐
+                         ├─→ requirements.md → brief.md → assemble.sh → arc42 markdown → make build
+gather-brief.sh ─────────┘
+```
+
+| Script | Makefile target | Replaces |
+| --- | --- | --- |
+| `scripts/gather-requirements.sh` | `make gather-requirements` | Prompt 06 / `/req-*` commands |
+| `scripts/gather-brief.sh` | `make gather-brief` | `/gather-*` commands |
+| `scripts/assemble.sh` | `make assemble` | Prompt 01 |
+| `scripts/validate-artifacts.sh` | `make validate-artifacts` | Manual review |
+
+All scripts read from stdin — pipe fixture answers for CI: `grep -v '^#' test/fixtures/requirements-answers.txt | bash scripts/gather-requirements.sh`. The `test-elicitation` CI job in `build.yml` exercises the full non-AI path end-to-end using the Task Tracker fixtures in `test/fixtures/`.
 
 ---
 

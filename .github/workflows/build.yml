@@ -206,6 +206,76 @@ jobs:
           path: project.docx
           retention-days: 30
 
+  test-elicitation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - name: Make scripts executable
+        run: chmod +x scripts/gather-requirements.sh scripts/gather-brief.sh scripts/assemble.sh scripts/validate-artifacts.sh
+
+      - name: Run gather-requirements (non-AI fallback — Prompt 06 / /req-* commands)
+        # Strips comment lines (starting with #) from the fixture before piping to the script.
+        # The script reads each answer from stdin in the same order as its read() calls.
+        run: |
+          mkdir -p proposals/ci-elicitation-test/markdown
+          grep -v '^#' test/fixtures/requirements-answers.txt | \
+            bash scripts/gather-requirements.sh proposals/ci-elicitation-test/requirements.md
+
+      - name: Run gather-brief (non-AI fallback — /gather-* commands)
+        # Run from the proposal directory so gather-brief.sh detects requirements.md
+        # and skips re-gathering requirements and constraints.
+        working-directory: proposals/ci-elicitation-test
+        run: |
+          grep -v '^#' ../../test/fixtures/brief-answers.txt | \
+            bash ../../scripts/gather-brief.sh brief.md
+
+      - name: Validate elicitation artifacts
+        run: |
+          bash scripts/validate-artifacts.sh \
+            --requirements proposals/ci-elicitation-test/requirements.md \
+            --brief proposals/ci-elicitation-test/brief.md
+
+      - name: Assemble arc42 markdown (non-AI fallback — Prompt 01)
+        run: bash scripts/assemble.sh --proposal ci-elicitation-test
+
+      - name: Verify assembled output
+        # All 12 arc42 files must be present and non-empty.
+        # Section headings are verified to ensure the assembler wrote meaningful content.
+        run: |
+          outdir="proposals/ci-elicitation-test/markdown"
+          expected=(
+            "01_Introduction_and_Goals.md"
+            "02_Constraints.md"
+            "03_Context_and_Scope.md"
+            "04_Solution_Strategy.md"
+            "05_Building_Block_View.md"
+            "06_Runtime_View.md"
+            "07_Deployment_View.md"
+            "08_Crosscutting_Concepts.md"
+            "09_Architecture_Decisions.md"
+            "10_Quality_Requirements.md"
+            "11_Risks_and_Technical_Debt.md"
+            "99_References.md"
+          )
+          for f in "${expected[@]}"; do
+            test -s "${outdir}/${f}" || { echo "FAIL: ${f} missing or empty"; exit 1; }
+          done
+          grep -q "Introduction"    "${outdir}/01_Introduction_and_Goals.md" || { echo "FAIL: §01 missing heading"; exit 1; }
+          grep -q "Context"         "${outdir}/03_Context_and_Scope.md"       || { echo "FAIL: §03 missing heading"; exit 1; }
+          grep -q "Solution"        "${outdir}/04_Solution_Strategy.md"       || { echo "FAIL: §04 missing heading"; exit 1; }
+          grep -q "Building Block"  "${outdir}/05_Building_Block_View.md"     || { echo "FAIL: §05 missing heading"; exit 1; }
+          grep -q "Deployment"      "${outdir}/07_Deployment_View.md"         || { echo "FAIL: §07 missing heading"; exit 1; }
+          grep -q "Risks"           "${outdir}/11_Risks_and_Technical_Debt.md" || { echo "FAIL: §11 missing heading"; exit 1; }
+          echo "All 12 arc42 files present and valid."
+
   docker:
     runs-on: ubuntu-24.04
     timeout-minutes: 30

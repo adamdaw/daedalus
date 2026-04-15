@@ -59,7 +59,8 @@ DOCX_FLAGS = \
 
 .PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
         watch lint spellcheck wordcount validate validate-all archive init list open open-html \
-        new-section status build-all delete help version docker-build docker-run docker-pull-run
+        new-section status build-all delete help version docker-build docker-run docker-pull-run \
+        gather-requirements gather-brief assemble validate-artifacts test-elicitation
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -301,6 +302,49 @@ init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
 	@echo "  Add sections: make new-section TITLE='...' PROPOSAL=$(NAME)"
 	@echo "  Requirements: /req-01 through /req-05 (run from proposals/$(NAME)/)"
 	@echo "  Architecture: /gather-01 through /gather-11 (run from proposals/$(NAME)/)"
+
+gather-requirements: ## Elicit requirements interactively → requirements.md (non-AI fallback for /req-* and Prompt 06)
+	@if [ -n "$(PROPOSAL)" ]; then \
+		bash scripts/gather-requirements.sh proposals/$(PROPOSAL)/requirements.md; \
+	else \
+		bash scripts/gather-requirements.sh; \
+	fi
+
+gather-brief: ## Elicit architecture brief interactively → brief.md (non-AI fallback for /gather-*)
+	@if [ -n "$(PROPOSAL)" ]; then \
+		cd proposals/$(PROPOSAL) && bash ../../scripts/gather-brief.sh brief.md; \
+	else \
+		bash scripts/gather-brief.sh; \
+	fi
+
+assemble: ## Assemble arc42 markdown from elicitation artifacts (non-AI fallback for Prompt 01)
+	bash scripts/assemble.sh $(if $(PROPOSAL),--proposal $(PROPOSAL))
+
+validate-artifacts: ## Validate structure of requirements.md and brief.md
+	@if [ -n "$(PROPOSAL)" ]; then \
+		bash scripts/validate-artifacts.sh \
+			--requirements proposals/$(PROPOSAL)/requirements.md \
+			--brief proposals/$(PROPOSAL)/brief.md; \
+	else \
+		bash scripts/validate-artifacts.sh; \
+	fi
+
+test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI required)
+	@echo "=== Elicitation pipeline test ==="
+	@mkdir -p proposals/ci-elicitation-test/markdown
+	grep -v '^#' test/fixtures/requirements-answers.txt | \
+		bash scripts/gather-requirements.sh proposals/ci-elicitation-test/requirements.md
+	cd proposals/ci-elicitation-test && \
+		grep -v '^#' ../../test/fixtures/brief-answers.txt | \
+		bash ../../scripts/gather-brief.sh brief.md
+	bash scripts/validate-artifacts.sh \
+		--requirements proposals/ci-elicitation-test/requirements.md \
+		--brief proposals/ci-elicitation-test/brief.md
+	bash scripts/assemble.sh --proposal ci-elicitation-test
+	@ls proposals/ci-elicitation-test/markdown/*.md | wc -l | \
+		xargs -I{} sh -c 'test {} -ge 12 || { echo "FAIL: expected 12 files, got {}"; exit 1; }'
+	@rm -rf proposals/ci-elicitation-test
+	@echo "=== Test passed ==="
 
 help: ## Show available targets
 	@echo "Usage: make [target] [PROPOSAL=name] [options]"
