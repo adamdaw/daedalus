@@ -30,3 +30,8 @@ indent_size = 2
 [*.json]
 indent_style = space
 indent_size = 2
+
+# PEP 8 — https://peps.python.org/pep-0008/#indentation
+[*.py]
+indent_style = space
+indent_size = 4

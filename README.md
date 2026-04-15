@@ -32,12 +32,14 @@ implementation decision is documented with its rationale and authoritative refer
 | **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) trigger `release.yml` |
 | **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
 | **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 binary download verification (pandoc, pandoc-crossref) in Dockerfile and CI |
-| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, least-privilege permissions |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, Trivy scanning, least-privilege permissions |
+| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA Level 2 provenance attestation on every published Docker image |
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors and IDEs (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates: linting, spellcheck, Conventional Commits |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting targets via `##` comments |
 | **PEP 668** | [peps.python.org/pep-0668](https://peps.python.org/pep-0668/) | Python tools installed in an isolated venv, not system Python |
 | **CommonMark** | [spec.commonmark.org](https://spec.commonmark.org/0.31.2/) | Trailing whitespace preserved in `.md` files (hard line break spec §2.2) |
+| **GitHub community health** | [docs.github.com — community health](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions) | `CONTRIBUTING.md`, `SECURITY.md` |
 
 ---
 
@@ -53,12 +55,13 @@ implementation decision is documented with its rationale and authoritative refer
 | `mermaid-filter` 1.4.7 | Diagram rendering | `npm install -g mermaid-filter@1.4.7` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
 | `markdownlint-cli` 0.44.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.44.0` |
-| `codespell` 2.3.0 | Spell checking (optional) | `pip install codespell==2.3.0` |
+| `codespell` | Spell checking (optional) | `pip install --constraint requirements-dev.txt codespell` |
 
 pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:
 
 ```bash
-wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
+curl -fsSL -o pandoc-crossref-Linux.tar.xz \
+  https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
 tar -xf pandoc-crossref-Linux.tar.xz
 sudo mv pandoc-crossref /usr/local/bin/
 ```
@@ -133,11 +136,13 @@ Install [pre-commit](https://pre-commit.com/) and run:
 
 ```bash
 pre-commit install
-pre-commit install --hook-type commit-msg
 ```
 
+`default_install_hook_types: [pre-commit, commit-msg]` is declared in `.pre-commit-config.yaml`,
+so a single `pre-commit install` installs both hook types — no extra flags needed.
+
 This enforces quality gates automatically on every commit:
-- **File hygiene** — trailing whitespace, end-of-file newlines, valid YAML/JSON, no merge conflict markers
+- **File hygiene** — trailing whitespace, end-of-file newlines, valid YAML/JSON/JSONC, no merge conflict markers
 - **Markdown linting** — markdownlint on content files
 - **Spell checking** — codespell on content files
 - **Conventional Commits** — commit message format validated on every commit (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
@@ -252,6 +257,7 @@ daedalus/
   images/               # Root example images
   templates/            # Skeleton copied into each new proposal by make init
   proposals/            # Your proposals (generated output is gitignored)
+  scripts/              # Pre-commit helper scripts (validate-jsonc.py)
   .devcontainer/        # VS Code devcontainer config
   .github/workflows/    # CI/CD pipelines
 ```
@@ -464,7 +470,8 @@ export PUPPETEER_EXECUTABLE_PATH=$(which chromium || which google-chrome)
 Download the binary matching your pandoc version and place it on `$PATH`:
 
 ```bash
-wget https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
+curl -fsSL -o pandoc-crossref-Linux.tar.xz \
+  https://github.com/lierdakil/pandoc-crossref/releases/download/v0.3.17.1/pandoc-crossref-Linux.tar.xz
 tar -xf pandoc-crossref-Linux.tar.xz
 sudo mv pandoc-crossref /usr/local/bin/
 ```

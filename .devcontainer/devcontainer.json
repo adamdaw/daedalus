@@ -11,14 +11,32 @@
       "extensions": [
         "yzhang.markdown-all-in-one",
         "davidanson.vscode-markdownlint",
-        "bierner.markdown-mermaid"
+        "bierner.markdown-mermaid",
+        // EditorConfig for VS Code — applies .editorconfig rules in the editor.
+        // Ensures trim_trailing_whitespace = false for *.md is honoured by the editor,
+        // consistent with the project .editorconfig and CommonMark spec §2.2 (hard line breaks).
+        // Reference: https://editorconfig.org/
+        "editorconfig.editorconfig"
       ],
       "settings": {
         "editor.wordWrap": "on",
         "editor.rulers": [100],
-        "files.trimTrailingWhitespace": true
+        // Trim trailing whitespace globally — except in Markdown.
+        // CommonMark spec §2.2 defines two or more trailing spaces as a hard line break (<br>).
+        // The [markdown] language override below preserves intentional trailing whitespace in .md files.
+        // Reference: https://spec.commonmark.org/0.31.2/#hard-line-breaks
+        "files.trimTrailingWhitespace": true,
+        "[markdown]": {
+          "files.trimTrailingWhitespace": false
+        }
       }
     }
   },
-  "postCreateCommand": "pip install pre-commit==4.5.1 && pre-commit install && make check && echo 'Daedalus environment ready.'"
+  // PEP 668 compliance: Ubuntu 24.04 marks the system Python as externally managed.
+  // pip install without a virtualenv would fail. The same venv pattern used in the Dockerfile
+  // is applied here: create an isolated environment, install, symlink for global access.
+  // pre-commit install (no flags) installs both hook types because default_install_hook_types:
+  // [pre-commit, commit-msg] is declared in .pre-commit-config.yaml.
+  // Reference: https://peps.python.org/pep-0668/ | https://pre-commit.com/index.html#pre-commit-install
+  "postCreateCommand": "python3 -m venv /opt/pre-commit && /opt/pre-commit/bin/pip install --no-cache-dir --constraint requirements-dev.txt pre-commit && ln -sf /opt/pre-commit/bin/pre-commit /usr/local/bin/pre-commit && pre-commit install && make check && echo 'Daedalus environment ready.'"
 }

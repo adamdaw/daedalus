@@ -111,10 +111,18 @@ jobs:
           echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g mermaid-filter@1.4.7 markdownlint-cli@0.44.0
+        run: npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.44.0
 
       - name: Install Python tools
-        run: pip install codespell==2.3.0
+        # GitHub Actions runners execute as a non-root user; pip installs to ~/.local (user
+        # site-packages) and does not trigger PEP 668's externally-managed-environment guard.
+        # venv is required in Docker (root user) and the devcontainer; not needed here.
+        # --constraint uses requirements-dev.txt as a version pin, not an install list —
+        # only codespell is installed; pre-commit (also in requirements-dev.txt) is not
+        # installed in CI because it is a developer workflow tool, not a build tool.
+        # Reference: pip constraints files — https://pip.pypa.io/en/stable/user_guide/#constraints-files
+        # Reference: PEP 668 — https://peps.python.org/pep-0668/
+        run: pip install --constraint requirements-dev.txt codespell
 
       - name: Lint markdown
         run: make lint
@@ -193,6 +201,11 @@ jobs:
     permissions:
       contents: read
       packages: write
+      # id-token: write and attestations: write are required for SLSA build provenance.
+      # SLSA Level 2 attestation links the built image to the exact source commit and workflow run.
+      # Reference: https://slsa.dev | https://github.com/actions/attest-build-provenance
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -211,6 +224,15 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
 
+      - name: Capture OCI label metadata
+        # Captures the current UTC timestamp and commit SHA for OCI image labels.
+        # BUILD_DATE and VCS_REF populate org.opencontainers.image.created and .revision,
+        # providing full build provenance in the image manifest.
+        # OCI Image Spec annotations — https://github.com/opencontainers/image-spec/blob/main/annotations.md
+        id: oci-meta
+        run: |
+          echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
       - name: Build Docker image
         uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
         with:
@@ -221,6 +243,9 @@ jobs:
             daedalus:latest
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ github.sha }}
+          build-args: |
+            BUILD_DATE=${{ steps.oci-meta.outputs.date }}
+            VCS_REF=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -256,10 +281,53 @@ jobs:
 
           echo "All Docker validation checks passed."
 
+      - name: Scan Docker image for vulnerabilities (Trivy)
+        # Trivy scans the built image for known CVEs before it is pushed to the registry.
+        # exit-code: 1 fails CI on CRITICAL or HIGH unfixed vulnerabilities — ensuring no
+        # known high-severity vulnerabilities ship in the published image.
+        # ignore-unfixed: true suppresses CVEs with no available fix (no actionable remediation).
+        # OpenSSF Scorecard "Vulnerabilities" check — https://securityscorecards.dev
+        # Reference: https://github.com/aquasecurity/trivy-action
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: daedalus:latest
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
       - name: Push to GHCR
         if: github.event_name != 'pull_request'
+        id: push
         run: |
           docker push ghcr.io/${{ github.repository }}:latest
           docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          # Capture the registry-assigned digest for the SLSA provenance attestation below.
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' \
+            "ghcr.io/${{ github.repository }}:${{ github.sha }}" | cut -d@ -f2)
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "Pushed ghcr.io/${{ github.repository }}:latest"
           echo "Pushed ghcr.io/${{ github.repository }}:${{ github.sha }}"
+
+      - name: Generate SLSA provenance attestation
+        # Attaches a signed SLSA Level 2 provenance statement to the image in GHCR.
+        # The attestation links the published image digest back to the specific source
+        # commit and GitHub Actions workflow run, enabling consumers to verify build integrity.
+        # Reference: https://slsa.dev | https://github.com/actions/attest-build-provenance
+        if: github.event_name != 'pull_request'
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
+
+      - name: Push versioned Docker tag (on version tags)
+        # When a vN.N.N tag is pushed, publish a human-readable version tag alongside the
+        # immutable SHA-based tag. Consumers can pin to ghcr.io/owner/repo:v1.2.3 for
+        # reproducible builds without tracking the full commit SHA.
+        if: github.event_name != 'pull_request' && github.ref_type == 'tag'
+        run: |
+          docker tag "ghcr.io/${{ github.repository }}:${{ github.sha }}" \
+                     "ghcr.io/${{ github.repository }}:${{ github.ref_name }}"
+          docker push "ghcr.io/${{ github.repository }}:${{ github.ref_name }}"
+          echo "Pushed ghcr.io/${{ github.repository }}:${{ github.ref_name }}"

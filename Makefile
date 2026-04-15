@@ -214,7 +214,7 @@ lint: ## Run markdownlint on content files
 	markdownlint $(MARKDOWN)
 
 spellcheck: ## Run codespell on content files
-	@command -v codespell >/dev/null 2>&1 || { echo "Error: codespell not found. Run: pip install codespell==2.3.0"; exit 1; }
+	@command -v codespell >/dev/null 2>&1 || { echo "Error: codespell not found. Run: pip install --constraint requirements-dev.txt codespell"; exit 1; }
 	codespell $(PROPOSAL_DIR)/markdown/
 
 validate: lint spellcheck ## Run lint + spellcheck without building
@@ -328,7 +328,10 @@ version: ## Print installed versions of all build tools
 	@echo "python:          $$(python3 --version 2>/dev/null || echo 'NOT FOUND')"
 
 docker-build: ## Build the Docker image locally
-	docker build -t daedalus .
+	docker build \
+		--build-arg BUILD_DATE=$(shell date -u +%Y-%m-%dT%H:%M:%SZ) \
+		--build-arg VCS_REF=$(shell git rev-parse HEAD 2>/dev/null || echo unknown) \
+		-t daedalus .
 
 docker-run: docker-build ## Run the build inside the locally-built Docker image (optional: TARGET=all TARGET=validate)
 	docker run --rm -v "$(CURDIR):/workspace" \

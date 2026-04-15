@@ -62,23 +62,33 @@ must point to a real browser binary. Two sandbox contexts to handle:
   at it before any build step. See the "Configure puppeteer no-sandbox" step in each workflow.
 
 ### mermaid-filter@1.4.7
-Pinned in `package.json`, Dockerfile, and all three CI workflows. `package.json` is the
-source of truth — dependabot opens PRs when a new version is available; update the npm
-install commands in Dockerfile and CI to match when accepting.
+Pinned in `package.json`, Dockerfile, all three CI workflows, README.md (dependency
+table + Troubleshooting section), and CONTRIBUTING.md (dependency table). `package.json`
+is the source of truth — dependabot opens PRs when a new version is available; update the
+npm install commands in Dockerfile, CI, README.md, and CONTRIBUTING.md to match when accepting.
 
 ### markdownlint-cli@0.44.0
-Pinned across four places — update all together: `package.json` (source of truth),
-`.pre-commit-config.yaml`, CI npm install commands, and Dockerfile. Dependabot opens PRs
-against `package.json`; when accepting, update the other three to match.
+Pinned across six places — update all together: `package.json` (source of truth),
+`.pre-commit-config.yaml`, CI npm install commands, Dockerfile, README.md (dependency
+table + Troubleshooting section), and CONTRIBUTING.md (dependency table). Dependabot opens
+PRs against `package.json`; when accepting, update the other five to match.
 
 ### codespell 2.3.0
-Pinned to match `.pre-commit-config.yaml`. Update both together. The CI pip install and
-Dockerfile both pin this version.
+`requirements-dev.txt` is the sole source of truth. Accepting a Dependabot PR to
+`requirements-dev.txt` is the **only** update required — no other files need editing:
+- Dockerfile: `COPY requirements-dev.txt` + `--constraint ... codespell` (automatic)
+- CI workflows: `pip install --constraint requirements-dev.txt codespell` (automatic)
+- `.pre-commit-config.yaml`: `language: system` hook — calls the installed binary, no `rev:` to sync
+- README.md and CONTRIBUTING.md: install command uses `--constraint` (version-agnostic); no hardcoded version present
 
-### American English
-codespell uses American English by default. Use "fulfillment" not "fulfilment",
-"coordinates" not "co-ordinates". The `.codespellrc` skips `project.tex` and `project.css`
-to avoid false positives from LaTeX/CSS keywords.
+### British English
+Write all prose in British English. codespell's default dictionaries (`clear`, `rare`) focus
+on unambiguous typos; the optional `en-GB_to_en-US` dictionary (which flags British spellings
+as American English errors) is not enabled. British spellings (`organisation`, `colour`,
+`analyse`, `licence`, `fulfil`, etc.) pass through unchecked by default. The `.codespellrc`
+skips `project.tex` and `project.css` to avoid false positives from LaTeX/CSS keywords. If
+a domain term is incorrectly flagged, add it to `.codespellrc` as `ignore-words-list = term`.
+Reference: codespell builtin dictionaries — https://github.com/codespell-project/codespell#usage
 
 ### GitHub Actions — SHA pinning
 All Actions are pinned to commit SHAs (not mutable tags). Dependabot opens weekly PRs to
@@ -103,9 +113,17 @@ daedalus/
   docs/                 VSDD knowledge base (mem-1 through mem-4)
   prompts/              Agent prompt files for the VSDD workflow
   CLAUDE.md             This file
-  .github/workflows/    build.yml, proposals.yml, release.yml
-  .github/dependabot.yml  Weekly Actions + Docker + npm version bump PRs
+  CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
+  SECURITY.md           Coordinated vulnerability disclosure policy
+  requirements-dev.txt  Python tool pins (source of truth for codespell — tracked by Dependabot)
+  .github/workflows/    build.yml, proposals.yml, release.yml, codeql.yml
+  .github/dependabot.yml  Weekly Actions + Docker + npm + pip version bump PRs
+  .github/CODEOWNERS    Auto-assigns @adamdaw as reviewer on all PRs
+  .github/ISSUE_TEMPLATE/  bug_report.md, feature_request.md
+  .github/pull_request_template.md
+  .devcontainer/devcontainer.json  VS Code Dev Container (builds from Dockerfile)
   package.json            Node.js tool version pins (source of truth for mermaid-filter, markdownlint-cli)
+  scripts/                  Pre-commit helper scripts (validate-jsonc.py)
   .pre-commit-config.yaml
   .markdownlint.yaml
   .codespellrc
@@ -120,9 +138,10 @@ daedalus/
 
 | Workflow | Trigger | What it does |
 | --- | --- | --- |
-| `build.yml` | Every push / PR / `workflow_dispatch` | lint → spellcheck → build PDF+HTML → validate → upload artifacts; Docker job builds, validates, and pushes to GHCR |
+| `build.yml` | Every push / PR / `workflow_dispatch` | lint → spellcheck → build PDF+HTML+DOCX → validate → upload artifacts; Docker job builds, validates, Trivy scans, pushes to GHCR with SLSA provenance; version tag push also publishes `:vN.N.N` Docker tag |
 | `proposals.yml` | Push to `proposals/**` / `workflow_dispatch` | Detects changed proposals (or uses manual input); builds + validates each in matrix; arc42 heading checks |
 | `release.yml` | Push of `v*` tag | lint → spellcheck → build PDF+HTML+DOCX → **validate all three** → attach to GitHub Release |
+| `codeql.yml` | Every push / PR / weekly cron | CodeQL static analysis on GitHub Actions YAML for script injection; `continue-on-error` for SARIF upload (requires GHAS) |
 
 PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading grep
 (Introduction, Context, Solution Strategy, Building Block, Deployment, Risks, References).
@@ -167,12 +186,14 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) trigger `release.yml` |
 | **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
 | **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 verification of pandoc and pandoc-crossref downloads |
-| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, least-privilege permissions |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, Trivy scanning, least-privilege permissions |
+| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA Level 2 provenance attestation on published Docker images |
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates on commit (pre-commit + commit-msg hooks) |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting `##` targets |
 | **PEP 668** | [peps.python.org/pep-0668](https://peps.python.org/pep-0668/) | Python tools installed in isolated venv, not `--break-system-packages` |
 | **CommonMark** | [spec.commonmark.org](https://spec.commonmark.org/0.31.2/) | Trailing whitespace preserved in `.md` files (hard line break §2.2) |
+| **GitHub community health** | [docs.github.com — community health](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions) | `CONTRIBUTING.md`, `SECURITY.md` |
 
 Every significant pipeline decision is documented with its rationale and authoritative reference in
 [`docs/pipeline-decisions.md`](../docs/pipeline-decisions.md).
@@ -221,10 +242,26 @@ See `docs/mem-4-process-lessons.md` for the full lesson log. Quick reference:
   versions together with `make check`
 - Chrome `--no-sandbox` required in Docker (root user) and on Ubuntu 24.04+ CI runners
   (AppArmor restriction); see the Chrome/Puppeteer constraint above for both patterns
-- apt cache key tied to workflow file hash — bust it by touching the workflow file
+- apt cache key uses a static version suffix (`apt-ubuntu-24.04-texlive-v1`), shared across
+  all three workflows; increment the suffix when adding or changing apt packages. (Historical
+  note: an earlier approach keyed on the workflow file hash, causing unnecessary cache misses
+  on unrelated workflow edits — avoid that pattern.)
 - npm cache key is version-based (`npm-mermaid-filter-X.Y.Z-markdownlint-X.Y.Z`); when
   bumping tool versions, the old cache is automatically abandoned and a fresh one built
 - `git diff --name-only HEAD~1 HEAD` in `proposals.yml` can miss changes in merge commits;
   acceptable for this use case
 - `build.yml`, `proposals.yml`, and `release.yml` share the same npm cache key — all three
   hit the same cache; a version bump in any one invalidates the cache for all three
+- devcontainer `pip install pre-commit` fails on Ubuntu 24.04 (PEP 668 externally managed
+  Python); use `python3 -m venv /opt/pre-commit` + symlink pattern, same as Dockerfile
+- devcontainer `files.trimTrailingWhitespace: true` must have a `[markdown]` language
+  override set to `false`; otherwise VS Code silently destroys CommonMark hard line breaks
+- `devcontainer.json` is JSONC (JSON with Comments per the Dev Container spec) — exclude it
+  from `check-json` in `.pre-commit-config.yaml`; strict JSON parsing rejects `//` comments;
+  use the `check-jsonc` local hook (`scripts/validate-jsonc.py`) to validate JSONC with
+  comment stripping rather than skipping validation entirely
+- README.md contains hardcoded tool versions (mermaid-filter, markdownlint-cli, pandoc,
+  pandoc-crossref) that Dependabot does not update automatically — update README alongside
+  `package.json` when accepting npm Dependabot PRs (see Critical Constraints above)
+- `pip install -r requirements-dev.txt` installs every listed package; use `--constraint`
+  when an environment only needs a subset — prevents build-tool pollution in the wrong context

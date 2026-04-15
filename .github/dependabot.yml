@@ -20,3 +20,13 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
+
+  # pip ecosystem tracks requirements-dev.txt (codespell).
+  # Completes the supply-chain coverage alongside github-actions, docker, and npm.
+  # Reference: https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"

@@ -110,15 +110,23 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 RUN npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.44.0
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
+# COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source
+# of truth rather than a hardcoded string in this file.
+# --constraint uses requirements-dev.txt as a version constraint file, not an install list:
+# only the explicitly named package (codespell) is installed. pre-commit is also listed in
+# requirements-dev.txt but is a developer workflow tool with no place in the build image;
+# --constraint installs it if named, ignores it otherwise.
 # Ubuntu 24.04 marks the system Python as 'externally managed'; --break-system-packages
 # bypasses this guard and can corrupt the OS Python environment. The correct approach
 # per PEP 668 is an isolated virtual environment, with the binary symlinked for global access.
 # --no-cache-dir: prevents pip from storing the package cache in the image layer.
-# Reference — https://peps.python.org/pep-0668/
+# Reference — PEP 668: https://peps.python.org/pep-0668/
+# Reference — pip constraints files: https://pip.pypa.io/en/stable/user_guide/#constraints-files
+COPY requirements-dev.txt /tmp/requirements-dev.txt
 RUN apt-get update && apt-get install -y --no-install-recommends python3-venv \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/codespell \
-    && /opt/codespell/bin/pip install --no-cache-dir codespell==2.3.0 \
+    && /opt/codespell/bin/pip install --no-cache-dir --constraint /tmp/requirements-dev.txt codespell \
     && ln -s /opt/codespell/bin/codespell /usr/local/bin/codespell
 
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the flag is always

@@ -1,0 +1,17 @@
+# requirements-dev.txt — Python development tool version pins.
+# Source of truth for all environments; Dependabot (pip ecosystem) opens weekly PRs.
+#
+# This file is used as a pip constraints file (--constraint), not an install list (-r).
+# Each environment installs only the tool it needs, version-pinned to this file:
+#
+#   Dockerfile:    pip install --constraint ... codespell    (build image, not pre-commit)
+#   CI workflows:  pip install --constraint ... codespell    (CI, not pre-commit)
+#   devcontainer:  pip install --constraint ... pre-commit   (dev tool, codespell from image)
+#   contributors:  pip install --constraint ... pre-commit   (venv; codespell installed separately)
+#
+# A single Dependabot PR bumping a version here propagates to all environments automatically.
+#
+# Reference: pip constraints files — https://pip.pypa.io/en/stable/user_guide/#constraints-files
+# Reference: Dependabot pip ecosystem — https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem
+codespell==2.3.0
+pre-commit==4.5.1

@@ -12,7 +12,7 @@
 make build  PROPOSAL=<name>   # → proposals/<name>/project.pdf
 make html   PROPOSAL=<name>   # → proposals/<name>/project.html
 make docx   PROPOSAL=<name>   # → proposals/<name>/project.docx
-make all    PROPOSAL=<name>   # PDF + HTML
+make all    PROPOSAL=<name>   # PDF + HTML + DOCX
 
 # Quality checks
 make validate PROPOSAL=<name> # lint + spellcheck
@@ -168,12 +168,14 @@ These checks run in `build.yml`, `proposals.yml`, and `release.yml`.
 
 ## Spell Check Reference
 
-codespell uses American English. Common gotchas:
-- `fulfillment` not `fulfilment`
-- `coordinates` not `co-ordinates`
-- `organisation` is flagged — use `organization`
-- `licence` is flagged — use `license`
-- Acronyms (JWT, ECS, SQS, ADR) are not flagged
+Use British English throughout. codespell's default dictionaries (`clear`, `rare`) focus on
+unambiguous typos; the `en-GB_to_en-US` dictionary is not enabled, so British spellings
+(`organisation`, `colour`, `analyse`, `licence`, `fulfil`, etc.) are not flagged.
 
-If a domain term is flagged incorrectly, add it to `.codespellrc` as
-`--ignore-words-list=term1,term2`.
+Acronyms (JWT, ECS, SQS, ADR) are not flagged.
+
+If a domain term is incorrectly flagged, add it to `.codespellrc` as:
+
+```ini
+ignore-words-list = term1,term2
+```

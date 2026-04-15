@@ -103,10 +103,18 @@ jobs:
           echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g mermaid-filter@1.4.7 markdownlint-cli@0.44.0
+        run: npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.44.0
 
       - name: Install Python tools
-        run: pip install codespell==2.3.0
+        # GitHub Actions runners execute as a non-root user; pip installs to ~/.local (user
+        # site-packages) and does not trigger PEP 668's externally-managed-environment guard.
+        # venv is required in Docker (root user) and the devcontainer; not needed here.
+        # --constraint uses requirements-dev.txt as a version pin, not an install list —
+        # only codespell is installed; pre-commit (also in requirements-dev.txt) is not
+        # installed in CI because it is a developer workflow tool, not a build tool.
+        # Reference: pip constraints files — https://pip.pypa.io/en/stable/user_guide/#constraints-files
+        # Reference: PEP 668 — https://peps.python.org/pep-0668/
+        run: pip install --constraint requirements-dev.txt codespell
 
       - name: Lint markdown
         run: make lint

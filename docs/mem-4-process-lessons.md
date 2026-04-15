@@ -83,31 +83,40 @@ instead (`colorlinks: true`, `geometry:`, etc.).
 
 ---
 
-### PL-06 — apt cache key tied to workflow file hash
+### PL-06 — apt cache key: use a static version suffix, not a workflow file hash
 
 **Date:** 2026-04  
 **Source:** daedalus CI
 
-The apt package cache is keyed on `${{ hashFiles('.github/workflows/build.yml') }}`.
-Changing the workflow file content busts the apt cache, which is useful when adding
-new apt packages but can cause unnecessary cache misses for unrelated workflow changes.
-The `release.yml` apt cache is keyed separately — both can diverge if one workflow is
-updated without the other.
+**Anti-pattern:** Keying the apt cache on `${{ hashFiles('.github/workflows/build.yml') }}`
+caused two problems: (1) any unrelated workflow edit busted the apt cache unnecessarily,
+adding ~3 minutes to CI; (2) if `build.yml` and `release.yml` used separate keys, they
+could diverge silently after an edit to one.
+
+**Current approach:** all three workflows use the same static key `apt-ubuntu-24.04-texlive-v1`.
+The cache persists across all workflow runs unless you explicitly increment the suffix.
+Increment the suffix (e.g., to `-v2`) when adding or changing apt packages; the old cache
+is then cleanly abandoned and rebuilt.
 
 ---
 
-### PL-07 — markdownlint-cli and codespell must be pinned consistently
+### PL-07 — markdownlint-cli and codespell version management differ
 
 **Date:** 2026-04  
 **Source:** daedalus CI + pre-commit
 
-Both tools appear in three places: `.pre-commit-config.yaml` (pre-commit hooks),
-the Dockerfile, and the CI workflow `npm install` / `pip install` steps. All three must
-use the same version. Current pinned versions:
-- markdownlint-cli: 0.44.0
-- codespell: 2.3.0
+The two linting tools use different version management strategies:
 
-When upgrading, update all three locations atomically.
+**markdownlint-cli** — `package.json` is the source of truth (Dependabot npm ecosystem).
+Four places must match: `package.json`, `.pre-commit-config.yaml` (`rev:`), Dockerfile
+(`npm install -g`), and all three CI workflows (`npm install -g`). When accepting a
+Dependabot PR to `package.json`, update the other three locations manually.
+
+**codespell** — `requirements-dev.txt` is the sole source of truth (Dependabot pip ecosystem).
+One place to update: `requirements-dev.txt`. Dockerfile consumes it via `--constraint`
+(automatic), CI workflows consume it via `--constraint` (automatic), and `.pre-commit-config.yaml`
+uses `language: system` with no `rev:` to sync. A single Dependabot PR to
+`requirements-dev.txt` updates all environments automatically — no manual follow-up needed.
 
 ---
 
@@ -124,21 +133,25 @@ dependabot without SHA pins means no protection.
 
 ---
 
-### PL-10 — Ubuntu 24.04 enforces PEP 668; pip3 install requires --break-system-packages
+### PL-10 — Ubuntu 24.04 enforces PEP 668; correct fix is a venv, not --break-system-packages
 
 **Date:** 2026-04
 **Source:** daedalus Dockerfile, Dependabot docker bump PR
 
 Ubuntu 24.04 ships pip 24.x which enforces PEP 668 (externally-managed-environment).
-`pip3 install <package>` fails with "externally managed environment" unless
-`--break-system-packages` is passed.
+`pip install <package>` fails with "externally managed environment" in root contexts
+(Dockerfile, devcontainer). `--break-system-packages` bypasses the guard but can corrupt
+the OS Python environment — it is not the correct fix.
 
-**Fix:** Always pass `--break-system-packages` in the Dockerfile (repo is pinned to Ubuntu 24.04):
+**Fix:** Create an isolated virtual environment per PEP 668's intent:
 ```dockerfile
-pip3 install --break-system-packages codespell==2.3.0
+RUN python3 -m venv /opt/codespell \
+    && /opt/codespell/bin/pip install --no-cache-dir --constraint /tmp/requirements-dev.txt codespell \
+    && ln -s /opt/codespell/bin/codespell /usr/local/bin/codespell
 ```
-GitHub Actions runners configure pip to allow installs without this flag, so CI workflow
-steps (`pip install codespell==2.3.0`) do not need it.
+The symlink provides global `codespell` access without polluting the system Python.
+GitHub Actions runners execute as a non-root user; pip installs to `~/.local` (user
+site-packages) and does not trigger the PEP 668 guard — venv is not required in CI.
 
 ---
 
@@ -183,19 +196,20 @@ someone tries `make init` on a Mac and gets a cryptic error.
 
 ## Documentation Authoring Lessons
 
-### DL-01 — British English is flagged by codespell
+### DL-01 — British English is supported; do not add `en-GB_to_en-US` to builtins
 
 **Date:** 2026-04  
-**Source:** daedalus arc42 example
+**Source:** daedalus arc42 example; updated 2026-04 after codespell dictionary audit
 
-codespell defaults to American English. Common British spellings that fail:
-- `fulfilment` → `fulfillment`
-- `co-ordinates` → `coordinates`
-- `organisation` → `organization`
-- `licence` → `license`
+Write all prose in British English. codespell's default dictionaries (`clear`, `rare`) focus
+on unambiguous typos and do not include British→American corrections. The optional
+`en-GB_to_en-US` builtin would flag British spellings as errors — do not add it.
 
-Write all prose in American English. Do not add British variants to `.codespellrc` unless
-the project explicitly uses British English for all content.
+The `-ise`/`-our` spellings, `organisation`, `licence`, etc. do not need to be added to
+`.codespellrc`; they are not in the default dictionaries. If a specific domain term is
+incorrectly flagged, add it as `ignore-words-list = term`.
+
+**Reference:** codespell builtin dictionaries — https://github.com/codespell-project/codespell
 
 ---
 

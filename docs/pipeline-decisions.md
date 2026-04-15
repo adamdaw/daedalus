@@ -111,7 +111,11 @@ outside the build). `--no-cache-dir` prevents the cache from entering the image.
 
 `--no-fund` suppresses the funding messages that appear in npm output. `--no-audit` suppresses
 the audit report. Both are addressed through Dependabot version-update PRs, not the Docker
-build. Suppressing them keeps build logs clean.
+build or CI run. Suppressing them keeps build logs clean and free of noise that is not
+actionable in an automated context. All three CI workflows use the same flags for consistency
+with the Dockerfile.
+
+**Reference:** npm install flags — https://docs.npmjs.com/cli/v10/commands/npm-install
 
 ### Chrome `--no-sandbox` wrapper
 
@@ -354,12 +358,13 @@ last pushed.
 
 **Reference:** https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/about-dependabot-version-updates
 
-### Three ecosystems: `github-actions`, `docker`, `npm`
+### Four ecosystems: `github-actions`, `docker`, `npm`, `pip`
 
-All three are potential supply chain attack vectors:
+All four are potential supply chain attack vectors:
 - `github-actions`: mutable tags on third-party Actions
 - `docker`: Ubuntu base image security patches
 - `npm`: mermaid-filter and markdownlint-cli vulnerability patches
+- `pip`: codespell vulnerability patches and compatibility updates
 
 **Reference:** OpenSSF Scorecard "Dependency-Update-Tool" — https://securityscorecards.dev
 
@@ -389,11 +394,58 @@ single `pre-commit install` installs both without extra flags.
 
 **Reference:** https://pre-commit.com/index.html#pre-commit-install
 
-### Hook versions pinned to match CI and Dockerfile
+### markdownlint-cli `rev:` pinned to match `package.json`
 
-`rev: v0.44.0` for markdownlint-cli, `rev: v2.3.0` for codespell match the versions in
-`package.json`, `.pre-commit-config.yaml`, CI workflows, and Dockerfile. Different versions
-between pre-commit and CI would allow commits that pass locally to fail in CI.
+`rev: v0.44.0` for markdownlint-cli matches the version in `package.json` (the Dependabot
+source of truth), CI npm install steps, and the Dockerfile. Different versions between the
+pre-commit hook and CI would allow commits that pass locally to fail in CI.
+
+### codespell: `language: system` instead of a repo-pinned `rev:`
+
+codespell does not use a `repo:` entry with a `rev:` field. Instead it uses a local
+`language: system` hook that calls whatever `codespell` binary is on the `PATH`.
+
+**Why `language: system`:** codespell is version-pinned in `requirements-dev.txt`, which is
+already consumed directly by the Dockerfile (`pip install --constraint ... codespell`) and
+all three CI workflows (`pip install --constraint requirements-dev.txt codespell`). A `rev:`
+in `.pre-commit-config.yaml` would be a fourth version string to update manually every time
+Dependabot opens a PR — exactly the synchronisation problem `requirements-dev.txt` was
+introduced to solve. With `language: system`, a single Dependabot PR to `requirements-dev.txt`
+updates all four environments (Dockerfile, CI ×3, and the pre-commit hook) without any
+additional edits.
+
+**Prerequisite:** codespell must be installed before `pre-commit run` is called. This is
+guaranteed in all execution contexts:
+- Devcontainer: `postCreateCommand` runs `pip install --constraint requirements-dev.txt codespell` — but codespell is actually already present from the Docker image layer; the `language: system` hook calls `/usr/local/bin/codespell` which is symlinked by the Dockerfile
+- CI: `pip install --constraint requirements-dev.txt codespell` runs before any lint/spellcheck step
+- Local: `CONTRIBUTING.md` setup instructions install codespell via `pip install --constraint requirements-dev.txt codespell`
+
+**Tradeoff:** unlike repo-based hooks, `language: system` does not auto-install the tool
+if it is missing; the hook fails with "command not found" instead. This is acceptable
+because all supported execution paths guarantee the install.
+
+**Reference:** pre-commit `language: system` — https://pre-commit.com/index.html#creating-new-hooks
+
+### `check-json` excludes `devcontainer.json`; `check-jsonc` validates it instead
+
+`devcontainer.json` is intentionally JSONC (JSON with Comments) — the Dev Container
+specification explicitly uses JSONC to allow inline documentation. The `check-json` hook
+from `pre-commit/pre-commit-hooks` uses Python's `json.loads()`, which is a strict JSON
+parser and rejects comments. Without the exclusion, `pre-commit run` fails on every commit.
+
+Simply excluding the file and performing no validation would be the common shortcut. Instead,
+the project adds a `check-jsonc` local hook (`scripts/validate-jsonc.py`) that strips `//`
+comments via a string-context-aware state machine and then validates with `json.loads()`. The
+state machine tracks whether the current position is inside a JSON string, so `//` inside a
+value (e.g. `"https://example.com"`) is preserved correctly and not treated as a comment.
+
+This preserves the intent of `check-json` (catching JSON syntax errors before they are
+committed) while correctly handling the JSONC subset used in `devcontainer.json`.
+
+The `check-json` exclusion is scoped precisely to `^\.devcontainer/devcontainer\.json$`. All
+other `.json` files (e.g., `package.json`) remain subject to strict JSON validation.
+
+**Reference:** Dev Container specification — https://containers.dev/implementors/json_reference/
 
 ### `files:` pattern restricts to content Markdown
 
@@ -527,6 +579,271 @@ generated document content as out of scope.
 
 ---
 
+## Dev Container (`.devcontainer/devcontainer.json`)
+
+**Reference:** VS Code Dev Containers — https://code.visualstudio.com/docs/devcontainers/containers
+
+### Builds from the project Dockerfile
+
+The dev container uses `"build": { "dockerfile": "../Dockerfile" }` rather than a pre-built
+base image. This ensures the dev environment is byte-for-byte identical to the Docker CI
+environment — same tool versions, same paths, same Chrome binary.
+
+### `"remoteUser": "root"`
+
+The Dockerfile's Chrome `--no-sandbox` wrapper is installed for root because that is the
+expected runtime user in Docker. If `remoteUser` were set to a non-root user, the sandbox
+restriction would trigger and Mermaid diagram rendering would fail.
+
+### PEP 668-compliant pre-commit install in `postCreateCommand`
+
+Ubuntu 24.04 marks the system Python as externally managed. `pip install` without a
+virtualenv fails with `externally-managed-environment`. The same venv pattern used in the
+Dockerfile is applied here: `python3 -m venv /opt/pre-commit`, install into the venv,
+symlink the binary for global access. This avoids `--break-system-packages`.
+
+**Reference:** PEP 668 — https://peps.python.org/pep-0668/
+
+### `pre-commit install` — single command installs both hook types
+
+`pre-commit install` alone only installs the `pre-commit` hook type by default. The
+`commit-msg` type is required for the Conventional Commits enforcement hook.
+
+This is solved at the config level with `default_install_hook_types: [pre-commit, commit-msg]`
+in `.pre-commit-config.yaml` (see the Pre-commit section). With that declaration in place, a
+bare `pre-commit install` — with no `--hook-type` flags — installs both types. The
+`postCreateCommand` uses this minimal form.
+
+**Reference:** https://pre-commit.com/index.html#pre-commit-install
+
+### `files.trimTrailingWhitespace` override for Markdown
+
+The global VS Code setting `files.trimTrailingWhitespace: true` is correct for most file
+types. However, the CommonMark specification defines two or more trailing spaces on a line
+as a hard line break (`<br>`). The `[markdown]` language-specific override sets
+`files.trimTrailingWhitespace: false` for `.md` files to prevent the editor from silently
+destroying intentional line breaks. This mirrors the `.editorconfig` `trim_trailing_whitespace = false`
+rule for `*.md` files.
+
+**Reference:** CommonMark spec §2.2 — https://spec.commonmark.org/0.31.2/#hard-line-breaks
+
+### EditorConfig extension recommended
+
+The `editorconfig.editorconfig` VS Code extension reads `.editorconfig` and applies rules
+in the editor — including the `trim_trailing_whitespace = false` override for `*.md`. Without
+the extension, VS Code ignores `.editorconfig` and the global trim setting would win.
+
+**Reference:** EditorConfig for VS Code — https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig
+
+---
+
+## OCI Build Metadata (`BUILD_DATE` and `VCS_REF`)
+
+**Reference:** OCI Image Spec annotations — https://github.com/opencontainers/image-spec/blob/main/annotations.md
+
+### `org.opencontainers.image.created` and `org.opencontainers.image.revision`
+
+The OCI Image Specification defines standard labels for documenting when and from what
+source a container image was built. `created` is a RFC 3339 timestamp (UTC); `revision`
+is the source VCS commit identifier. These fields are consumed by:
+- Container registries (GHCR, Docker Hub) — displayed in the image detail view
+- Vulnerability scanners (Trivy, Grype) — used to correlate age-related CVEs
+- Supply chain tooling — used alongside SLSA attestations to verify provenance
+
+### ARG, not ENV
+
+`BUILD_DATE` and `VCS_REF` are passed as `ARG`, not baked as `ENV`. ARG values are
+available during the build but do not persist in the final image environment. This prevents
+the timestamp from appearing in `docker run` environment output and avoids breaking the
+Docker layer cache on every build (a `FROM` with an `ENV BUILD_DATE=...` would invalidate
+the entire cache on every run).
+
+### CI: separate "Capture OCI label metadata" step
+
+`github.sha` is available as a context variable in all CI steps. The build timestamp is
+not — GitHub Actions has no built-in expression for the current UTC time. A dedicated
+shell step runs `date -u +%Y-%m-%dT%H:%M:%SZ` and writes the result to `$GITHUB_OUTPUT`,
+making it available to the subsequent `docker/build-push-action` step via
+`${{ steps.oci-meta.outputs.date }}`.
+
+### Makefile: `$(shell ...)` for local builds
+
+For local `make docker-build`, `$(shell date -u ...)` and `$(shell git rev-parse HEAD ...)`
+are evaluated at recipe time by Make's shell function, producing the timestamp and commit
+SHA at the moment of the build.
+
+---
+
+## Python Tool Version Management (`requirements-dev.txt`)
+
+**Reference:** pip requirements format — https://pip.pypa.io/en/stable/reference/requirements-file-format/  
+**Reference:** Dependabot pip ecosystem — https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file#package-ecosystem
+
+### `requirements-dev.txt` as source of truth for codespell and pre-commit
+
+`requirements-dev.txt` pins two Python tools: `codespell` (CI build tool) and `pre-commit`
+(developer workflow tool). Dependabot's `pip` ecosystem entry opens weekly PRs against this
+single file. A Dependabot PR requires zero manual follow-up edits anywhere.
+
+### `--constraint` instead of `-r` (install list)
+
+pip's `-r` flag installs every package listed in the file. pip's `--constraint` flag uses
+the file purely as a version pin — only the packages explicitly named on the command line
+are installed, constrained to the versions in the file. This means each environment installs
+only the tool it actually needs:
+
+| Environment | Command | Installs |
+| --- | --- | --- |
+| Dockerfile | `pip install --constraint ... codespell` | codespell only (pre-commit has no place in the build image) |
+| CI (×3) | `pip install --constraint ... codespell` | codespell only (pre-commit is a dev workflow tool, not a build tool) |
+| devcontainer | `pip install --constraint ... pre-commit` | pre-commit only (codespell is already in the image from the Dockerfile layer) |
+| contributor local | `pip install --constraint ... pre-commit` | pre-commit only (codespell installed separately per CONTRIBUTING.md) |
+
+Using `-r` instead would silently install the wrong tool in each environment: the Dockerfile
+would ship pre-commit in the build image; the devcontainer would redundantly install a second
+copy of codespell alongside the one already symlinked from the Dockerfile layer.
+
+**Reference:** pip constraints files — https://pip.pypa.io/en/stable/user_guide/#constraints-files
+
+### CI uses `--constraint`, not an inline version string
+
+All three CI workflows use `pip install --constraint requirements-dev.txt codespell` rather
+than `pip install codespell==X.Y.Z`. When Dependabot bumps codespell in `requirements-dev.txt`,
+the CI workflows pick up the new version automatically — no additional edits required.
+Only codespell is installed; pre-commit (also in `requirements-dev.txt`) is not installed
+in CI because it is a developer workflow tool, not a build tool.
+
+### Why CI doesn't need venv (PEP 668)
+
+GitHub Actions ubuntu-24.04 runners execute as a non-root user (`runner`). `pip install`
+without `sudo` installs to `~/.local/lib/python3.x/site-packages/` (user site-packages),
+which is not the system-managed Python environment and does not trigger PEP 668's
+`externally-managed-environment` guard. venv is required in the Dockerfile (root user
+writing to system Python paths) and the devcontainer (same root context); it is unnecessary
+overhead in the non-root CI runner environment.
+
+**Reference:** PEP 668 — https://peps.python.org/pep-0668/
+
+---
+
+## Docker Vulnerability Scanning (Trivy)
+
+**Reference:** aquasecurity/trivy-action — https://github.com/aquasecurity/trivy-action  
+**Reference:** OpenSSF Scorecard "Vulnerabilities" check — https://securityscorecards.dev
+
+### Trivy scans before GHCR push
+
+The `build.yml` docker job scans the locally built image with Trivy before pushing it to
+GHCR. This ensures no image with known CRITICAL or HIGH unfixed CVEs is published to the
+registry — consumers pulling `:latest` always get a scanned image.
+
+### `exit-code: 1` on CRITICAL/HIGH unfixed
+
+`exit-code: '1'` fails the workflow if any unfixed CRITICAL or HIGH CVE is found.
+`ignore-unfixed: true` suppresses CVEs that have no available fix in the package manager
+(no actionable remediation exists). Together these settings block publishable vulnerabilities
+while avoiding alert fatigue from issues that cannot be resolved by upgrading packages.
+
+### OpenSSF Scorecard signal
+
+The OpenSSF Scorecard "Vulnerabilities" check awards points when a project uses a
+vulnerability scanner (e.g., Trivy, Grype, Snyk) on its container images. Adding Trivy to
+the Docker publish step satisfies this check.
+
+---
+
+## SLSA Build Provenance
+
+**Reference:** SLSA (Supply-chain Levels for Software Artifacts) — https://slsa.dev  
+**Reference:** actions/attest-build-provenance — https://github.com/actions/attest-build-provenance
+
+### What it provides
+
+After pushing the Docker image to GHCR, `actions/attest-build-provenance` generates and
+signs a SLSA Level 2 provenance statement and attaches it to the image in the registry as
+an OCI referrer. The attestation records:
+- The exact image digest (sha256:...)
+- The GitHub repository, ref, and commit SHA
+- The Actions workflow run ID and trigger event
+
+Consumers can verify the attestation with `gh attestation verify` to confirm the image was
+built from the expected source commit by the expected workflow, not by an outside party.
+
+### Permissions required
+
+SLSA attestation signing requires two additional GitHub Actions permissions on the docker job:
+- `id-token: write` — allows the job to request an OIDC token for Sigstore signing
+- `attestations: write` — allows the job to write the attestation to the GitHub Packages OCI registry
+
+These are not granted by the workflow-level `permissions: {}` default; they are declared
+explicitly on the docker job following the least-privilege pattern.
+
+### Image digest captured from push output
+
+The attestation requires the exact registry digest (assigned by GHCR at push time, not
+predictable before push). The push step captures it via
+`docker inspect --format='{{index .RepoDigests 0}}'` and writes it to `$GITHUB_OUTPUT`
+for consumption by the attestation step.
+
+---
+
+## Versioned Docker Tags
+
+### `:vN.N.N` tag on version tag push
+
+When a `v*` tag triggers `build.yml`, the docker job pushes an additional tag:
+`ghcr.io/owner/repo:v1.2.3`. This gives consumers a human-readable, stable version pin
+alongside the immutable commit-SHA tag. The versioned tag is derived from `github.ref_name`
+(the pushed tag name) and applied to the same image digest as `:${{ github.sha }}`.
+
+The step uses `github.ref_type == 'tag'` to distinguish tag pushes from branch pushes,
+so only version releases receive a versioned Docker tag.
+
+---
+
+## CONTRIBUTING.md
+
+**Reference:** GitHub community health files — https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file
+
+### Standard community health file
+
+`CONTRIBUTING.md` is a GitHub community health file. GitHub surfaces it automatically on
+the new issue form, new PR form, and the repository's Insights → Community Standards page.
+Its presence contributes to the OpenSSF Scorecard "Contributors" and "Maintained" checks.
+
+The file documents:
+- All three dev environment options (devcontainer, Docker, local)
+- Tool version pins and where to find them
+- Quality check commands
+- PEP 668-compliant pre-commit setup instructions
+- Conventional Commits format and examples
+- PR submission process and review expectations
+- Release tagging process
+
+---
+
+## Issue and PR Templates
+
+**Reference:** GitHub issue templates — https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/about-issue-and-pull-request-templates
+
+### `.github/ISSUE_TEMPLATE/` — structured issue forms
+
+`bug_report.md` and `feature_request.md` define the structure for new issues. Structured
+templates produce consistently useful reports (environment, steps to reproduce, expected vs
+actual behaviour) and reduce back-and-forth asking for clarifying information.
+
+Pre-filling the title with `fix: ` or `feat: ` nudges reporters toward Conventional Commits
+format for the eventual commit that closes the issue.
+
+### `.github/pull_request_template.md` — PR checklist
+
+A PR template surfaces the test checklist on every new pull request, reducing the chance
+of a PR being merged without the author having run validation locally. It also reminds
+contributors to link related issues (`Closes #NNN`) and notes the Conventional Commits
+commit message requirement.
+
+---
+
 ## codespell (`.codespellrc`)
 
 **Reference:** https://github.com/codespell-project/codespell#configuration
@@ -538,3 +855,29 @@ generated document content as out of scope.
 - BibTeX (`.bib`) contains author names and journal abbreviations that are not prose
 - Generated LaTeX (`project.tex`) and CSS (`project.css`) contain keywords and identifiers
   that trigger hundreds of false positives
+
+The `skip` list in `.codespellrc` applies when codespell scans a directory (e.g. `make
+spellcheck` passes `markdown/` as a directory argument). The pre-commit `codespell` hook
+does not duplicate `--skip` in its `args:` — pre-commit's default `pass_filenames: true`
+passes individual matched filenames, not directories, so skip glob patterns in args would
+have no effect. The `files:` pattern in the hook already restricts input to `.md` content
+files.
+
+**Reference:** pre-commit `pass_filenames` — https://pre-commit.com/index.html#creating-new-hooks
+
+### British English: `en-GB_to_en-US` not added to `--builtin`
+
+The project writes prose in British English. codespell's default builtins are `clear` and
+`rare`, which focus on unambiguous typos. The optional `en-GB_to_en-US` builtin explicitly
+flags British spellings as errors and suggests American English replacements — it is
+deliberately not added.
+
+If a domain term is incorrectly flagged by the default dictionaries, add it inline:
+
+```ini
+[codespell]
+ignore-words-list = term1,term2
+```
+
+**Reference:** codespell builtin dictionaries — https://github.com/codespell-project/codespell#usage  
+**Reference:** jj-vcs/jj@93368f1 — example of a project that explicitly enables `en-GB_to_en-US` to enforce American English

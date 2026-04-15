@@ -1,5 +1,5 @@
 # pre-commit hook configuration — https://pre-commit.com/
-# Install: pre-commit install && pre-commit install --hook-type commit-msg
+# Install: pre-commit install  (default_install_hook_types installs both pre-commit and commit-msg)
 # Run manually: pre-commit run --all-files
 #
 # Hook types:
@@ -19,6 +19,11 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
       - id: check-json
+        # devcontainer.json is JSONC (JSON with Comments), which is not valid strict JSON.
+        # The devcontainer specification explicitly uses JSONC to allow inline documentation.
+        # Strict JSON validation would reject it — exclude it and validate with check-jsonc below.
+        # Reference: Dev Container spec — https://containers.dev/implementors/json_reference/
+        exclude: "^\\.devcontainer/devcontainer\\.json$"
       - id: check-merge-conflict
 
   # Markdown linting — https://github.com/igorshubovych/markdownlint-cli
@@ -30,12 +35,48 @@ repos:
         files: "(markdown|proposals/.+/markdown)/.*\\.md$"
 
   # Spell checking — https://github.com/codespell-project/codespell
-  - repo: https://github.com/codespell-project/codespell
-    rev: v2.3.0
+  # Uses language: system (local hook) rather than a repo-pinned rev:.
+  #
+  # Rationale: codespell is version-pinned in requirements-dev.txt, which is the
+  # Dependabot-tracked source of truth. The Dockerfile (COPY requirements-dev.txt) and
+  # all three CI workflows (pip install --constraint requirements-dev.txt codespell) consume it directly.
+  # A repo: hook with rev: v2.3.0 would create a fourth version string to keep in sync
+  # manually every time Dependabot opens a PR — exactly the problem requirements-dev.txt
+  # was introduced to solve.
+  #
+  # With language: system, the hook calls whatever codespell binary is on the PATH,
+  # which is always the version from requirements-dev.txt. A single Dependabot PR to
+  # requirements-dev.txt is the only update needed across all environments.
+  #
+  # Prerequisite: codespell must be installed before running pre-commit.
+  # This is guaranteed by the devcontainer postCreateCommand and CONTRIBUTING.md setup.
+  # Reference: pre-commit language: system — https://pre-commit.com/index.html#creating-new-hooks
+  - repo: local
     hooks:
       - id: codespell
-        args: ["--skip=*.bib,*.pdf,*.html,project.tex,project.css"]
+        name: codespell
+        language: system
+        entry: codespell
+        # No --skip args: pre-commit passes individual matched filenames (pass_filenames: true
+        # by default), not directories. The files: pattern restricts input to .md content files;
+        # skip patterns in args would have no effect. All codespell configuration is read from
+        # .codespellrc. The skip list there applies when codespell scans directories (e.g. make
+        # spellcheck); it is not needed here.
+        # Reference: pre-commit pass_filenames — https://pre-commit.com/index.html#creating-new-hooks
         files: "(markdown|proposals/.+/markdown)/.*\\.md$"
+
+      - id: check-jsonc
+        # Validates JSONC files (JSON with Comments) excluded from check-json above.
+        # scripts/validate-jsonc.py strips // comments using a string-context-aware state
+        # machine — so // inside a JSON string value (e.g. "https://example.com") is
+        # preserved correctly — then validates the result with Python's json.loads().
+        # language: system uses the Python already installed in every execution context
+        # (devcontainer image layer, CI runner, contributor local venv).
+        # Reference: Dev Container spec — https://containers.dev/implementors/json_reference/
+        name: check-jsonc (devcontainer.json)
+        language: system
+        entry: python3 scripts/validate-jsonc.py
+        files: "^\\.devcontainer/devcontainer\\.json$"
 
   # Conventional Commits enforcement — https://www.conventionalcommits.org
   # Allowed types: feat, fix, build, chore, ci, docs, perf, refactor, revert, style, test
