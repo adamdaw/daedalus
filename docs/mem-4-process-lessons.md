@@ -131,16 +131,14 @@ dependabot without SHA pins means no protection.
 
 Ubuntu 24.04 ships pip 24.x which enforces PEP 668 (externally-managed-environment).
 `pip3 install <package>` fails with "externally managed environment" unless
-`--break-system-packages` is passed. Ubuntu 22.04 ships pip 22.0.2, which does not
-recognise that flag and would error if it is present.
+`--break-system-packages` is passed.
 
-**Fix:** Use a fallback pattern in the Dockerfile:
+**Fix:** Always pass `--break-system-packages` in the Dockerfile (repo is pinned to Ubuntu 24.04):
 ```dockerfile
-pip3 install --break-system-packages codespell==2.3.0 2>/dev/null \
-|| pip3 install codespell==2.3.0
+pip3 install --break-system-packages codespell==2.3.0
 ```
-Tries with the flag (works on 24.04), falls back without it (works on 22.04).
-If both fail, the layer fails as expected.
+GitHub Actions runners configure pip to allow installs without this flag, so CI workflow
+steps (`pip install codespell==2.3.0`) do not need it.
 
 ---
 

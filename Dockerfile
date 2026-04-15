@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ARG PANDOC_VERSION=3.1.13
@@ -54,13 +54,10 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 RUN npm install -g mermaid-filter markdownlint-cli@0.44.0
 
 # Install Python tools
-# Ubuntu 24.04+ (pip 23+) enforces PEP 668 and requires --break-system-packages for
-# global installs. Ubuntu 22.04 (pip 22) does not recognise that flag. The fallback
-# pattern handles both: try with the flag first (24.04), fall back without it (22.04).
+# Ubuntu 24.04 enforces PEP 668; --break-system-packages is required for global installs.
 RUN apt-get update && apt-get install -y --no-install-recommends python3-pip \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 install --break-system-packages codespell==2.3.0 2>/dev/null \
-    || pip3 install codespell==2.3.0
+    && pip3 install --break-system-packages codespell==2.3.0
 
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the
 # flag is always present regardless of how puppeteer invokes it.

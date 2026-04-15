@@ -13,7 +13,7 @@ produces a professional PDF, HTML, and optionally DOCX — with cover page, TOC,
 headers, Mermaid diagrams, cross-references, and bibliography.
 
 **Stack:** Pandoc 3.1.13 → XeLaTeX (PDF) / HTML5 / DOCX. Filters: pandoc-crossref 0.3.17.1,
-mermaid-filter (npm). CI: GitHub Actions. Container: Docker (Ubuntu 22.04). Linting:
+mermaid-filter (npm). CI: GitHub Actions. Container: Docker (Ubuntu 24.04). Linting:
 markdownlint-cli 0.44.0 + codespell 2.3.0.
 
 **VSDD role:** Daedalus produces the spec artifact layer in a VSDD workflow. The arc42
@@ -90,7 +90,7 @@ daedalus/
   project.css           HTML stylesheet (light + dark mode, print)
   project.bib           Root example bibliography
   draft.tex             Draft watermark (loaded with DRAFT=1)
-  Dockerfile            Ubuntu 22.04 build environment
+  Dockerfile            Ubuntu 24.04 build environment
   docs/                 VSDD knowledge base (mem-1 through mem-4)
   prompts/              Agent prompt files for the VSDD workflow
   CLAUDE.md             This file
