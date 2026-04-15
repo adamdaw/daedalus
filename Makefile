@@ -1,3 +1,7 @@
+# Default target: show help rather than running a build on bare 'make'.
+# GNU Make .DEFAULT_GOAL — https://www.gnu.org/software/make/manual/make.html#index-.DEFAULT_005fGOAL
+.DEFAULT_GOAL := help
+
 PANDOC_VERSION   := 3.1.13
 CROSSREF_VERSION := 0.3.17.1
 

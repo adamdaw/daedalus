@@ -1,0 +1,23 @@
+# markdownlint configuration
+# Rules reference: https://github.com/DavidAnson/markdownlint/blob/main/doc/Rules.md
+# Spec:           https://github.com/igorshubovych/markdownlint-cli
+
+# Enable all rules by default; selectively disable below.
+default: true
+
+# MD013 — Line length: disabled. Arc42 prose sections contain long descriptive
+# lines that are not meaningfully shortened by wrapping.
+MD013: false
+
+# MD024 — Multiple headings with the same content: disabled. Arc42 section
+# templates reuse heading names (e.g. "Overview") across different sections.
+MD024: false
+
+# MD033 — Inline HTML: disabled. Mermaid diagram code fences and Pandoc raw
+# HTML attributes require inline HTML in content files.
+MD033: false
+
+# MD041 — First line must be a top-level heading: disabled. Arc42 section files
+# begin with a level-1 heading, but config.yaml and bib files that markdownlint
+# may encounter via glob do not.
+MD041: false

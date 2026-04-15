@@ -1,14 +1,46 @@
+# pre-commit hook configuration — https://pre-commit.com/
+# Install: pre-commit install && pre-commit install --hook-type commit-msg
+# Run manually: pre-commit run --all-files
+#
+# Hook types:
+#   pre-commit  — runs before every commit (linting, formatting checks)
+#   commit-msg  — runs on the commit message (Conventional Commits enforcement)
+
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
+  # Standard file hygiene — https://github.com/pre-commit/pre-commit-hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+        # Markdown trailing spaces are meaningful (hard line break); exclude .md files.
+        exclude: ".*\\.md$"
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+
+  # Markdown linting — https://github.com/igorshubovych/markdownlint-cli
   - repo: https://github.com/igorshubovych/markdownlint-cli
     rev: v0.44.0
     hooks:
       - id: markdownlint
-        args: ["--config", ".markdownlint.json"]
+        args: ["--config", ".markdownlint.yaml"]
         files: "(markdown|proposals/.+/markdown)/.*\\.md$"
 
+  # Spell checking — https://github.com/codespell-project/codespell
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
       - id: codespell
         args: ["--skip=*.bib,*.pdf,*.html,project.tex,project.css"]
         files: "(markdown|proposals/.+/markdown)/.*\\.md$"
+
+  # Conventional Commits enforcement — https://www.conventionalcommits.org
+  # Allowed types: feat, fix, build, chore, ci, docs, perf, refactor, revert, style, test
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.4.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]

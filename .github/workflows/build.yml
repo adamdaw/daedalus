@@ -14,7 +14,10 @@ permissions: {}
 
 env:
   PANDOC_VERSION: 3.1.13
+  # SHA-256 digests for supply-chain integrity — re-compute when upgrading versions
+  PANDOC_SHA: b51029afd2e302679aabb9464cd96bda378145d48bb853bd32d93c57b93a293d
   CROSSREF_VERSION: 0.3.17.1
+  CROSSREF_SHA: 52a21ef8945e664e7ccfea5f40268db3e3ddee4e7ce1f47f24716fea37c2410e
 
 jobs:
   build:
@@ -40,6 +43,7 @@ jobs:
 
       - name: Install pandoc
         run: |
+          echo "${{ env.PANDOC_SHA }}  pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb" | sha256sum -c -
           sudo dpkg -i "pandoc-${{ env.PANDOC_VERSION }}-1-amd64.deb"
           pandoc --version
 
@@ -57,6 +61,7 @@ jobs:
 
       - name: Install pandoc-crossref
         run: |
+          echo "${{ env.CROSSREF_SHA }}  pandoc-crossref-Linux.tar.xz" | sha256sum -c -
           tar -xf "pandoc-crossref-Linux.tar.xz"
           sudo mv pandoc-crossref /usr/local/bin/
           pandoc-crossref --version
@@ -91,6 +96,8 @@ jobs:
         run: |
           echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
           echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
+          echo "PUPPETEER_EXECUTABLE_PATH=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
+          echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> $GITHUB_ENV
 
       - name: Install Node.js tools
         run: npm install -g mermaid-filter@1.4.7 markdownlint-cli@0.44.0
@@ -106,21 +113,12 @@ jobs:
 
       - name: Build PDF
         run: make build
-        env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
       - name: Build HTML
         run: make html
-        env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
       - name: Build DOCX
         run: make docx
-        env:
-          PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: "true"
-          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
 
       - name: Validate PDF
         run: |

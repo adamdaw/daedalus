@@ -10,8 +10,10 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 
 ## Standards & Practices
 
-Daedalus is grounded in recognised industry standards throughout — in the document template,
-the diagram notation, the decision record format, the quality model, and the CI/CD pipeline:
+Daedalus follows recognised industry standards throughout — in the document template, the diagram notation,
+the decision record format, the quality model, and across the entire build pipeline:
+
+### Document & Architecture
 
 | Standard | Reference | Applied in |
 |---|---|---|
@@ -19,9 +21,19 @@ the diagram notation, the decision record format, the quality model, and the CI/
 | **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
 | **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
 | **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios |
-| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format (`feat:`, `fix:`, `chore:`, `docs:`) |
-| **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) |
-| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | CI/CD: SHA-pinned actions, Dependabot, CodeQL, branch protection |
+
+### Pipeline & Tooling
+
+| Standard | Reference | Applied in |
+|---|---|---|
+| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format (`feat:`, `fix:`, `chore:`, `docs:`); enforced by pre-commit |
+| **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) trigger `release.yml` |
+| **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
+| **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 binary download verification (pandoc, pandoc-crossref) in Dockerfile and CI |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, least-privilege permissions |
+| **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors and IDEs (`.editorconfig`) |
+| **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates: linting, spellcheck, Conventional Commits |
+| **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting targets via `##` comments |
 
 ---
 
@@ -117,9 +129,14 @@ Install [pre-commit](https://pre-commit.com/) and run:
 
 ```bash
 pre-commit install
+pre-commit install --hook-type commit-msg
 ```
 
-This runs markdownlint and codespell automatically before every commit.
+This enforces quality gates automatically on every commit:
+- **File hygiene** — trailing whitespace, end-of-file newlines, valid YAML/JSON, no merge conflict markers
+- **Markdown linting** — markdownlint on content files
+- **Spell checking** — codespell on content files
+- **Conventional Commits** — commit message format validated on every commit (`feat:`, `fix:`, `chore:`, `docs:`, etc.)
 
 ---
 
@@ -224,7 +241,7 @@ daedalus/
   Makefile              # Build automation
   Dockerfile            # Containerised build environment
   package.json          # Node.js tool version pins (source of truth for npm tools)
-  .markdownlint.json    # Lint configuration
+  .markdownlint.yaml    # Lint configuration (YAML enables inline comments)
   .codespellrc          # Spell check configuration
   .pre-commit-config.yaml  # Pre-commit hook definitions
   markdown/             # Root example content (a complete sample proposal)

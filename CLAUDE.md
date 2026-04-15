@@ -107,7 +107,7 @@ daedalus/
   .github/dependabot.yml  Weekly Actions + Docker + npm version bump PRs
   package.json            Node.js tool version pins (source of truth for mermaid-filter, markdownlint-cli)
   .pre-commit-config.yaml
-  .markdownlint.json
+  .markdownlint.yaml
   .codespellrc
   .editorconfig
   .dockerignore
@@ -150,15 +150,27 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 
 ## Standards & Practices
 
+### Document & Architecture
+
 | Standard | Reference | Applied in |
 | --- | --- | --- |
 | **arc42** | [arc42.org](https://arc42.org) | Document template structure — all 11 sections |
 | **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
 | **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
 | **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios |
-| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format (`feat:`, `fix:`, `chore:`, `docs:`) |
+
+### Pipeline & Tooling
+
+| Standard | Reference | Applied in |
+| --- | --- | --- |
+| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format; enforced by pre-commit commit-msg hook |
 | **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) trigger `release.yml` |
-| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | CI/CD security posture (SHA pinning, Dependabot, CodeQL) |
+| **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
+| **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 verification of pandoc and pandoc-crossref downloads |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, least-privilege permissions |
+| **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors (`.editorconfig`) |
+| **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates on commit (pre-commit + commit-msg hooks) |
+| **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting `##` targets |
 
 ---
 

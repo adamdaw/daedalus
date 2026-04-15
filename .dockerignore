@@ -27,5 +27,7 @@ package.json
 package-lock.json
 __pycache__
 
-# Documentation
+# Documentation and agent prompts — not needed at image build time
 README.md
+docs/
+prompts/

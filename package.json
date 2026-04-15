@@ -1,6 +1,9 @@
 {
   "private": true,
   "description": "Node.js build tool pins — versions here are the source of truth for CI and Dockerfile. Dependabot opens PRs when new versions are available; update npm install commands to match.",
+  "engines": {
+    "node": ">=22"
+  },
   "devDependencies": {
     "markdownlint-cli": "0.44.0",
     "mermaid-filter": "1.4.7"

@@ -1,8 +1,28 @@
 FROM ubuntu:24.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+# Version pins — keep in sync with Makefile and all CI workflows.
 ARG PANDOC_VERSION=3.1.13
 ARG CROSSREF_VERSION=0.3.17.1
+
+# SHA-256 digests for supply-chain integrity.
+# Re-compute when upgrading: sha256sum <downloaded-file>
+# OpenSSF Supply Chain Best Practices — https://best.openssf.org/Compiler-Hardening-Guides/Dockerfile-Best-Practices
+ARG PANDOC_SHA=b51029afd2e302679aabb9464cd96bda378145d48bb853bd32d93c57b93a293d
+ARG CROSSREF_SHA=52a21ef8945e664e7ccfea5f40268db3e3ddee4e7ce1f47f24716fea37c2410e
+
+# OCI image specification annotations — https://github.com/opencontainers/image-spec/blob/main/annotations.md
+# Pass BUILD_DATE and VCS_REF at build time for full provenance:
+#   docker build --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) --build-arg VCS_REF=$(git rev-parse HEAD) .
+ARG BUILD_DATE
+ARG VCS_REF
+LABEL org.opencontainers.image.title="Daedalus" \
+      org.opencontainers.image.description="arc42 document generation pipeline — Pandoc to PDF, HTML, and DOCX" \
+      org.opencontainers.image.source="https://github.com/adamdaw/daedalus" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}"
 
 # Install base utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -14,13 +34,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install pandoc
+# Install pandoc — verify SHA-256 before installing
 RUN wget -q "https://github.com/jgm/pandoc/releases/download/${PANDOC_VERSION}/pandoc-${PANDOC_VERSION}-1-amd64.deb" \
+    && echo "${PANDOC_SHA}  pandoc-${PANDOC_VERSION}-1-amd64.deb" | sha256sum -c - \
     && dpkg -i "pandoc-${PANDOC_VERSION}-1-amd64.deb" \
     && rm "pandoc-${PANDOC_VERSION}-1-amd64.deb"
 
-# Install pandoc-crossref (must match pandoc version)
+# Install pandoc-crossref (must match pandoc version) — verify SHA-256 before installing
 RUN wget -q "https://github.com/lierdakil/pandoc-crossref/releases/download/v${CROSSREF_VERSION}/pandoc-crossref-Linux.tar.xz" \
+    && echo "${CROSSREF_SHA}  pandoc-crossref-Linux.tar.xz" | sha256sum -c - \
     && tar -xf "pandoc-crossref-Linux.tar.xz" \
     && mv pandoc-crossref /usr/local/bin/ \
     && rm "pandoc-crossref-Linux.tar.xz"
