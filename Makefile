@@ -291,6 +291,7 @@ init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
 	cp templates/project.bib proposals/$(NAME)/project.bib
 	cp -r templates/markdown/. proposals/$(NAME)/markdown/
 	cp templates/brief.md proposals/$(NAME)/brief.md
+	cp templates/requirements.md proposals/$(NAME)/requirements.md
 	@echo ""
 	@echo "Scaffolded proposals/$(NAME)/"
 	@echo "  Edit:  proposals/$(NAME)/config.yaml"
@@ -298,7 +299,8 @@ init: ## Scaffold a new proposal (requires NAME=; optional TITLE= AUTHOR= DATE=)
 	@echo "  Build: make build PROPOSAL=$(NAME)"
 	@echo "  HTML:  make html  PROPOSAL=$(NAME)"
 	@echo "  Add sections: make new-section TITLE='...' PROPOSAL=$(NAME)"
-	@echo "  Gather info:  /gather-01 through /gather-11 (run from proposals/$(NAME)/)"
+	@echo "  Requirements: /req-01 through /req-05 (run from proposals/$(NAME)/)"
+	@echo "  Architecture: /gather-01 through /gather-11 (run from proposals/$(NAME)/)"
 
 help: ## Show available targets
 	@echo "Usage: make [target] [PROPOSAL=name] [options]"

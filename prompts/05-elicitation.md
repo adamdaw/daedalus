@@ -1,24 +1,60 @@
-# Prompt 05 — Requirements Elicitation
+# Prompt 05 — Elicitation Reference
 
-**Role:** Elicitation guide (one per arc42 section)  
+**Role:** Reference document for the elicitation layer  
 **Phase:** 0 — Before spec authoring  
-**Invocation:** `/gather-01` through `/gather-11` Claude Code slash commands
+**Invocation:** `/req-01` through `/req-05` (requirements) and `/gather-01` through `/gather-11` (architecture)
 
 ---
 
 ## Purpose
 
-The spec author (Prompt 01) drafts an arc42 document from requirements. This prompt set
-systematically gathers those requirements before any drafting begins, section by section,
-using a structured Q&A that produces `brief.md` — the handoff artifact consumed by Prompt 01.
+The elicitation layer sits upstream of Prompt 01 (spec author) and produces two structured
+handoff artifacts:
 
-Without elicitation, the spec author must infer requirements from whatever the user provides
-ad-hoc, producing generic output. With a populated `brief.md`, the spec author works from
-concrete, domain-specific inputs and produces a document that reflects the actual system.
+- **`requirements.md`** — what the system must do (business goals, user stories, NFRs,
+  constraints, acceptance criteria). Follows ISO/IEC/IEEE 29148:2018.
+- **`brief.md`** — how the architect has thought through the arc42 sections (solution
+  strategy, building blocks, ADR context, quality scenarios, risk register).
+
+Without elicitation, Prompt 01 must infer everything from ad-hoc input and produces generic
+output. With populated artifacts, it works from concrete, domain-specific inputs.
+
+**Recommended sequence:**
+
+```
+/req-01 through /req-05 → requirements.md
+        (bring as context)
+/gather-01 through /gather-11 → brief.md
+        (both fed to)
+Prompt 01 → arc42 spec
+```
+
+For synthesis from existing material (meeting notes, emails, briefs), use **Prompt 06**
+(`prompts/06-req-author.md`) instead of or alongside the `/req-*` interactive commands.
 
 ---
 
-## How It Works
+---
+
+## Requirements Commands (`/req-*`)
+
+Five commands for interactive requirements elicitation, producing `requirements.md`.
+
+| Command | Covers | Standards |
+| --- | --- | --- |
+| `/req-01` | Stakeholders, purpose, scope | ISO 29148 §5.2.4, IREB CPRE |
+| `/req-02` | Business goals + functional requirements (user stories) | ISO 29148 §5.2.5, MoSCoW, INVEST |
+| `/req-03` | Non-functional requirements (measurable criteria) | ISO 29148 §5.2.5, ISO/IEC 25010 |
+| `/req-04` | Constraints, assumptions, dependencies | ISO 29148 §5.2.4, IREB |
+| `/req-05` | Acceptance criteria (BDD) + traceability matrix | BDD Given/When/Then, IEEE 29148 §5.2.8 |
+
+Each command reads `requirements.md` in the current directory (creates it from
+`templates/requirements.md` if absent), asks focused questions, and writes structured
+output back into the relevant section.
+
+---
+
+## Architecture Commands (`/gather-*`)
 
 Each `/gather-XX` command covers one arc42 section:
 
@@ -132,15 +168,16 @@ arc42 numbering; Section 01 first (quality goals from §01 are referenced in §0
 
 ## Handoff to Spec Author
 
-When all (or sufficient) sections of `brief.md` are marked `complete`, run Prompt 01
-(spec author). Prompt 01 reads `brief.md` as its primary input and produces the full
-arc42 document. Sections still marked `empty` will be drafted with minimal content and
-flagged for review.
+When `requirements.md` and/or `brief.md` are sufficiently populated, run Prompt 01.
+Prompt 01 reads both files as primary input. Sections still marked `empty` will be
+drafted with minimal content and flagged for review.
 
 ---
 
-## Output File
+## Output Files
 
-`brief.md` lives in the proposal directory (created by `make init`, or in the current
-working directory if running from an existing proposal). It is a drafting artifact —
-it is not compiled by `make build`. It feeds Prompt 01 only.
+Both artifacts live in the proposal directory (created by `make init`, or in the current
+working directory). Neither is compiled by `make build` — they feed Prompt 01 only.
+
+- `requirements.md` — what the system must do
+- `brief.md` — architectural thinking across all 11 arc42 sections

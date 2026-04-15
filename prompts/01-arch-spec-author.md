@@ -26,11 +26,16 @@ The Architect will provide one of:
 - A requirements PDF or document reference
 - A partially completed arc42 document for completion
 
-**If `brief.md` is present:** read it first. It is the primary input — each section maps
-directly to the corresponding arc42 section. Sections with `Status: complete` contain
-structured, validated answers to the ATAM/ISO 31000/arc42 questions; treat them as
-authoritative. Sections with `Status: empty` require authoring from context or by asking the
-Architect.
+**If `requirements.md` is present:** read it first. It contains the stakeholders, user
+stories, NFRs, constraints, acceptance criteria, and traceability matrix from the
+requirements elicitation phase (ISO/IEC/IEEE 29148:2018). Requirements with `Status: complete`
+sections are validated inputs; treat them as authoritative. The RTM (§09 of `requirements.md`)
+shows which arc42 sections each requirement maps to — use it to ensure full coverage.
+
+**If `brief.md` is present:** read it alongside `requirements.md`. It contains structured
+answers to the arc42-section-specific questions from the architecture elicitation phase.
+Sections with `Status: complete` are validated; treat them as authoritative. Sections with
+`Status: empty` require authoring from context or by asking the Architect.
 
 You will produce a **complete arc42 architectural specification** across all 11 sections plus
 References, formatted for the daedalus pipeline (Markdown files, BibTeX citations, Mermaid

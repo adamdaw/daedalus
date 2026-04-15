@@ -123,7 +123,7 @@ dependabot PR, verify the SHA comment matches the expected version tag.
 ```
 daedalus/
   markdown/             Root example (complete arc42 worked example — Acme Commerce)
-  templates/            Skeletons copied by make init: config.yaml, project.bib, markdown/, brief.md
+  templates/            Skeletons copied by make init: config.yaml, project.bib, markdown/, brief.md, requirements.md
   proposals/            User proposals (gitignored output files)
   images/               Root example images (logo.jpg/png/pdf drop-in)
   project.tex           Shared LaTeX header (cover page, fancyhdr, logo detection)
@@ -236,8 +236,38 @@ The `prompts/` directory contains the agent prompts for the full VSDD workflow. 
 | 02 | `prompts/02-adversary-arch.md` | Adversary (Sarcasmotron) | 3 — full adversarial review of all 11 sections |
 | 03 | `prompts/03-adr-author.md` | ADR Author (Claude) | 1b — write or audit ADRs in Section 9 |
 | 04 | `prompts/04-feedback-triage.md` | Architect (triage) | 4 — Accept / Reject / Defer adversarial findings |
+| 05 | `prompts/05-elicitation.md` | Reference — arc42 elicitation approach | 0 — documents /gather-* commands |
+| 06 | `prompts/06-req-author.md` | Requirements Author (Claude) | 0 — synthesise raw material into requirements.md |
 
 **Session start sequence:** Load Prompt 00 → assess document state → pick the right next prompt.
+
+---
+
+## Requirements Commands (`/req-*`)
+
+Five slash commands for interactive requirements elicitation, producing `requirements.md`
+per ISO/IEC/IEEE 29148:2018. Run these before or alongside the `/gather-*` commands —
+`requirements.md` feeds into the `/gather-*` sessions as context.
+
+| Command | Covers | Standards |
+| --- | --- | --- |
+| `/req-01` | Stakeholders + purpose/scope | ISO 29148 §5.2.4, IREB CPRE |
+| `/req-02` | Business + functional requirements (user stories) | ISO 29148 §5.2.5, MoSCoW, INVEST |
+| `/req-03` | Non-functional requirements | ISO 29148 §5.2.5, ISO/IEC 25010 |
+| `/req-04` | Constraints + assumptions + dependencies | ISO 29148 §5.2.4, IREB |
+| `/req-05` | Acceptance criteria (BDD) + traceability matrix | BDD Given/When/Then, IEEE 29148 |
+
+**Prompt 06** (`prompts/06-req-author.md`) is the synthesis alternative: provide raw
+material (meeting notes, emails, briefs) and it produces a structured `requirements.md`,
+flagging gaps, contradictions, and untestable requirements.
+
+**Full workflow:**
+
+```
+/req-* commands  ─┐
+                   ├─→ requirements.md → (context for /gather-*) → brief.md → Prompt 01 → arc42
+Prompt 06 ─────────┘
+```
 
 ---
 
