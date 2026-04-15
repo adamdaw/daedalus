@@ -120,17 +120,37 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
 # Reference — https://github.com/mermaid-js/mermaid-cli
 # Reference — https://github.com/pandoc-ext/diagram
-# package.json is copied to the prefix directory (/usr/local) because npm --prefix
-# reads the package.json from <prefix>/package.json, not from the working directory.
-# After install, package.json and the generated package-lock.json are removed so the
-# prefix directory is not polluted. Packages go to /usr/local/lib/node_modules/;
-# bin symlinks go to /usr/local/bin/ — equivalent to 'npm install -g'.
-# --include=dev: devDependencies are installed regardless of NODE_ENV, which could be
-# set to 'production' in some build environments and would otherwise skip them.
-COPY package.json /usr/local/package.json
-RUN npm install --no-fund --no-audit --include=dev --prefix /usr/local \
-    && rm /usr/local/package.json \
-    && rm -f /usr/local/package-lock.json
+# Install Node.js tools from package.json with npm overrides applied.
+# 'npm install -g pkg@version' has no package.json project context, so 'overrides' is
+# not honoured. Instead: install locally (which reads package.json and applies overrides),
+# copy the resulting node_modules to the global location, and create /usr/local/bin/
+# symlinks manually — equivalent to 'npm install -g' with overrides.
+#
+# npm local install: packages → <cwd>/node_modules/
+#                   bin symlinks → <cwd>/node_modules/.bin/  (relative to .bin/)
+# npm global install: packages → <prefix>/lib/node_modules/
+#                   bin symlinks → <prefix>/bin/
+#
+# Copying node_modules to /usr/local/lib/node_modules/ preserves the relative symlinks
+# in .bin/ — they resolve correctly from the new location. /usr/local/bin/ symlinks
+# point at the absolute /usr/local/lib/node_modules/.bin/<bin> paths.
+#
+# --include=dev: install devDependencies regardless of NODE_ENV.
+# --no-fund / --no-audit: suppress non-actionable build log noise (handled via Dependabot).
+# overrides in package.json force picomatch to 4.0.4, patching CVE-2026-33671 in the
+# picomatch@4.0.3 transitive dependency pulled in by puppeteer.
+#
+# Reference — npm overrides: https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
+# Reference — npm install: https://docs.npmjs.com/cli/v10/commands/npm-install
+COPY package.json /tmp/npm-install/package.json
+RUN cd /tmp/npm-install \
+    && npm install --no-fund --no-audit --include=dev \
+    && cp -rP node_modules/. /usr/local/lib/node_modules/ \
+    && for bin_link in node_modules/.bin/*; do \
+         bin_name=$(basename "$bin_link"); \
+         ln -sf "/usr/local/lib/node_modules/.bin/${bin_name}" "/usr/local/bin/${bin_name}"; \
+       done \
+    && rm -rf /tmp/npm-install
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source

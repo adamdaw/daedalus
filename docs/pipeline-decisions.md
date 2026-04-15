@@ -108,23 +108,28 @@ outside the build). `--no-cache-dir` prevents the cache from entering the image.
 
 **Reference:** https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#run
 
-### npm `overrides` to patch transitive CVEs; `--prefix /usr/local` to apply them in Docker
+### npm `overrides` to patch transitive CVEs; local install + manual bin links to apply them in Docker
 
-`npm install -g` does not honour `package.json`'s `overrides` field — it installs a single
-named package without a project context. To force a transitive dependency to a patched version
-in the Docker image, the Dockerfile uses `npm install --prefix /usr/local` from a `COPY`-ed
-`package.json` instead of `npm install -g`. With `--prefix /usr/local`, npm installs into
-`/usr/local/lib/node_modules/` and creates bin symlinks in `/usr/local/bin/` (equivalent to
-`npm install -g`), and the project-context `overrides` field is respected.
+`npm install -g pkg@version` has no package.json project context, so `overrides` is ignored.
+To force a transitive dependency to a patched version in the Docker image, the Dockerfile:
 
-The `package.json` `overrides` section pins `picomatch` to `4.0.4` to fix CVE-2026-33671
-(ReDoS via crafted extglob patterns). `picomatch@4.0.3` is a transitive dependency of
-`puppeteer`, itself a dependency of `@mermaid-js/mermaid-cli`.
+1. COPYs `package.json` (with the `overrides` field) to a temp directory
+2. Runs `npm install` locally (reads `package.json`, applies `overrides`)
+3. Copies the resulting `node_modules/` to `/usr/local/lib/node_modules/` (the global package location), preserving symlinks
+4. Creates `/usr/local/bin/` symlinks to `/usr/local/lib/node_modules/.bin/<bin>` (equivalent to what `npm install -g` does)
+5. Cleans up the temp directory
+
+npm local installs put packages in `<cwd>/node_modules/` with relative bin symlinks in `<cwd>/node_modules/.bin/`. npm global installs put packages in `<prefix>/lib/node_modules/` with absolute bin symlinks in `<prefix>/bin/`. By copying the local tree to the global location and creating the bin symlinks explicitly, the result is identical to `npm install -g` but with `overrides` honoured.
+
+The `overrides` in `package.json` pin `picomatch` to `4.0.4`, patching CVE-2026-33671 (ReDoS
+via crafted extglob patterns). `picomatch@4.0.3` is a transitive dependency of `puppeteer`,
+itself a dependency of `@mermaid-js/mermaid-cli`.
 
 This pattern follows the same principle as `requirements-dev.txt` for Python: a single
 authoritative file pins and constrains all tool versions, and Dependabot tracks it.
 
-**Reference:** npm overrides — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides
+**Reference:** npm overrides — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#overrides  
+**Reference:** npm install — https://docs.npmjs.com/cli/v10/commands/npm-install
 
 ### `npm install --no-fund --no-audit`
 
