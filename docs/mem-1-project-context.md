@@ -8,7 +8,7 @@
 ## What Daedalus Is
 
 Daedalus is an arc42 architectural documentation pipeline. Authors write content in
-Markdown; the pipeline (Pandoc + XeLaTeX + mermaid-filter + pandoc-crossref) produces
+Markdown; the pipeline (Pandoc + XeLaTeX + pandoc-ext/diagram + @mermaid-js/mermaid-cli + pandoc-crossref) produces
 a professional PDF, HTML, and DOCX. It is version-controlled, CI-validated, and
 Docker-reproducible.
 

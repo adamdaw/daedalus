@@ -13,8 +13,9 @@ produces a professional PDF, HTML, and optionally DOCX — with cover page, TOC,
 headers, Mermaid diagrams, cross-references, and bibliography.
 
 **Stack:** Pandoc 3.1.13 → XeLaTeX (PDF) / HTML5 / DOCX. Filters: pandoc-crossref 0.3.17.1,
-mermaid-filter@1.4.7 (npm). CI: GitHub Actions. Container: Docker (Ubuntu 24.04). Linting:
-markdownlint-cli@0.44.0 + codespell 2.3.0. *(Keep tool versions here in sync with `package.json`.)*
+pandoc-ext/diagram v1.2.0 (Lua, vendored at `filters/diagram.lua`) + @mermaid-js/mermaid-cli@11.12.0 (npm).
+CI: GitHub Actions. Container: Docker (Ubuntu 24.04). Linting: markdownlint-cli@0.48.0 + codespell (see
+`requirements-dev.txt`). *(Keep tool versions here in sync with `package.json`.)*
 
 **VSDD role:** Daedalus produces the spec artifact layer in a VSDD workflow. The arc42
 document it generates IS the formal specification — Section 1 is the behavioral contract,
@@ -52,28 +53,35 @@ pandoc-crossref 0.3.17.1. Do not upgrade one without upgrading the other. The Ma
 Dockerfile, and all three CI workflows reference these versions — update all of them
 together.
 
-### Chrome / Puppeteer for mermaid-filter
-mermaid-filter renders Mermaid diagrams via Chrome/Chromium. `PUPPETEER_EXECUTABLE_PATH`
+### Chrome / Puppeteer for @mermaid-js/mermaid-cli (mmdc)
+Mermaid diagrams are rendered by `mmdc` (via `filters/diagram.lua`). `PUPPETEER_EXECUTABLE_PATH`
 must point to a real browser binary. Two sandbox contexts to handle:
-- **Docker (root user):** Chrome requires `--no-sandbox`. The Dockerfile wraps the binary
-  with a shell script that injects `--no-sandbox --disable-setuid-sandbox` automatically.
+- **Docker (root user):** Chrome requires `--no-sandbox`. The Dockerfile wraps the Chrome binary
+  with a shell script, creates `/etc/mmdc-puppeteer.json` (points at the wrapper), and writes
+  `/usr/local/bin/mmdc-pandoc` (the wrapper consumed via `MERMAID_BIN`).
 - **GitHub Actions on Ubuntu 24.04+:** AppArmor blocks unprivileged user namespaces. CI
-  jobs write a puppeteer launch config and set `MERMAID_FILTER_PUPPETEER_CONFIG` to point
-  at it before any build step. See the "Configure puppeteer no-sandbox" step in each workflow.
+  jobs write a puppeteer config at `/tmp/mmdc-puppeteer.json` and create `/usr/local/bin/mmdc-pandoc`,
+  then set `MERMAID_BIN` to point at it. See the "Configure mmdc for pandoc" step in each workflow.
 
-### mermaid-filter@1.4.7
-Pinned in `package.json`, Dockerfile, all three CI workflows, README.md (dependency
-table + Troubleshooting section), and CONTRIBUTING.md (dependency table). `package.json`
-is the source of truth — dependabot opens PRs when a new version is available; update the
-npm install commands in Dockerfile, CI, README.md, and CONTRIBUTING.md to match when accepting.
+### @mermaid-js/mermaid-cli@11.12.0
+Pinned in `package.json`, Dockerfile, all three CI workflows, README.md (dependency table +
+Troubleshooting section), and CONTRIBUTING.md (dependency table). `package.json` is the source
+of truth — Dependabot opens PRs when a new version is available; update the npm install commands
+in Dockerfile, CI, README.md, and CONTRIBUTING.md to match when accepting.
 
-### markdownlint-cli@0.44.0
+### filters/diagram.lua (pandoc-ext/diagram v1.2.0)
+Vendored Lua filter at `filters/diagram.lua`. Pinned to pandoc-ext/diagram v1.2.0. To upgrade:
+download `diagram.lua` from the new release tag at https://github.com/pandoc-ext/diagram and
+replace the file. The version comment at the top of the file and the `local version` variable
+must be updated to match.
+
+### markdownlint-cli@0.48.0
 Pinned across six places — update all together: `package.json` (source of truth),
 `.pre-commit-config.yaml`, CI npm install commands, Dockerfile, README.md (dependency
 table + Troubleshooting section), and CONTRIBUTING.md (dependency table). Dependabot opens
 PRs against `package.json`; when accepting, update the other five to match.
 
-### codespell 2.3.0
+### codespell
 `requirements-dev.txt` is the sole source of truth. Accepting a Dependabot PR to
 `requirements-dev.txt` is the **only** update required — no other files need editing:
 - Dockerfile: `COPY requirements-dev.txt` + `--constraint ... codespell` (automatic)
@@ -122,7 +130,8 @@ daedalus/
   .github/ISSUE_TEMPLATE/  bug_report.md, feature_request.md
   .github/pull_request_template.md
   .devcontainer/devcontainer.json  VS Code Dev Container (builds from Dockerfile)
-  package.json            Node.js tool version pins (source of truth for mermaid-filter, markdownlint-cli)
+  filters/diagram.lua     Vendored pandoc-ext/diagram Lua filter (v1.2.0) — invokes mmdc for Mermaid rendering
+  package.json            Node.js tool version pins (source of truth for @mermaid-js/mermaid-cli, markdownlint-cli)
   scripts/                  Pre-commit helper scripts (validate-jsonc.py)
   .pre-commit-config.yaml
   .markdownlint.yaml
@@ -246,7 +255,7 @@ See `docs/mem-4-process-lessons.md` for the full lesson log. Quick reference:
   all three workflows; increment the suffix when adding or changing apt packages. (Historical
   note: an earlier approach keyed on the workflow file hash, causing unnecessary cache misses
   on unrelated workflow edits — avoid that pattern.)
-- npm cache key is version-based (`npm-mermaid-filter-X.Y.Z-markdownlint-X.Y.Z`); when
+- npm cache key is version-based (`npm-mermaid-cli-X.Y.Z-markdownlint-X.Y.Z`); when
   bumping tool versions, the old cache is automatically abandoned and a fresh one built
 - `git diff --name-only HEAD~1 HEAD` in `proposals.yml` can miss changes in merge commits;
   acceptable for this use case
@@ -260,7 +269,7 @@ See `docs/mem-4-process-lessons.md` for the full lesson log. Quick reference:
   from `check-json` in `.pre-commit-config.yaml`; strict JSON parsing rejects `//` comments;
   use the `check-jsonc` local hook (`scripts/validate-jsonc.py`) to validate JSONC with
   comment stripping rather than skipping validation entirely
-- README.md contains hardcoded tool versions (mermaid-filter, markdownlint-cli, pandoc,
+- README.md contains hardcoded tool versions (@mermaid-js/mermaid-cli, markdownlint-cli, pandoc,
   pandoc-crossref) that Dependabot does not update automatically — update README alongside
   `package.json` when accepting npm Dependabot PRs (see Critical Constraints above)
 - `pip install -r requirements-dev.txt` installs every listed package; use `--constraint`

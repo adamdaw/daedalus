@@ -85,10 +85,11 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get update && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Google Chrome for mermaid-filter.
+# Install Google Chrome for @mermaid-js/mermaid-cli (mmdc).
 # Google Chrome (not Ubuntu's chromium-browser) is used for reliable Puppeteer compatibility;
 # the Puppeteer team tests against Chrome and maintains the executable path contract.
 # Reference — https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
+# Reference — https://github.com/mermaid-js/mermaid-cli/blob/master/docs/already-installed-chromium.md
 RUN curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub \
       | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
@@ -99,7 +100,9 @@ RUN curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub \
 
 # PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: prevents Puppeteer from downloading a bundled Chromium
 # (several hundred MB) since we provide an explicit Chrome binary above.
+# PUPPETEER_EXECUTABLE_PATH: points mmdc's Puppeteer instance at the installed Chrome binary.
 # Reference — https://pptr.dev/guides/configuration#environment-variables
+# Reference — https://github.com/mermaid-js/mermaid-cli/blob/master/docs/already-installed-chromium.md
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 
@@ -107,7 +110,12 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # --no-fund: suppresses funding messages in build logs (addressed by Dependabot PRs, not here).
 # --no-audit: suppresses audit output in build logs (same rationale).
 # Versions pinned to match package.json, .pre-commit-config.yaml, and CI workflows.
-RUN npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.48.0
+# @mermaid-js/mermaid-cli replaces the unmaintained mermaid-filter; diagram rendering is now
+# handled by filters/diagram.lua (pandoc-ext/diagram Lua filter) which invokes mmdc via
+# the MERMAID_BIN environment variable.
+# Reference — https://github.com/mermaid-js/mermaid-cli
+# Reference — https://github.com/pandoc-ext/diagram
+RUN npm install -g --no-fund --no-audit @mermaid-js/mermaid-cli@11.12.0 markdownlint-cli@0.48.0
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source
@@ -130,13 +138,36 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3-venv \
     && ln -s /opt/codespell/bin/codespell /usr/local/bin/codespell
 
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the flag is always
-# present regardless of how Puppeteer invokes it. In CI (non-root), MERMAID_FILTER_PUPPETEER_CONFIG
-# handles this instead; this wrapper is the Docker-specific solution.
+# present regardless of how Puppeteer invokes it. In CI (non-root), the mmdc-pandoc wrapper
+# and puppeteer config file handle this instead; this wrapper is the Docker-specific solution.
 # Reference — https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
 RUN mv /usr/bin/google-chrome-stable /usr/bin/google-chrome-stable-real \
     && printf '#!/bin/sh\nexec /usr/bin/google-chrome-stable-real --no-sandbox --disable-setuid-sandbox "$@"\n' \
        > /usr/bin/google-chrome-stable \
     && chmod +x /usr/bin/google-chrome-stable
+
+# Puppeteer configuration for mmdc — points at the Chrome wrapper above.
+# executablePath: the Chrome wrapper script that injects --no-sandbox (required for root).
+# Reference — https://pptr.dev/guides/configuration
+RUN printf '{"executablePath":"/usr/bin/google-chrome-stable"}\n' \
+    > /etc/mmdc-puppeteer.json
+
+# mmdc-pandoc: wrapper script consumed by filters/diagram.lua via MERMAID_BIN.
+# pandoc-ext/diagram calls the binary at $MERMAID_BIN with --pdfFit --input --output args.
+# This wrapper injects --puppeteerConfigFile (for the Chrome binary + no-sandbox config)
+# and --theme (for diagram theming) before forwarding all other arguments to mmdc.
+# MERMAID_THEME defaults to "default" if unset; override with: make build MERMAID_THEME=dark
+# Reference — https://github.com/pandoc-ext/diagram
+# Reference — https://github.com/mermaid-js/mermaid-cli
+RUN printf '#!/bin/sh\nexec mmdc --puppeteerConfigFile /etc/mmdc-puppeteer.json --theme "${MERMAID_THEME:-default}" "$@"\n' \
+    > /usr/local/bin/mmdc-pandoc \
+    && chmod +x /usr/local/bin/mmdc-pandoc
+
+# MERMAID_BIN: tells filters/diagram.lua which binary to call for Mermaid rendering.
+# The Lua filter reads MERMAID_BIN via os.getenv('MERMAID_BIN') (the diagram engine resolves
+# execpath from <ENGINE_NAME>_BIN, i.e. MERMAID_BIN).
+# Reference — https://github.com/pandoc-ext/diagram (get_engine function)
+ENV MERMAID_BIN=/usr/local/bin/mmdc-pandoc
 
 # Explicit absolute WORKDIR (never rely on implicit working directory or RUN cd).
 # /workspace matches the GitHub Actions runner workspace convention for environment consistency.

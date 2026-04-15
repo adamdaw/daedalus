@@ -14,8 +14,10 @@ else
 endif
 
 # Mermaid diagram theme. Override with: make build MERMAID_THEME=dark
+# MERMAID_THEME is read by the mmdc-pandoc wrapper script, which passes --theme to mmdc.
+# filters/diagram.lua (pandoc-ext/diagram) invokes the binary at $MERMAID_BIN.
 MERMAID_THEME ?= default
-export MERMAID_FILTER_THEME = $(MERMAID_THEME)
+export MERMAID_THEME
 
 # Set PROPOSAL=name to build proposals/name/; omit to build the root example.
 ifdef PROPOSAL
@@ -35,7 +37,7 @@ IMAGES   := $(PROPOSAL_DIR)/images
 PANDOC_FLAGS = \
 	--metadata-file=$(CONFIG) \
 	-F pandoc-crossref \
-	-F mermaid-filter \
+	--lua-filter filters/diagram.lua \
 	--toc \
 	-H project.tex \
 	$(if $(DRAFT),-H draft.tex,) \
@@ -49,7 +51,7 @@ PANDOC_FLAGS = \
 DOCX_FLAGS = \
 	--metadata-file=$(CONFIG) \
 	-F pandoc-crossref \
-	-F mermaid-filter \
+	--lua-filter filters/diagram.lua \
 	--toc \
 	--bibliography $(BIB) \
 	--citeproc \
@@ -90,7 +92,8 @@ clean-all: ## Remove generated output for the root example and every proposal
 	done
 
 check-filters:
-	@command -v mermaid-filter  >/dev/null 2>&1 || { echo "Error: mermaid-filter not found. Run: npm install -g mermaid-filter@1.4.7"; exit 1; }
+	@command -v mmdc           >/dev/null 2>&1 || { echo "Error: mmdc not found. Run: npm install -g @mermaid-js/mermaid-cli@11.12.0"; exit 1; }
+	@test -f filters/diagram.lua                || { echo "Error: filters/diagram.lua not found. Expected at: filters/diagram.lua"; exit 1; }
 	@command -v pandoc-crossref >/dev/null 2>&1 || { echo "Error: pandoc-crossref not found. See: https://github.com/lierdakil/pandoc-crossref/releases"; exit 1; }
 
 check: check-pandoc check-filters ## Verify all build dependencies are installed
@@ -210,7 +213,7 @@ watch: ## Rebuild on file changes (requires fswatch or inotify-tools)
 	fi
 
 lint: ## Run markdownlint on content files
-	@command -v markdownlint >/dev/null 2>&1 || { echo "Error: markdownlint not found. Run: npm install -g markdownlint-cli@0.44.0"; exit 1; }
+	@command -v markdownlint >/dev/null 2>&1 || { echo "Error: markdownlint not found. Run: npm install -g markdownlint-cli@0.48.0"; exit 1; }
 	markdownlint $(MARKDOWN)
 
 spellcheck: ## Run codespell on content files
@@ -321,7 +324,7 @@ version: ## Print installed versions of all build tools
 	@echo "pandoc:          $$(pandoc --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
 	@echo "pandoc-crossref: $$(pandoc-crossref --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
 	@echo "xelatex:         $$(xelatex --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
-	@echo "mermaid-filter:  $$(mermaid-filter --version 2>/dev/null | tr -d '\n' || echo 'NOT FOUND')"
+	@echo "mmdc (mermaid):  $$(mmdc --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
 	@echo "markdownlint:    $$(markdownlint --version 2>/dev/null || echo 'NOT FOUND')"
 	@echo "codespell:       $$(codespell --version 2>/dev/null || echo 'NOT FOUND')"
 	@echo "node:            $$(node --version 2>/dev/null || echo 'NOT FOUND')"

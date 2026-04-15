@@ -4,7 +4,7 @@
 
 A document generation pipeline for [arc42](https://arc42.org) architectural documentation. Write content in Markdown using the arc42 template structure, run `make all`, get a professional PDF, HTML, and DOCX — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 
-Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [mermaid-filter](https://github.com/raghur/mermaid-filter), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
+Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) + [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
 
 ---
 
@@ -52,8 +52,8 @@ implementation decision is documented with its rationale and authoritative refer
 | `pandoc` 3.1.13 | Markdown → PDF/HTML | [pandoc.org/installing](https://pandoc.org/installing.html) |
 | `pandoc-crossref` 0.3.17.1 | Figure/table cross-references | [releases](https://github.com/lierdakil/pandoc-crossref/releases) |
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
-| `mermaid-filter` 1.4.7 | Diagram rendering | `npm install -g mermaid-filter@1.4.7` |
-| Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
+| `@mermaid-js/mermaid-cli` 11.12.0 | Diagram rendering (mmdc) | `npm install -g @mermaid-js/mermaid-cli@11.12.0` |
+| Chromium / Chrome | Required by mmdc (Puppeteer) | `apt install chromium` / `brew install chromium` |
 | `markdownlint-cli` 0.48.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.48.0` |
 | `codespell` | Spell checking (optional) | `pip install --constraint requirements-dev.txt codespell` |
 
@@ -66,10 +66,12 @@ tar -xf pandoc-crossref-Linux.tar.xz
 sudo mv pandoc-crossref /usr/local/bin/
 ```
 
-For mermaid-filter to find the browser:
+For mmdc to find the browser and the pandoc-ext/diagram filter to invoke it:
 ```bash
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 export PUPPETEER_EXECUTABLE_PATH=$(which chromium)
+# MERMAID_BIN points filters/diagram.lua at the mmdc binary (or a wrapper script)
+export MERMAID_BIN=$(which mmdc)
 ```
 
 Verify all dependencies:
@@ -412,7 +414,7 @@ autoSectionLabels: true
 
 ### `build.yml` — runs on every push, PR, or manual trigger
 
-1. Installs pandoc, pandoc-crossref, XeLaTeX, mermaid-filter, markdownlint, codespell
+1. Installs pandoc, pandoc-crossref, XeLaTeX, @mermaid-js/mermaid-cli, markdownlint, codespell
 2. Lints all markdown files
 3. Spell-checks all markdown files
 4. Builds `project.pdf` and validates structure (page count, arc42 section headings)
@@ -449,20 +451,21 @@ All CI jobs cache:
 - The pandoc `.deb` installer (keyed by pandoc version)
 - The pandoc-crossref `.tar.xz` binary (keyed by crossref version)
 - apt package archives (stable key `apt-ubuntu-24.04-texlive-v1`, shared across all workflows; bump the suffix if packages change)
-- npm global cache (keyed by tool versions, e.g. `npm-mermaid-filter-1.4.7-markdownlint-0.44.0`; shared across all workflows)
+- npm global cache (keyed by tool versions, e.g. `npm-mermaid-cli-11.12.0-markdownlint-0.48.0`; shared across all workflows)
 
 ---
 
 ## Troubleshooting
 
-### `Error: mermaid-filter not found`
+### `Error: mmdc not found`
 
-Install mermaid-filter and ensure the browser path is set:
+Install `@mermaid-js/mermaid-cli` and ensure the browser path and `MERMAID_BIN` are set:
 
 ```bash
-npm install -g mermaid-filter@1.4.7
+npm install -g @mermaid-js/mermaid-cli@11.12.0
 export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 export PUPPETEER_EXECUTABLE_PATH=$(which chromium || which google-chrome)
+export MERMAID_BIN=$(which mmdc)
 ```
 
 ### `Error: pandoc-crossref not found`
@@ -484,18 +487,28 @@ The build will still proceed, but cross-references or other features may behave 
 
 ### Mermaid diagrams render as blank boxes
 
-The `PUPPETEER_EXECUTABLE_PATH` environment variable must point to a real Chrome or Chromium binary. Confirm with:
+`PUPPETEER_EXECUTABLE_PATH` must point to a real Chrome or Chromium binary, and `MERMAID_BIN`
+must point to the `mmdc` binary (or a wrapper script). Confirm with:
 
 ```bash
 echo $PUPPETEER_EXECUTABLE_PATH
 $PUPPETEER_EXECUTABLE_PATH --version
+echo $MERMAID_BIN
+$MERMAID_BIN --version
 ```
 
-If running as root (e.g., in Docker), Chrome requires `--no-sandbox`. The Dockerfile wraps the binary automatically. For local root environments or Ubuntu 24.04+ (AppArmor sandbox restriction), create a puppeteer config file and point `MERMAID_FILTER_PUPPETEER_CONFIG` at it:
+If running as root (e.g., in Docker), Chrome requires `--no-sandbox`. The Dockerfile handles
+this automatically via a Chrome wrapper script and a puppeteer config at `/etc/mmdc-puppeteer.json`.
+
+For local root environments or Ubuntu 24.04+ (AppArmor sandbox restriction), create a puppeteer
+config file and use a wrapper script as `MERMAID_BIN`:
 
 ```bash
-echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
-export MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json
+echo '{"executablePath":"'$(which google-chrome)'","args":["--no-sandbox","--disable-setuid-sandbox"]}' \
+  > /tmp/mmdc-puppeteer.json
+printf '#!/bin/sh\nexec mmdc --puppeteerConfigFile /tmp/mmdc-puppeteer.json --theme "${MERMAID_THEME:-default}" "$@"\n' \
+  > /tmp/mmdc-pandoc && chmod +x /tmp/mmdc-pandoc
+export MERMAID_BIN=/tmp/mmdc-pandoc
 ```
 
 ### `xelatex not found`

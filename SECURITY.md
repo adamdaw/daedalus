@@ -25,7 +25,7 @@ If the issue is confirmed, we will coordinate a fix and disclosure timeline with
 
 ## Scope
 
-This repository contains a document generation pipeline (Pandoc, XeLaTeX, mermaid-filter).
+This repository contains a document generation pipeline (Pandoc, XeLaTeX, @mermaid-js/mermaid-cli).
 Security-relevant areas include:
 
 - The Dockerfile and build environment (supply chain integrity)

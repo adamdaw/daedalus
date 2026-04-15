@@ -89,21 +89,32 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
-          key: npm-mermaid-filter-1.4.7-markdownlint-0.48.0
+          key: npm-mermaid-cli-11.12.0-markdownlint-0.48.0
 
-      - name: Setup Chrome for mermaid-filter
+      - name: Setup Chrome for mmdc
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
         id: setup-chrome
 
-      - name: Configure puppeteer no-sandbox (Ubuntu 24.04 AppArmor)
+      - name: Configure mmdc for pandoc (puppeteer + no-sandbox)
+        # Creates a Puppeteer config pointing at the runner's Chrome binary, then writes a
+        # wrapper script (mmdc-pandoc) that injects --puppeteerConfigFile and --theme before
+        # forwarding all arguments to mmdc. filters/diagram.lua invokes this wrapper via
+        # MERMAID_BIN. The --no-sandbox flag is required on Ubuntu 24.04+ because AppArmor
+        # restricts unprivileged user namespaces used by Chrome's zygote process.
+        # Reference: https://github.com/mermaid-js/mermaid-cli/blob/master/docs/already-installed-chromium.md
+        # Reference: https://pptr.dev/guides/configuration
         run: |
-          echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
-          echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
+          printf '{"executablePath":"%s","args":["--no-sandbox","--disable-setuid-sandbox"]}\n' \
+            "${{ steps.setup-chrome.outputs.chrome-path }}" > /tmp/mmdc-puppeteer.json
+          printf '#!/bin/sh\nexec mmdc --puppeteerConfigFile /tmp/mmdc-puppeteer.json --theme "${MERMAID_THEME:-default}" "$@"\n' \
+            > /usr/local/bin/mmdc-pandoc
+          chmod +x /usr/local/bin/mmdc-pandoc
+          echo "MERMAID_BIN=/usr/local/bin/mmdc-pandoc" >> $GITHUB_ENV
           echo "PUPPETEER_EXECUTABLE_PATH=${{ steps.setup-chrome.outputs.chrome-path }}" >> $GITHUB_ENV
           echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.48.0
+        run: npm install -g --no-fund --no-audit @mermaid-js/mermaid-cli@11.12.0 markdownlint-cli@0.48.0
 
       - name: Install Python tools
         # GitHub Actions runners execute as a non-root user; pip installs to ~/.local (user

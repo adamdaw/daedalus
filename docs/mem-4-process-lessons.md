@@ -35,9 +35,9 @@ atomically.
 **Date:** 2026-04  
 **Source:** daedalus Docker build
 
-mermaid-filter calls puppeteer which calls Chrome. Chrome refuses to run as root without
-`--no-sandbox`. The fix is a wrapper shell script at `/usr/bin/google-chrome-stable` that
-appends the flag:
+`@mermaid-js/mermaid-cli` (mmdc) calls Puppeteer which calls Chrome. Chrome refuses to run
+as root without `--no-sandbox`. The fix is a wrapper shell script at `/usr/bin/google-chrome-stable`
+that appends the flag:
 
 ```sh
 #!/bin/sh
@@ -45,7 +45,12 @@ exec /usr/bin/google-chrome-stable-real --no-sandbox --disable-setuid-sandbox "$
 ```
 
 This is in the Dockerfile. Do not remove it. Do not create a non-root user as a workaround
-without verifying that mermaid-filter can still find Chrome via `PUPPETEER_EXECUTABLE_PATH`.
+without verifying that mmdc can still find Chrome via `PUPPETEER_EXECUTABLE_PATH`.
+
+Additionally, the Dockerfile creates `/etc/mmdc-puppeteer.json` (pointing at the Chrome
+wrapper) and `/usr/local/bin/mmdc-pandoc` (the wrapper script that passes
+`--puppeteerConfigFile` and `--theme` to mmdc). The `MERMAID_BIN` env var points
+`filters/diagram.lua` at `mmdc-pandoc`.
 
 ---
 
@@ -158,25 +163,53 @@ site-packages) and does not trigger the PEP 668 guard — venv is not required i
 ### PL-11 — Ubuntu 24.04 AppArmor blocks Chrome sandbox in GitHub Actions
 
 **Date:** 2026-04
-**Source:** daedalus build.yml — mermaid-filter / puppeteer on ubuntu-24.04 runner
+**Source:** daedalus build.yml — @mermaid-js/mermaid-cli / puppeteer on ubuntu-24.04 runner
 
 Ubuntu 24.04 (and 23.10+) restricts unprivileged user namespaces via AppArmor. Chrome's
 zygote process requires a usable sandbox to launch and crashes with:
 `FATAL: No usable sandbox!`
 
-This affects any CI job that calls puppeteer/Chrome headlessly (mermaid-filter, Playwright, etc.)
+This affects any CI job that calls puppeteer/Chrome headlessly (mmdc, Playwright, etc.)
 on an `ubuntu-24.04` runner. The `ubuntu-22.04` runner was not affected.
 
-**Fix:** Create a puppeteer launch config that passes `--no-sandbox` and point
-`MERMAID_FILTER_PUPPETEER_CONFIG` at it via `$GITHUB_ENV`:
+**Fix:** Create a puppeteer launch config that passes `--no-sandbox` and write a wrapper
+script (`mmdc-pandoc`) that injects it before invoking mmdc. Set `MERMAID_BIN` to point at
+the wrapper via `$GITHUB_ENV`:
 ```yaml
-- name: Configure puppeteer no-sandbox (Ubuntu 24.04 AppArmor)
+- name: Configure mmdc for pandoc (puppeteer + no-sandbox)
   run: |
-    echo '{"args":["--no-sandbox","--disable-setuid-sandbox"]}' > /tmp/puppeteer-config.json
-    echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
+    printf '{"executablePath":"%s","args":["--no-sandbox","--disable-setuid-sandbox"]}\n' \
+      "${{ steps.setup-chrome.outputs.chrome-path }}" > /tmp/mmdc-puppeteer.json
+    printf '#!/bin/sh\nexec mmdc --puppeteerConfigFile /tmp/mmdc-puppeteer.json --theme "${MERMAID_THEME:-default}" "$@"\n' \
+      > /usr/local/bin/mmdc-pandoc
+    chmod +x /usr/local/bin/mmdc-pandoc
+    echo "MERMAID_BIN=/usr/local/bin/mmdc-pandoc" >> $GITHUB_ENV
 ```
-In Docker, wrap the Chrome binary to always inject `--no-sandbox --disable-setuid-sandbox`
-(already done in the Dockerfile via the wrapper script).
+In Docker, the Chrome wrapper binary and `/etc/mmdc-puppeteer.json` handle the equivalent
+(already done in the Dockerfile).
+
+---
+
+### PL-12 — mermaid-filter is unmaintained; prefer @mermaid-js/mermaid-cli + pandoc-ext/diagram
+
+**Date:** 2026-04  
+**Source:** daedalus Trivy CVE scan (build runs 53-56)
+
+`mermaid-filter@1.4.7` (last release December 2023) has unfixed HIGH CVEs in transitive
+dependencies (glob, picomatch, tar-fs, ws). The project is unmaintained with no upstream
+fix available. Trivy's `exit-code: 1` on HIGH/CRITICAL unfixed CVEs blocked CI.
+
+**Fix:** Migrate to `@mermaid-js/mermaid-cli@11.12.0` (actively maintained, Dependabot
+tracked) + `pandoc-ext/diagram` v1.2.0 Lua filter (vendored at `filters/diagram.lua`).
+
+Key points:
+- The Lua filter runs inside pandoc's built-in Lua interpreter (no subprocess overhead)
+- `mmdc` is invoked via the `MERMAID_BIN` env var (resolved as `MERMAID_BIN` by the filter)
+- A wrapper script (`mmdc-pandoc`) injects `--puppeteerConfigFile` and `--theme` before forwarding
+- SVG output preferred for HTML (sharper, smaller); filter auto-selects best format per output type
+
+Do not revert to `mermaid-filter`. If `@mermaid-js/mermaid-cli` is ever replaced, ensure the
+replacement is actively maintained and the Trivy scan passes.
 
 ---
 

@@ -23,7 +23,7 @@ only and does not appear in the runtime environment.
 Docker invalidates the build cache from the first changed layer onwards. Base utilities,
 pandoc, pandoc-crossref, and XeLaTeX change rarely; Node.js tooling and Python tooling
 change on version bumps. Placing stable layers first ensures that a version bump in
-`mermaid-filter` does not force a re-download of TeX Live.
+`@mermaid-js/mermaid-cli` does not force a re-download of TeX Live.
 
 **Reference:** https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#leverage-build-cache
 
@@ -75,11 +75,12 @@ the key fetch is data, not a shell script.
 
 ### Google Chrome, not `chromium-browser`
 
-Puppeteer (used by mermaid-filter) is tested against Google Chrome. Ubuntu's packaged
-`chromium-browser` may lag behind the Puppeteer-compatible version or diverge in behaviour.
-Using Chrome from Google's official apt repository ensures Puppeteer compatibility.
+Puppeteer (used by `@mermaid-js/mermaid-cli`) is tested against Google Chrome. Ubuntu's
+packaged `chromium-browser` may lag behind the Puppeteer-compatible version or diverge in
+behaviour. Using Chrome from Google's official apt repository ensures Puppeteer compatibility.
 
-**Reference:** https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
+**Reference:** https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker  
+**Reference:** https://github.com/mermaid-js/mermaid-cli/blob/master/docs/already-installed-chromium.md
 
 ### `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true`
 
@@ -124,10 +125,50 @@ execution or privileged kernel namespace access not available in standard Docker
 binary with a shell script that injects `--no-sandbox` ensures the flag is always present
 regardless of how Puppeteer invokes Chrome.
 
-In CI (non-root user), `MERMAID_FILTER_PUPPETEER_CONFIG` handles this instead — the wrapper
-is the Docker-specific solution.
+In CI (non-root user), the `mmdc-pandoc` wrapper script (created in the "Configure mmdc for
+pandoc" step) includes the puppeteer config that passes `--no-sandbox` — the Chrome binary
+wrapper is the Docker-specific solution.
 
 **Reference:** https://github.com/puppeteer/puppeteer/blob/main/docs/troubleshooting.md#running-puppeteer-in-docker
+
+### `mmdc-pandoc` wrapper and `MERMAID_BIN`
+
+`filters/diagram.lua` (pandoc-ext/diagram) invokes the Mermaid engine via the binary path
+from the `MERMAID_BIN` environment variable (resolved as `<ENGINE>_BIN` per the filter's
+`get_engine` function). A bare `mmdc` call does not inject the Puppeteer configuration or the
+diagram theme. A thin wrapper script (`mmdc-pandoc`) prepends `--puppeteerConfigFile` and
+`--theme` before forwarding all arguments to `mmdc`.
+
+This pattern keeps the Lua filter generic (it knows nothing about Puppeteer or themes) and
+externalises the environment-specific configuration into the wrapper — which differs between
+Docker (`/usr/local/bin/mmdc-pandoc`, static path) and CI (written to `/usr/local/bin/mmdc-pandoc`
+at job startup).
+
+**Reference:** pandoc-ext/diagram `get_engine` — https://github.com/pandoc-ext/diagram  
+**Reference:** @mermaid-js/mermaid-cli — https://github.com/mermaid-js/mermaid-cli  
+**Reference:** Using system Chrome with mmdc — https://github.com/mermaid-js/mermaid-cli/blob/master/docs/already-installed-chromium.md
+
+### pandoc-ext/diagram Lua filter (vendored at `filters/diagram.lua`)
+
+Mermaid diagram rendering was migrated from the unmaintained `mermaid-filter@1.4.7` (last
+release December 2023, CVEs in transitive dependencies with no upstream fix) to
+`pandoc-ext/diagram` v1.2.0 + `@mermaid-js/mermaid-cli` v11.12.0.
+
+The Lua filter is vendored (copied verbatim from the upstream tagged release) rather than
+fetched at build time. Vendoring pins the exact filter version to a git commit, making
+upgrades an explicit code change (auditable in the diff) rather than a silent network fetch.
+
+The filter runs inside pandoc's built-in Lua interpreter — no additional runtime dependency
+and no subprocess for the filter itself. Only `mmdc` (the diagram renderer) is an external
+process.
+
+Output format: SVG for HTML output (sharper, smaller, scalable); for PDF the filter produces
+SVG embedded via pandoc's media bag. DOCX receives PNG (the filter automatically selects the
+best format per output type via `format_options`).
+
+**Reference:** pandoc-ext/diagram — https://github.com/pandoc-ext/diagram  
+**Reference:** @mermaid-js/mermaid-cli — https://github.com/mermaid-js/mermaid-cli  
+**Reference:** pandoc Lua filters — https://pandoc.org/lua-filters.html
 
 ### `WORKDIR /workspace` — explicit, absolute, matching convention
 
@@ -316,7 +357,7 @@ the value is treated as a single argument regardless of content.
 Cache keys are version-pinned strings shared across all three build workflows:
 - `pandoc-$VERSION` / `pandoc-crossref-$VERSION`: keyed by tool version
 - `apt-ubuntu-24.04-texlive-v1`: stable key; bump the suffix if apt packages change
-- `npm-mermaid-filter-X.Y.Z-markdownlint-X.Y.Z`: invalidated automatically on version bump
+- `npm-mermaid-cli-X.Y.Z-markdownlint-X.Y.Z`: invalidated automatically on version bump
 
 Sharing keys across workflows means a warm cache from `build.yml` benefits `proposals.yml`
 and `release.yml` without a separate download.
@@ -363,7 +404,7 @@ last pushed.
 All four are potential supply chain attack vectors:
 - `github-actions`: mutable tags on third-party Actions
 - `docker`: Ubuntu base image security patches
-- `npm`: mermaid-filter and markdownlint-cli vulnerability patches
+- `npm`: @mermaid-js/mermaid-cli and markdownlint-cli vulnerability patches
 - `pip`: codespell vulnerability patches and compatibility updates
 
 **Reference:** OpenSSF Scorecard "Dependency-Update-Tool" — https://securityscorecards.dev
