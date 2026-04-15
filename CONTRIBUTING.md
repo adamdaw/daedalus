@@ -58,7 +58,7 @@ Key tools and version pins (update all together — see `CLAUDE.md` Critical Con
 | pandoc | 3.1.13 | [GitHub releases](https://github.com/jgm/pandoc/releases) |
 | pandoc-crossref | 0.3.17.1 | [GitHub releases](https://github.com/lierdakil/pandoc-crossref/releases) |
 | mermaid-filter | 1.4.7 | `npm install -g mermaid-filter@1.4.7` |
-| markdownlint-cli | 0.44.0 | `npm install -g markdownlint-cli@0.44.0` |
+| markdownlint-cli | 0.48.0 | `npm install -g markdownlint-cli@0.48.0` |
 | codespell | `requirements-dev.txt` | `pip install --constraint requirements-dev.txt codespell` (use a venv on Ubuntu 24.04+) |
 
 ---

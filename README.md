@@ -54,7 +54,7 @@ implementation decision is documented with its rationale and authoritative refer
 | `xelatex` | PDF rendering engine | `apt install texlive-xetex texlive-latex-extra lmodern` |
 | `mermaid-filter` 1.4.7 | Diagram rendering | `npm install -g mermaid-filter@1.4.7` |
 | Chromium / Chrome | Required by mermaid-filter | `apt install chromium` / `brew install chromium` |
-| `markdownlint-cli` 0.44.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.44.0` |
+| `markdownlint-cli` 0.48.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.48.0` |
 | `codespell` | Spell checking (optional) | `pip install --constraint requirements-dev.txt codespell` |
 
 pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:

@@ -107,7 +107,7 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # --no-fund: suppresses funding messages in build logs (addressed by Dependabot PRs, not here).
 # --no-audit: suppresses audit output in build logs (same rationale).
 # Versions pinned to match package.json, .pre-commit-config.yaml, and CI workflows.
-RUN npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.44.0
+RUN npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.48.0
 
 # Install Python tools via a virtual environment (PEP 668 compliance).
 # COPY requirements-dev.txt so the version pin is read from the Dependabot-tracked source

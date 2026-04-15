@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
-          key: npm-mermaid-filter-1.4.7-markdownlint-0.44.0
+          key: npm-mermaid-filter-1.4.7-markdownlint-0.48.0
 
       - name: Setup Chrome for mermaid-filter
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
@@ -103,7 +103,7 @@ jobs:
           echo "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.44.0
+        run: npm install -g --no-fund --no-audit mermaid-filter@1.4.7 markdownlint-cli@0.48.0
 
       - name: Install Python tools
         # GitHub Actions runners execute as a non-root user; pip installs to ~/.local (user
