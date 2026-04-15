@@ -1,6 +1,7 @@
 # Runtime View
 
-<!-- Describe the important runtime scenarios: how the building blocks interact
+<!-- arc42 Section 6 — https://docs.arc42.org/section-6/
+     Describe the important runtime scenarios: how the building blocks interact
      to fulfil the key use cases. Document both happy paths and failure cases. -->
 
 ## Scenario: [Primary Use Case]

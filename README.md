@@ -8,6 +8,23 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 
 ---
 
+## Standards & Practices
+
+Daedalus is grounded in recognised industry standards throughout — in the document template,
+the diagram notation, the decision record format, the quality model, and the CI/CD pipeline:
+
+| Standard | Reference | Applied in |
+|---|---|---|
+| **arc42** | [arc42.org](https://arc42.org) | Document template structure — all 11 sections |
+| **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
+| **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
+| **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios |
+| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format (`feat:`, `fix:`, `chore:`, `docs:`) |
+| **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | CI/CD: SHA-pinned actions, Dependabot, CodeQL, branch protection |
+
+---
+
 ## Quick Start
 
 ### Dependencies

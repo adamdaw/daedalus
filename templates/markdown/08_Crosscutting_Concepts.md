@@ -1,6 +1,7 @@
 # Cross-cutting Concepts
 
-<!-- Describe overall regulations and solution ideas that apply across multiple
+<!-- arc42 Section 8 — https://docs.arc42.org/section-8/
+     Describe overall regulations and solution ideas that apply across multiple
      building blocks. These capture the "how we do things here" decisions. -->
 
 ## Security and Authentication

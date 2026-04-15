@@ -1,6 +1,7 @@
 # Architecture Constraints
 
-<!-- Constraints limit the solution space before any design decisions are made.
+<!-- arc42 Section 2 — https://docs.arc42.org/section-2/
+     Constraints limit the solution space before any design decisions are made.
      Identify them early — they shape the architecture more than any other input. -->
 
 ## Technical Constraints

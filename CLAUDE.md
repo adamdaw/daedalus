@@ -131,20 +131,34 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 
 ## arc42 Section Mapping
 
-| File | arc42 Section | Purpose |
+| File | arc42 Section | Purpose | Reference |
+| --- | --- | --- | --- |
+| 01 | Introduction and Goals | Requirements, quality goals, stakeholders | [§1](https://docs.arc42.org/section-1/) |
+| 02 | Constraints | Technical, organisational, conventions | [§2](https://docs.arc42.org/section-2/) |
+| 03 | Context and Scope | System boundary, external interfaces | [§3](https://docs.arc42.org/section-3/) |
+| 04 | Solution Strategy | Technology decisions, structural approach | [§4](https://docs.arc42.org/section-4/) |
+| 05 | Building Block View | C4 Container/Component decomposition | [§5](https://docs.arc42.org/section-5/) |
+| 06 | Runtime View | Sequence diagrams, key scenarios | [§6](https://docs.arc42.org/section-6/) |
+| 07 | Deployment View | Infrastructure, environments, deploy process | [§7](https://docs.arc42.org/section-7/) |
+| 08 | Cross-cutting Concepts | Security, logging, error handling, config | [§8](https://docs.arc42.org/section-8/) |
+| 09 | Architecture Decisions | ADRs — the "why" behind key choices | [§9](https://docs.arc42.org/section-9/) |
+| 10 | Quality Requirements | Quality tree + measurable quality scenarios | [§10](https://docs.arc42.org/section-10/) |
+| 11 | Risks and Technical Debt | Risk register, tracked debt | [§11](https://docs.arc42.org/section-11/) |
+| 99 | References | Bibliography (auto-populated by --citeproc) | — |
+
+---
+
+## Standards & Practices
+
+| Standard | Reference | Applied in |
 | --- | --- | --- |
-| 01 | Introduction and Goals | Requirements, quality goals, stakeholders |
-| 02 | Constraints | Technical, organisational, conventions |
-| 03 | Context and Scope | System boundary, external interfaces |
-| 04 | Solution Strategy | Technology decisions, structural approach |
-| 05 | Building Block View | C4 Container/Component decomposition |
-| 06 | Runtime View | Sequence diagrams, key scenarios |
-| 07 | Deployment View | Infrastructure, environments, deploy process |
-| 08 | Cross-cutting Concepts | Security, logging, error handling, config |
-| 09 | Architecture Decisions | ADRs — the "why" behind key choices |
-| 10 | Quality Requirements | Quality tree + measurable quality scenarios |
-| 11 | Risks and Technical Debt | Risk register, tracked debt |
-| 99 | References | Bibliography (auto-populated by --citeproc) |
+| **arc42** | [arc42.org](https://arc42.org) | Document template structure — all 11 sections |
+| **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
+| **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
+| **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios |
+| **Conventional Commits** | [conventionalcommits.org](https://www.conventionalcommits.org) | Commit message format (`feat:`, `fix:`, `chore:`, `docs:`) |
+| **Semantic Versioning** | [semver.org](https://semver.org) | Release tags (`v1.0.0`) trigger `release.yml` |
+| **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | CI/CD security posture (SHA pinning, Dependabot, CodeQL) |
 
 ---
 

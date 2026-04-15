@@ -10,6 +10,9 @@
 
 **Do not open a public GitHub issue for security vulnerabilities.**
 
+This project follows [coordinated vulnerability disclosure](https://cheatsheetseries.owasp.org/cheatsheets/Vulnerability_Disclosure_Cheat_Sheet.html)
+(OWASP Vulnerability Disclosure Cheat Sheet).
+
 To report a security issue, email **security@bespokeinformatics.com** with:
 
 - A description of the vulnerability

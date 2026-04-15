@@ -1,6 +1,8 @@
 # Deployment View
 
-<!-- Describe the technical infrastructure and how building blocks are mapped to it.
+<!-- arc42 Section 7 — https://docs.arc42.org/section-7/
+     Describe the technical infrastructure and how building blocks are mapped to it.
+     Use a C4 Deployment diagram to show infrastructure — https://c4model.com/#DeploymentDiagram
      Include the most important environments. -->
 
 ## Infrastructure Overview

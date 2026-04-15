@@ -1,6 +1,7 @@
 # Introduction and Goals
 
-<!-- Summarise the driving requirements and the goals of this architecture document.
+<!-- arc42 Section 1 — https://docs.arc42.org/section-1/
+     Summarise the driving requirements and the goals of this architecture document.
      Keep this section brief; detailed requirements belong in requirement artefacts. -->
 
 ## Requirements Overview
@@ -17,6 +18,7 @@
 
 <!-- The top 3–5 quality goals that have the highest priority for this architecture.
      These should be the most important criteria for architecture decisions.
+     Use ISO/IEC 25010 quality categories (https://iso25010.info) as a guide.
      See Section 10 for measurable quality scenarios. -->
 
 | Priority | Quality Goal | Motivation |

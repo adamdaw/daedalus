@@ -1,5 +1,7 @@
 # Risks and Technical Debt
 
+<!-- arc42 Section 11 — https://docs.arc42.org/section-11/ -->
+
 ## Architecture Risks
 
 <!-- List known risks with their probability, impact, and mitigation strategy.
