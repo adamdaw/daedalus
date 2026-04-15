@@ -45,22 +45,25 @@
 %%─── Page break before each top-level section ────────────────────────────────
 \newcommand{\sectionbreak}{\clearpage}
 
+%%─── Cover page logo ─────────────────────────────────────────────────────────
+%% Checks both the direct filename (found when TEXINPUTS includes the images
+%% directory) and the images/ subdirectory path (found when xelatex runs from
+%% the repository root). Supports .jpg, .png, and .pdf logo formats.
+\newcommand{\insertlogo}{%
+  \IfFileExists{logo.jpg}{\includegraphics[width=0.35\textwidth]{logo.jpg}\\[2cm]}{%
+  \IfFileExists{logo.png}{\includegraphics[width=0.35\textwidth]{logo.png}\\[2cm]}{%
+  \IfFileExists{logo.pdf}{\includegraphics[width=0.35\textwidth]{logo.pdf}\\[2cm]}{%
+  \IfFileExists{images/logo.jpg}{\includegraphics[width=0.35\textwidth]{images/logo.jpg}\\[2cm]}{%
+  \IfFileExists{images/logo.png}{\includegraphics[width=0.35\textwidth]{images/logo.png}\\[2cm]}{%
+  \IfFileExists{images/logo.pdf}{\includegraphics[width=0.35\textwidth]{images/logo.pdf}\\[2cm]}{%
+  \vspace{3.5cm}}}}}}}
+
 %%─── Custom cover page ───────────────────────────────────────────────────────
 \renewcommand{\maketitle}{%
   \begin{titlepage}%
     \centering%
     \vspace*{1.5cm}%
-    \IfFileExists{logo.jpg}{%
-      \includegraphics[width=0.35\textwidth]{logo.jpg}\\[2cm]%
-    }{%
-      \IfFileExists{logo.png}{%
-        \includegraphics[width=0.35\textwidth]{logo.png}\\[2cm]%
-      }{%
-        \IfFileExists{logo.pdf}{%
-          \includegraphics[width=0.35\textwidth]{logo.pdf}\\[2cm]%
-        }{\vspace{3.5cm}}%
-      }%
-    }%
+    \insertlogo%
     {\Huge\bfseries\@title\par}%
     \ifdefempty{\@subtitle}{}{%
       \vspace{0.5cm}{\Large\@subtitle\par}%
