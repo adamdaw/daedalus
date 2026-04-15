@@ -11,7 +11,9 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 ## Standards & Practices
 
 Daedalus follows recognised industry standards throughout — in the document template, the diagram notation,
-the decision record format, the quality model, and across the entire build pipeline:
+the decision record format, the quality model, and across the entire build pipeline. Every significant
+implementation decision is documented with its rationale and authoritative reference in
+[`docs/pipeline-decisions.md`](docs/pipeline-decisions.md).
 
 ### Document & Architecture
 
@@ -34,6 +36,8 @@ the decision record format, the quality model, and across the entire build pipel
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors and IDEs (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates: linting, spellcheck, Conventional Commits |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting targets via `##` comments |
+| **PEP 668** | [peps.python.org/pep-0668](https://peps.python.org/pep-0668/) | Python tools installed in an isolated venv, not system Python |
+| **CommonMark** | [spec.commonmark.org](https://spec.commonmark.org/0.31.2/) | Trailing whitespace preserved in `.md` files (hard line break spec §2.2) |
 
 ---
 

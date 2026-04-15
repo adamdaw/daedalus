@@ -171,6 +171,11 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates on commit (pre-commit + commit-msg hooks) |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting `##` targets |
+| **PEP 668** | [peps.python.org/pep-0668](https://peps.python.org/pep-0668/) | Python tools installed in isolated venv, not `--break-system-packages` |
+| **CommonMark** | [spec.commonmark.org](https://spec.commonmark.org/0.31.2/) | Trailing whitespace preserved in `.md` files (hard line break §2.2) |
+
+Every significant pipeline decision is documented with its rationale and authoritative reference in
+[`docs/pipeline-decisions.md`](../docs/pipeline-decisions.md).
 
 ---
 
