@@ -65,7 +65,7 @@ DOCX_FLAGS = \
         watch lint spellcheck shellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help version docker-build docker-run docker-pull-run \
         gather-requirements gather-brief assemble validate-artifacts test-elicitation test-scripts \
-        progress ready
+        progress ready coverage
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -126,7 +126,7 @@ list: ## List all proposals with their titles
 		for cfg in proposals/*/config.yaml; do \
 			name=$$(basename "$$(dirname "$$cfg")"); \
 			title=$$(grep '^title:' "$$cfg" 2>/dev/null \
-				| head -1 | sed 's/title:[[:space:]]*//' | tr -d '"'"'"'); \
+				| head -1 | sed 's/title:[[:space:]]*//' | tr -d '\042\047'); \
 			echo "  $$name — $$title"; \
 		done; \
 	else \
@@ -151,7 +151,7 @@ status: ## Show build state and word count for all proposals
 		for cfg in proposals/*/config.yaml; do \
 			name=$$(basename "$$(dirname "$$cfg")"); \
 			title=$$(grep '^title:' "$$cfg" | head -1 \
-				| sed 's/title:[[:space:]]*//' | tr -d '"'"'"'); \
+				| sed 's/title:[[:space:]]*//' | tr -d '\042\047'); \
 			pdf="proposals/$$name/project.pdf"; \
 			htm="proposals/$$name/project.html"; \
 			docx="proposals/$$name/project.docx"; \
@@ -382,6 +382,11 @@ test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI re
 		xargs -I{} sh -c 'test {} -ge 12 || { echo "FAIL: expected 12 files, got {}"; exit 1; }'
 	@rm -rf proposals/ci-elicitation-test
 	@echo "=== Test passed ==="
+
+coverage: ## Run test coverage analysis (requires Ruby + bashcov)
+	@command -v bashcov >/dev/null 2>&1 || { echo "Error: bashcov not found. Run: gem install bashcov simplecov-cobertura"; exit 1; }
+	@command -v bats >/dev/null 2>&1 || { echo "Error: bats not found. Run: apt-get install bats"; exit 1; }
+	bash scripts/coverage.sh
 
 help: ## Show available targets
 	@echo "Usage: make [target] [PROPOSAL=name] [options]"

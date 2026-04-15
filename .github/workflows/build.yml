@@ -226,13 +226,22 @@ jobs:
       - name: Install test tools and make scripts executable
         run: |
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck bats
+          gem install --no-document bashcov simplecov-cobertura
           chmod +x scripts/*.sh
 
       - name: Lint shell scripts (ShellCheck)
         run: shellcheck scripts/*.sh
 
-      - name: Run bats unit tests
-        run: bats test/scripts/*.bats
+      - name: Run bats unit tests with coverage (bashcov)
+        run: bashcov -- bats test/scripts/*.bats
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
 
       - name: Run gather-requirements (non-AI fallback — Prompt 06 / /req-* commands)
         # Strips comment lines (starting with #) from the fixture before piping to the script.

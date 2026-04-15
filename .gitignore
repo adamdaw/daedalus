@@ -16,8 +16,12 @@ proposals/*.zip
 # Dependencies
 node_modules/
 package-lock.json
+Gemfile.lock
 __pycache__/
 *.pyc
+
+# Coverage output
+coverage/
 
 # OS
 .DS_Store

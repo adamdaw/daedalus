@@ -160,6 +160,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3-venv \
     && /opt/codespell/bin/pip install --no-cache-dir --constraint /tmp/requirements-dev.txt codespell \
     && ln -s /opt/codespell/bin/codespell /usr/local/bin/codespell
 
+# Install Ruby tools (bashcov for test coverage).
+# bashcov traces bash script execution via PS4/BASH_XTRACEFD and produces coverage reports.
+# simplecov-cobertura outputs Cobertura XML for CI integration.
+# Reference — bashcov: https://github.com/infertux/bashcov
+# Reference — simplecov-cobertura: https://github.com/dashingrocket/simplecov-cobertura
+COPY Gemfile /tmp/Gemfile
+RUN apt-get update && apt-get install -y --no-install-recommends ruby ruby-dev build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && cd /tmp && gem install bundler --no-document \
+    && bundle install --gemfile=/tmp/Gemfile --no-cache \
+    && rm -f /tmp/Gemfile /tmp/Gemfile.lock
+
 # Chrome refuses to run as root without --no-sandbox. Wrap the binary so the flag is always
 # present regardless of how Puppeteer invokes it. In CI (non-root), the mmdc-pandoc wrapper
 # and puppeteer config file handle this instead; this wrapper is the Docker-specific solution.
