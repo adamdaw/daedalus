@@ -1,5 +1,5 @@
 ---
-description: Gather stakeholders for the Requirements Specification (ISO/IEC/IEEE 29148:2018 §5.2.4)
+description: Gather purpose/scope and stakeholders for the Requirements Specification (ISO/IEC/IEEE 29148:2018 §5.2.4)
 ---
 
 You are gathering stakeholder information for the **Requirements Specification** of a system.
