@@ -54,9 +54,17 @@ together.
 
 ### Chrome / Puppeteer for mermaid-filter
 mermaid-filter renders Mermaid diagrams via Chrome/Chromium. `PUPPETEER_EXECUTABLE_PATH`
-must point to a real browser binary. When running as root (Docker), Chrome requires
-`--no-sandbox`; the Dockerfile wraps the binary with a shell script that injects this flag
-automatically.
+must point to a real browser binary. Two sandbox contexts to handle:
+- **Docker (root user):** Chrome requires `--no-sandbox`. The Dockerfile wraps the binary
+  with a shell script that injects `--no-sandbox --disable-setuid-sandbox` automatically.
+- **GitHub Actions on Ubuntu 24.04+:** AppArmor blocks unprivileged user namespaces. CI
+  jobs write a puppeteer launch config and set `MERMAID_FILTER_PUPPETEER_CONFIG` to point
+  at it before any build step. See the "Configure puppeteer no-sandbox" step in each workflow.
+
+### mermaid-filter@1.4.7
+Pinned in `package.json`, Dockerfile, and all three CI workflows. `package.json` is the
+source of truth — dependabot opens PRs when a new version is available; update the npm
+install commands in Dockerfile and CI to match when accepting.
 
 ### markdownlint-cli@0.44.0
 Pinned to match `.pre-commit-config.yaml`. Update both together. The CI npm install and
@@ -95,7 +103,8 @@ daedalus/
   prompts/              Agent prompt files for the VSDD workflow
   CLAUDE.md             This file
   .github/workflows/    build.yml, proposals.yml, release.yml
-  .github/dependabot.yml  Weekly Actions version bump PRs
+  .github/dependabot.yml  Weekly Actions + Docker + npm version bump PRs
+  package.json            Node.js tool version pins (source of truth for mermaid-filter, markdownlint-cli)
   .pre-commit-config.yaml
   .markdownlint.json
   .codespellrc
@@ -178,9 +187,12 @@ See `docs/mem-4-process-lessons.md` for the full lesson log. Quick reference:
 
 - pandoc-crossref version mismatch is silent and produces wrong output — always verify both
   versions together with `make check`
-- Chrome `--no-sandbox` is required in Docker (root user); the Dockerfile wraps the binary
+- Chrome `--no-sandbox` required in Docker (root user) and on Ubuntu 24.04+ CI runners
+  (AppArmor restriction); see the Chrome/Puppeteer constraint above for both patterns
 - apt cache key tied to workflow file hash — bust it by touching the workflow file
+- npm cache key is version-based (`npm-mermaid-filter-X.Y.Z-markdownlint-X.Y.Z`); when
+  bumping tool versions, the old cache is automatically abandoned and a fresh one built
 - `git diff --name-only HEAD~1 HEAD` in `proposals.yml` can miss changes in merge commits;
   acceptable for this use case
-- The `release.yml` apt cache key is separate from `build.yml` — the two caches can diverge
-  if one workflow is changed without the other
+- `build.yml`, `proposals.yml`, and `release.yml` share the same npm cache key — all three
+  hit the same cache; a version bump in any one invalidates the cache for all three

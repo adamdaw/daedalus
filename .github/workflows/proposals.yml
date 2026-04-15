@@ -15,8 +15,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
+permissions: {}
 
 env:
   PANDOC_VERSION: 3.1.13
@@ -25,6 +24,9 @@ env:
 jobs:
   detect:
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
     outputs:
       proposals: ${{ steps.detect.outputs.proposals }}
 
@@ -70,6 +72,9 @@ jobs:
     needs: detect
     if: needs.detect.outputs.proposals != '[]' && needs.detect.outputs.proposals != ''
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -130,7 +135,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
-          key: npm-mermaid-filter-${{ hashFiles('.github/workflows/proposals.yml') }}
+          key: npm-mermaid-filter-1.4.7-markdownlint-0.44.0
 
       - name: Setup Chrome for mermaid-filter
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
@@ -142,7 +147,7 @@ jobs:
           echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g mermaid-filter markdownlint-cli@0.44.0
+        run: npm install -g mermaid-filter@1.4.7 markdownlint-cli@0.44.0
 
       - name: Install Python tools
         run: pip install codespell==2.3.0

@@ -1,8 +1,10 @@
 # Generated output
 project.pdf
 project.html
+project.docx
 proposals/*/project.pdf
 proposals/*/project.html
+proposals/*/project.docx
 proposals/*.zip
 
 # Intermediate LaTeX files
@@ -13,6 +15,7 @@ proposals/*.zip
 
 # Dependencies
 node_modules/
+package-lock.json
 __pycache__/
 *.pyc
 

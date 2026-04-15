@@ -22,6 +22,7 @@ jobs:
     # which is not available on private repos without a paid plan. The analysis still
     # runs and contributes to Scorecard's SAST check; the upload failure is non-fatal.
     continue-on-error: true
+    timeout-minutes: 15
     permissions:
       contents: read
       security-events: write

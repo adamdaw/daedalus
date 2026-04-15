@@ -123,7 +123,9 @@ list: ## List all proposals with their titles
 status: ## Show build state and word count for all proposals
 	@echo "Root example:"
 	@words=$$(wc -w markdown/*.md 2>/dev/null | tail -1 | awk '{print $$1}'); \
-	if [ -f project.pdf ] && [ -f project.html ]; then \
+	if [ -f project.pdf ] && [ -f project.html ] && [ -f project.docx ]; then \
+		echo "  [pdf+html+docx]  project.pdf + project.html + project.docx  ($$words words)"; \
+	elif [ -f project.pdf ] && [ -f project.html ]; then \
 		echo "  [pdf+html]  project.pdf + project.html  ($$words words)"; \
 	elif [ -f project.pdf ]; then \
 		echo "  [pdf only]  project.pdf  ($$words words)"; \
@@ -139,9 +141,12 @@ status: ## Show build state and word count for all proposals
 				| sed 's/title:[[:space:]]*//' | tr -d '"'"'"'); \
 			pdf="proposals/$$name/project.pdf"; \
 			htm="proposals/$$name/project.html"; \
+			docx="proposals/$$name/project.docx"; \
 			words=$$(wc -w "proposals/$$name/markdown/"*.md 2>/dev/null \
 				| tail -1 | awk '{print $$1}'); \
-			if [ -f "$$pdf" ] && [ -f "$$htm" ]; then \
+			if [ -f "$$pdf" ] && [ -f "$$htm" ] && [ -f "$$docx" ]; then \
+				echo "  [pdf+html+docx]  $$name — $$title  ($$words words)"; \
+			elif [ -f "$$pdf" ] && [ -f "$$htm" ]; then \
 				echo "  [pdf+html]  $$name — $$title  ($$words words)"; \
 			elif [ -f "$$pdf" ]; then \
 				echo "  [pdf only]  $$name — $$title  ($$words words)"; \

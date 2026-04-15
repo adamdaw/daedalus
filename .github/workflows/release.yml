@@ -19,6 +19,7 @@ env:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -75,7 +76,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
         with:
           path: ~/.npm
-          key: npm-mermaid-filter-${{ hashFiles('.github/workflows/release.yml') }}
+          key: npm-mermaid-filter-1.4.7-markdownlint-0.44.0
 
       - name: Setup Chrome for mermaid-filter
         uses: browser-actions/setup-chrome@4f8e94349a351df0f048634f25fec36c3c91eded # v2.1.1
@@ -87,7 +88,7 @@ jobs:
           echo "MERMAID_FILTER_PUPPETEER_CONFIG=/tmp/puppeteer-config.json" >> $GITHUB_ENV
 
       - name: Install Node.js tools
-        run: npm install -g mermaid-filter markdownlint-cli@0.44.0
+        run: npm install -g mermaid-filter@1.4.7 markdownlint-cli@0.44.0
 
       - name: Install Python tools
         run: pip install codespell==2.3.0
