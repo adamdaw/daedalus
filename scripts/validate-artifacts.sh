@@ -7,10 +7,11 @@
 #   ISO/IEC/IEEE 29148:2018 — requirements specification structure
 #   arc42 §1–11 — architecture documentation structure
 
-set -euo pipefail
+set -uo pipefail
 
 REQUIREMENTS="requirements.md"
 BRIEF="brief.md"
+READY=false
 errors=0
 warnings=0
 
@@ -18,7 +19,8 @@ while [[ $# -gt 0 ]]; do
     case "$1" in
         --requirements) REQUIREMENTS="$2"; shift 2 ;;
         --brief)        BRIEF="$2";        shift 2 ;;
-        *) echo "Usage: $0 [--requirements FILE] [--brief FILE]" >&2; exit 1 ;;
+        --ready)        READY=true;        shift ;;
+        *) echo "Usage: $0 [--requirements FILE] [--brief FILE] [--ready]" >&2; exit 1 ;;
     esac
 done
 
@@ -131,11 +133,78 @@ fi
 
 echo ""
 
+# --- Readiness checks (cross-document consistency, --ready flag) ---
+
+if [[ "$READY" == true && -f "$REQUIREMENTS" && -f "$BRIEF" ]]; then
+    echo "Readiness checks..."
+
+    # 1. All sections must be complete
+    req_empty=$(grep -c "Status: empty" "$REQUIREMENTS" || true)
+    req_ip=$(grep -c "Status: in-progress" "$REQUIREMENTS" || true)
+    brief_empty=$(grep -c "Status: empty" "$BRIEF" || true)
+    brief_ip=$(grep -c "Status: in-progress" "$BRIEF" || true)
+    incomplete=$((req_empty + req_ip + brief_empty + brief_ip))
+    if [[ $incomplete -gt 0 ]]; then
+        warn "${incomplete} section(s) not yet complete across both files"
+    else
+        ok "All sections marked complete"
+    fi
+
+    # 2. Must requirements have acceptance criteria
+    must_count=$(grep -cP '\|\s*(M|Must)\s*\|' "$REQUIREMENTS" || true)
+    ac_count=$(grep -c "^| AC-" "$REQUIREMENTS" || true)
+    if [[ $must_count -gt 0 ]]; then
+        if [[ $ac_count -ge $must_count ]]; then
+            ok "Must requirements (${must_count}) covered by acceptance criteria (${ac_count})"
+        elif [[ $ac_count -gt 0 ]]; then
+            warn "Only ${ac_count} acceptance criterion/criteria for ${must_count} Must requirement(s)"
+        else
+            warn "${must_count} Must requirement(s) but no acceptance criteria rows"
+        fi
+    fi
+
+    # 3. Quality goals in brief §01 have quality scenarios in brief §10
+    # Extract quality goals from §01 Quality Goals table
+    goal_count=$(awk '/^## 01 /,/^---/' "$BRIEF" | grep -cP '^\| \d' || true)
+    scenario_count=$(awk '/^## 10 /,/^---/' "$BRIEF" | grep -cP '^\| QS-' || true)
+    if [[ $goal_count -gt 0 ]]; then
+        if [[ $scenario_count -ge $goal_count ]]; then
+            ok "Quality goals (${goal_count}) covered by scenarios (${scenario_count})"
+        else
+            warn "Only ${scenario_count} quality scenario(s) for ${goal_count} quality goal(s)"
+        fi
+    fi
+
+    # 4. Technology decisions in brief §04 have ADR drafts in brief §09
+    tech_decisions=$(awk '/^## 04 /,/^---/' "$BRIEF" | grep -cP '^\| [A-Z]' || true)
+    adr_count=$(awk '/^## 09 /,/^## (1[0-9]|References)/' "$BRIEF" | grep -cP '^#### ADR-' || true)
+    if [[ $tech_decisions -gt 0 ]]; then
+        if [[ $adr_count -ge $tech_decisions ]]; then
+            ok "Technology decisions (${tech_decisions}) covered by ADRs (${adr_count})"
+        else
+            warn "Only ${adr_count} ADR(s) for ${tech_decisions} technology decision(s)"
+        fi
+    fi
+
+    # 5. RTM completeness — check for Untraced entries
+    untraced=$(grep -c "Untraced" "$REQUIREMENTS" || true)
+    if [[ $untraced -gt 0 ]]; then
+        warn "${untraced} requirement(s) still marked 'Untraced' in RTM"
+    else
+        ok "All requirements traced in RTM"
+    fi
+
+    echo ""
+fi
+
 # --- Summary ---
 
 if [[ $errors -gt 0 ]]; then
-    echo "Result: ${errors} error(s), ${warnings} warning(s) — fix errors before running assemble"
+    echo "Result: ${errors} error(s), ${warnings} warning(s) — fix errors before proceeding"
     exit 1
+elif [[ "$READY" == true && $warnings -gt 0 ]]; then
+    echo "Result: ${warnings} warning(s) — review before starting spec authoring"
+    exit 0
 else
     echo "Result: valid — ${warnings} warning(s)"
     exit 0

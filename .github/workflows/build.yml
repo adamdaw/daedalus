@@ -219,7 +219,7 @@ jobs:
           fetch-depth: 1
 
       - name: Make scripts executable
-        run: chmod +x scripts/gather-requirements.sh scripts/gather-brief.sh scripts/assemble.sh scripts/validate-artifacts.sh
+        run: chmod +x scripts/gather-requirements.sh scripts/gather-brief.sh scripts/assemble.sh scripts/validate-artifacts.sh scripts/progress.sh
 
       - name: Run gather-requirements (non-AI fallback — Prompt 06 / /req-* commands)
         # Strips comment lines (starting with #) from the fixture before piping to the script.
@@ -240,6 +240,18 @@ jobs:
       - name: Validate elicitation artifacts
         run: |
           bash scripts/validate-artifacts.sh \
+            --requirements proposals/ci-elicitation-test/requirements.md \
+            --brief proposals/ci-elicitation-test/brief.md
+
+      - name: Run progress dashboard
+        run: |
+          bash scripts/progress.sh \
+            --requirements proposals/ci-elicitation-test/requirements.md \
+            --brief proposals/ci-elicitation-test/brief.md
+
+      - name: Run readiness check
+        run: |
+          bash scripts/validate-artifacts.sh --ready \
             --requirements proposals/ci-elicitation-test/requirements.md \
             --brief proposals/ci-elicitation-test/brief.md
 

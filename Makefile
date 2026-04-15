@@ -60,7 +60,8 @@ DOCX_FLAGS = \
 .PHONY: build html docx all clean clean-all check check-pandoc check-filters check-proposal \
         watch lint spellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help version docker-build docker-run docker-pull-run \
-        gather-requirements gather-brief assemble validate-artifacts test-elicitation
+        gather-requirements gather-brief assemble validate-artifacts test-elicitation \
+        progress ready
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -329,6 +330,24 @@ validate-artifacts: ## Validate structure of requirements.md and brief.md
 		bash scripts/validate-artifacts.sh; \
 	fi
 
+progress: ## Show elicitation progress dashboard for requirements.md and brief.md
+	@if [ -n "$(PROPOSAL)" ]; then \
+		bash scripts/progress.sh \
+			--requirements proposals/$(PROPOSAL)/requirements.md \
+			--brief proposals/$(PROPOSAL)/brief.md; \
+	else \
+		bash scripts/progress.sh; \
+	fi
+
+ready: ## Validate artifacts are complete and consistent (pre-authoring gate)
+	@if [ -n "$(PROPOSAL)" ]; then \
+		bash scripts/validate-artifacts.sh --ready \
+			--requirements proposals/$(PROPOSAL)/requirements.md \
+			--brief proposals/$(PROPOSAL)/brief.md; \
+	else \
+		bash scripts/validate-artifacts.sh --ready; \
+	fi
+
 test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI required)
 	@echo "=== Elicitation pipeline test ==="
 	@mkdir -p proposals/ci-elicitation-test/markdown
@@ -338,6 +357,12 @@ test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI re
 		grep -v '^#' ../../test/fixtures/brief-answers.txt | \
 		bash ../../scripts/gather-brief.sh brief.md
 	bash scripts/validate-artifacts.sh \
+		--requirements proposals/ci-elicitation-test/requirements.md \
+		--brief proposals/ci-elicitation-test/brief.md
+	bash scripts/progress.sh \
+		--requirements proposals/ci-elicitation-test/requirements.md \
+		--brief proposals/ci-elicitation-test/brief.md
+	bash scripts/validate-artifacts.sh --ready \
 		--requirements proposals/ci-elicitation-test/requirements.md \
 		--brief proposals/ci-elicitation-test/brief.md
 	bash scripts/assemble.sh --proposal ci-elicitation-test
