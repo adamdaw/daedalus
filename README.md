@@ -2,11 +2,11 @@
 
 [![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml?query=branch%3Amaster)
 
-A document generation pipeline for [arc42](https://arc42.org) architectural documentation. Write content in Markdown using the arc42 template structure, run `make all`, get a professional PDF, HTML, and DOCX — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
+An architecture documentation pipeline with structured requirements elicitation. Write in Markdown, run `make all`, get professional PDF, HTML, and DOCX — with cover page, table of contents, Mermaid diagrams, cross-references, and bibliography. No AI required.
 
-Includes a structured authoring workflow for requirements elicitation ([ISO/IEC/IEEE 29148:2018](https://www.iso.org/standard/72089.html)) and section-by-section architecture gathering — available as interactive [Claude Code](https://docs.anthropic.com/en/docs/claude-code) commands or standalone bash scripts.
+Daedalus guides you from blank proposal to finished document through two phases: **requirements gathering** ([ISO/IEC/IEEE 29148:2018](https://www.iso.org/standard/72089.html)) and **architecture elicitation** ([arc42](https://arc42.org) default template, with [C4 Model](https://c4model.com) diagrams). Interactive bash scripts walk you through each section at the terminal; [Claude Code](https://docs.anthropic.com/en/docs/claude-code) commands provide AI-assisted enrichment for teams that use it.
 
-Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) + [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref).
+Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/), [pandoc-ext/diagram](https://github.com/pandoc-ext/diagram) + [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli), and [pandoc-crossref](https://github.com/lierdakil/pandoc-crossref). The pipeline is framework-agnostic — arc42 is the current default, with additional templates [planned](docs/ENHANCEMENTS.md).
 
 ---
 
