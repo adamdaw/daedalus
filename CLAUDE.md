@@ -39,6 +39,9 @@ make validate                 # lint + spellcheck
 make validate-all             # lint + spellcheck across all proposals
 make shellcheck               # lint shell scripts with ShellCheck
 make test-scripts              # run bats unit tests for shell scripts
+make test-python              # run Python unit tests (requires pytest)
+make test-lua                 # run Lua filter integration tests
+make test-all                 # run all tests (bats + Python + Lua)
 make check                    # verify all build dependencies are installed
 make docker-run               # run make all inside locally-built Docker image
 make docker-pull-run          # pull pre-built image from GHCR and run (faster)
@@ -143,8 +146,10 @@ daedalus/
   .claude/commands/     Slash commands: start-proposal, elicit, gather-01 through gather-11, req-01 through req-05
   scripts/              Pipeline and elicitation scripts (bash + Python)
   scripts/progress.sh           Elicitation progress dashboard
-  test/fixtures/        CI fixture answers for Task Tracker (requirements-answers.txt, brief-answers.txt)
-  test/scripts/         bats unit tests for shell scripts (progress, validate-artifacts, assemble)
+  test/scripts/         bats unit tests for shell scripts (95 tests)
+  test/python/          pytest tests for Python scripts
+  test/lua/             Lua filter integration tests
+  test/fixtures/        CI fixture data (requirements, brief, JSONC)
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
   SECURITY.md           Coordinated vulnerability disclosure policy

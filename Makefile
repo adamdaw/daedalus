@@ -65,7 +65,7 @@ DOCX_FLAGS = \
         watch lint spellcheck shellcheck wordcount validate validate-all archive init list open open-html \
         new-section status build-all delete help version docker-build docker-run docker-pull-run \
         gather-requirements gather-brief assemble validate-artifacts test-elicitation test-scripts \
-        progress ready coverage
+        test-python test-lua test-all progress ready coverage
 
 build: check check-proposal ## Build PDF (add DRAFT=1 for watermark, MERMAID_THEME=dark for theme)
 	pandoc $(MARKDOWN) $(PANDOC_FLAGS) \
@@ -359,6 +359,15 @@ ready: ## Validate artifacts are complete and consistent (pre-authoring gate)
 test-scripts: ## Run bats unit tests for shell scripts (https://github.com/bats-core/bats-core)
 	@command -v bats >/dev/null 2>&1 || { echo "Error: bats not found. Run: apt-get install bats"; exit 1; }
 	bats test/scripts/*.bats
+
+test-python: ## Run Python unit tests (requires pytest)
+	@command -v python3 >/dev/null 2>&1 || { echo "Error: python3 not found."; exit 1; }
+	python3 -m pytest test/python/ -v
+
+test-lua: ## Run Lua filter integration tests (requires pandoc + mmdc)
+	bash test/lua/run_tests.sh
+
+test-all: test-scripts test-python test-lua ## Run all tests (bats + Python + Lua)
 
 test-elicitation: ## Run full elicitation pipeline test using fixtures (no AI required)
 	@echo "=== Elicitation pipeline test ==="

@@ -146,6 +146,9 @@ jobs:
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck
           shellcheck scripts/*.sh
 
+      - name: Run Lua filter integration tests
+        run: bash test/lua/run_tests.sh
+
       - name: Build PDF
         run: make build
 
@@ -227,13 +230,17 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck bats
           gem install --no-document bashcov simplecov-cobertura
-          chmod +x scripts/*.sh
+          pip install --constraint requirements-dev.txt pytest
+          chmod +x scripts/*.sh test/lua/run_tests.sh
 
       - name: Lint shell scripts (ShellCheck)
         run: shellcheck scripts/*.sh
 
       - name: Run bats unit tests with coverage (bashcov)
         run: bashcov -- bats test/scripts/*.bats
+
+      - name: Run Python unit tests (pytest)
+        run: python3 -m pytest test/python/ -v
 
       - name: Upload coverage report
         if: always()

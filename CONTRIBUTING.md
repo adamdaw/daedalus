@@ -97,6 +97,9 @@ make validate-all      # lint + spellcheck across all proposals
 ```bash
 make shellcheck    # ShellCheck static analysis on scripts/*.sh
 make test-scripts  # bats unit tests for shell scripts
+make test-all      # run all tests (bats + Python + Lua)
+make test-python   # Python unit tests for validate-jsonc.py
+make test-lua      # Lua filter integration tests
 ```
 
 **British English.** Write all prose in British English (`organisation`, `colour`, `analyse`,
