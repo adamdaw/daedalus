@@ -18,10 +18,9 @@ jobs:
   analyze:
     name: Analyze
     runs-on: ubuntu-24.04
-    # continue-on-error: the SARIF upload requires GitHub Advanced Security (GHAS),
-    # which is not available on private repos without a paid plan. The analysis still
-    # runs and contributes to Scorecard's SAST check; the upload failure is non-fatal.
-    continue-on-error: true
+    # GHAS (GitHub Advanced Security) is free on public repositories. SARIF upload
+    # populates the Security tab with CodeQL findings.
+    # Reference: https://docs.github.com/en/code-security/code-scanning/introduction-to-code-scanning/about-code-scanning
     timeout-minutes: 15
     permissions:
       contents: read

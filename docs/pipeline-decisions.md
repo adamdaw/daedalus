@@ -866,24 +866,17 @@ the Docker publish step satisfies this check.
 **Reference:** SLSA (Supply-chain Levels for Software Artifacts) — https://slsa.dev  
 **Reference:** actions/attest-build-provenance — https://github.com/actions/attest-build-provenance
 
-### Status: deferred until repository is public
+### Status: enabled
 
-`actions/attest-build-provenance` requires either a public repository or a GitHub
-Organization account. This is a private user-owned repository; the step fails with
-"Feature not available for user-owned private repositories."
+`actions/attest-build-provenance` is enabled in the docker job of `build.yml`. The step
+runs on pushes to master, captures the image digest after GHCR push, and signs the image
+with GitHub's OIDC identity.
 
-The step and its associated permissions (`id-token: write`, `attestations: write`) have
-been removed from the docker job in `build.yml`. Build provenance is captured via OCI
-image labels (`org.opencontainers.image.created` and `.revision`).
+Permissions required in the docker job: `id-token: write` and `attestations: write`.
 
-When the repository is made public, re-add to the docker job:
-1. Permissions: `id-token: write` and `attestations: write`
-2. Digest capture in the push step (see git history)
-3. The attestation step using `actions/attest-build-provenance`
+### What it provides
 
-### What it will provide
-
-Once re-enabled, `actions/attest-build-provenance` will generate and sign a SLSA Level 2
+`actions/attest-build-provenance` generates and signs a SLSA Level 2
 provenance statement attached to the image in GHCR as an OCI referrer. The attestation records:
 - The exact image digest (sha256:...)
 - The GitHub repository, ref, and commit SHA

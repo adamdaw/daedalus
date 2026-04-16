@@ -327,6 +327,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
 
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -422,12 +424,29 @@ jobs:
           trivyignores: .trivyignore
 
       - name: Push to GHCR
+        id: push
         if: github.event_name != 'pull_request'
         run: |
           docker push ghcr.io/${{ github.repository }}:latest
           docker push ghcr.io/${{ github.repository }}:${{ github.sha }}
+          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "ghcr.io/${{ github.repository }}:latest" | cut -d@ -f2)
+          echo "digest=${DIGEST}" >> "$GITHUB_OUTPUT"
           echo "Pushed ghcr.io/${{ github.repository }}:latest"
           echo "Pushed ghcr.io/${{ github.repository }}:${{ github.sha }}"
+          echo "Digest: ${DIGEST}"
+
+      - name: Attest build provenance (SLSA)
+        # SLSA Level 2 provenance attestation — signs the Docker image with GitHub's
+        # OIDC identity so consumers can verify it was built by this workflow.
+        # Verify with: gh attestation verify ghcr.io/adamdaw/daedalus:latest
+        # Reference: https://slsa.dev
+        # Reference: https://github.com/actions/attest-build-provenance
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.push.outputs.digest != ''
+        uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v2.2.3
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
 
       - name: Push versioned Docker tag (on version tags)
         # When a vN.N.N tag is pushed, publish a human-readable version tag alongside the

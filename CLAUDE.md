@@ -240,7 +240,7 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **OCI Image Spec** | [opencontainers.org — annotations](https://github.com/opencontainers/image-spec/blob/main/annotations.md) | Docker image labels: title, description, source, licenses |
 | **OpenSSF Supply Chain Best Practices** | [best.openssf.org](https://best.openssf.org) | SHA-256 verification of pandoc and pandoc-crossref downloads |
 | **OpenSSF Scorecard** | [securityscorecards.dev](https://securityscorecards.dev) | SHA-pinned Actions, Dependabot, CodeQL, Trivy scanning, least-privilege permissions |
-| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA provenance attestation — deferred until repo is public (GitHub limitation for private user repos) |
+| **SLSA** | [slsa.dev](https://slsa.dev) | SLSA provenance attestation on Docker images pushed to GHCR |
 | **EditorConfig** | [editorconfig.org](https://editorconfig.org) | Consistent formatting across editors (`.editorconfig`) |
 | **pre-commit framework** | [pre-commit.com](https://pre-commit.com) | Automated quality gates on commit (pre-commit + commit-msg hooks) |
 | **GNU Make conventions** | [GNU Make manual](https://www.gnu.org/software/make/manual/make.html) | `.DEFAULT_GOAL := help`; self-documenting `##` targets |
