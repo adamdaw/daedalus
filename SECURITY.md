@@ -13,7 +13,7 @@
 This project follows [coordinated vulnerability disclosure](https://cheatsheetseries.owasp.org/cheatsheets/Vulnerability_Disclosure_Cheat_Sheet.html)
 (OWASP Vulnerability Disclosure Cheat Sheet).
 
-To report a security issue, email **security@bespokeinformatics.com** with:
+To report a security issue, email **security@bespokeinformatics.ca** with:
 
 - A description of the vulnerability
 - Steps to reproduce it
