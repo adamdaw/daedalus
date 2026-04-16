@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 4.0+ (associative arrays, [[ ]], local, set -euo pipefail)
 # assemble.sh — non-AI fallback for prompts/01-arch-spec-author.md
 # Assembles arc42 markdown files from requirements.md + brief.md.
 # Output is draft quality: structured content, no AI prose synthesis.

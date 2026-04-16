@@ -22,6 +22,8 @@
 <!-- Reliability, Security, Maintainability, Portability                          -->
 | Priority | Quality Goal | Motivation |
 | --- | --- | --- |
+<!-- Example row — replace with your actual quality goals -->
+| 1 | *Performance Efficiency* | *Users expect sub-second page loads under normal traffic* |
 
 ### Stakeholders
 | Role | Expectations |

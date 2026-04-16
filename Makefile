@@ -119,6 +119,16 @@ ifdef PROPOSAL
 		exit 1; \
 	}
 endif
+	@test -n "$$(ls $(PROPOSAL_DIR)/markdown/*.md 2>/dev/null)" || { \
+		echo "Error: no markdown files found in $(PROPOSAL_DIR)/markdown/"; \
+		echo "  Create content files or run 'make init NAME=...' to scaffold a proposal."; \
+		exit 1; \
+	}
+	@test -f $(CONFIG) || { \
+		echo "Error: $(CONFIG) not found."; \
+		echo "  Create config.yaml or run 'make init NAME=...' to scaffold a proposal."; \
+		exit 1; \
+	}
 
 list: ## List all proposals with their titles
 	@if ls proposals/*/config.yaml >/dev/null 2>&1; then \
@@ -422,6 +432,7 @@ delete: ## Delete a proposal and all its contents (requires PROPOSAL=; add CONFI
 	@echo "Deleted proposals/$(PROPOSAL)/"
 
 version: ## Print installed versions of all build tools
+	@echo "daedalus:        $$(cat VERSION 2>/dev/null || echo 'unknown')"
 	@echo "pandoc:          $$(pandoc --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
 	@echo "pandoc-crossref: $$(pandoc-crossref --version 2>/dev/null | head -1 || echo 'NOT FOUND')"
 	@echo "xelatex:         $$(xelatex --version 2>/dev/null | head -1 || echo 'NOT FOUND')"

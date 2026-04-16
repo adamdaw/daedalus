@@ -35,7 +35,8 @@
 
 | ID | Role | Organisation / Context | Goals | Priority |
 | --- | --- | --- | --- | --- |
-| STK-01 | | | | High/Medium/Low |
+<!-- Example row — replace with your actual stakeholders -->
+| STK-01 | *Product Owner* | *Example Corp* | *Faster delivery with fewer defects* | *High* |
 
 ---
 

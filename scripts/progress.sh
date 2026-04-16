@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 4.0+ (associative arrays, [[ ]], local, set -euo pipefail)
 # progress.sh — Display elicitation progress dashboard for requirements.md and brief.md
 #
 # Usage:

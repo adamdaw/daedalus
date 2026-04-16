@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 3.0+ (local, [[ ]], set -uo pipefail)
 # validate-artifacts.sh — validates structure of requirements.md and brief.md
 # Usage: validate-artifacts.sh [--requirements FILE] [--brief FILE]
 # Exit 0 if valid, 1 if any blocking errors.

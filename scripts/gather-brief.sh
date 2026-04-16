@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 4.0+ (associative arrays, [[ ]], local, set -euo pipefail)
 # gather-brief.sh — non-AI fallback for /gather-01 through /gather-11
 # Interactive arc42 architecture elicitation. Reads from stdin — pipe answers for CI:
 #   gather-brief.sh < test/fixtures/brief-answers.txt

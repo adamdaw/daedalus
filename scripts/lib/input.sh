@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 3.0+ (local, [[ ]], IFS= read -r)
 # lib/input.sh — Shared I/O functions for interactive elicitation scripts
 #
 # Sourced by gather-requirements.sh and gather-brief.sh to avoid code duplication.

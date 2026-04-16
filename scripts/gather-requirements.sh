@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Requires bash 4.0+ (associative arrays, [[ ]], local, set -euo pipefail)
 # gather-requirements.sh — non-AI fallback for Prompt 06 and /req-* commands
 # Interactive requirements elicitation. Reads from stdin — pipe answers for CI:
 #   gather-requirements.sh < test/fixtures/requirements-answers.txt
