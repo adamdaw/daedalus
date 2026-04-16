@@ -56,6 +56,76 @@ teardown() {
     done
 }
 
+@test "assemble.sh --proposal resolves paths correctly" {
+    # Create proposal structure
+    mkdir -p "$TEST_DIR/proposals/test-proj/markdown"
+    cp "$TEST_DIR/requirements.md" "$TEST_DIR/proposals/test-proj/requirements.md"
+    cp "$TEST_DIR/brief.md" "$TEST_DIR/proposals/test-proj/brief.md"
+
+    cd "$TEST_DIR"
+    run bash "$OLDPWD/scripts/assemble.sh" --proposal test-proj
+    cd "$OLDPWD"
+    [ "$status" -eq 0 ]
+
+    file_count=$(find "$TEST_DIR/proposals/test-proj/markdown" -maxdepth 1 -name '*.md' | wc -l)
+    [ "$file_count" -eq 12 ]
+}
+
+@test "assemble.sh fails when brief.md is missing" {
+    run bash scripts/assemble.sh \
+        --requirements "$TEST_DIR/requirements.md" \
+        --brief "$TEST_DIR/nonexistent-brief.md" \
+        --output "$TEST_DIR/markdown"
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"not found"* ]]
+}
+
+@test "assemble.sh unknown option exits with error" {
+    run bash scripts/assemble.sh --bogus-flag
+    [ "$status" -eq 1 ]
+    [[ "$output" == *"Usage"* ]]
+}
+
+@test "assemble.sh output section 01 contains Introduction heading" {
+    bash scripts/assemble.sh \
+        --requirements "$TEST_DIR/requirements.md" \
+        --brief "$TEST_DIR/brief.md" \
+        --output "$TEST_DIR/markdown"
+
+    grep -q "Introduction and Goals" "$TEST_DIR/markdown/01_Introduction_and_Goals.md"
+}
+
+@test "assemble.sh output section 02 contains constraint content" {
+    bash scripts/assemble.sh \
+        --requirements "$TEST_DIR/requirements.md" \
+        --brief "$TEST_DIR/brief.md" \
+        --output "$TEST_DIR/markdown"
+
+    # The constraints file should have the Constraints heading
+    grep -q "Constraints" "$TEST_DIR/markdown/02_Constraints.md"
+}
+
+@test "assemble.sh produces all 12 expected filenames" {
+    bash scripts/assemble.sh \
+        --requirements "$TEST_DIR/requirements.md" \
+        --brief "$TEST_DIR/brief.md" \
+        --output "$TEST_DIR/markdown"
+
+    # Check all 12 exact filenames
+    [ -f "$TEST_DIR/markdown/01_Introduction_and_Goals.md" ]
+    [ -f "$TEST_DIR/markdown/02_Constraints.md" ]
+    [ -f "$TEST_DIR/markdown/03_Context_and_Scope.md" ]
+    [ -f "$TEST_DIR/markdown/04_Solution_Strategy.md" ]
+    [ -f "$TEST_DIR/markdown/05_Building_Block_View.md" ]
+    [ -f "$TEST_DIR/markdown/06_Runtime_View.md" ]
+    [ -f "$TEST_DIR/markdown/07_Deployment_View.md" ]
+    [ -f "$TEST_DIR/markdown/08_Crosscutting_Concepts.md" ]
+    [ -f "$TEST_DIR/markdown/09_Architecture_Decisions.md" ]
+    [ -f "$TEST_DIR/markdown/10_Quality_Requirements.md" ]
+    [ -f "$TEST_DIR/markdown/11_Risks_and_Technical_Debt.md" ]
+    [ -f "$TEST_DIR/markdown/99_References.md" ]
+}
+
 @test "assemble.sh output contains expected section headings" {
     bash scripts/assemble.sh \
         --requirements "$TEST_DIR/requirements.md" \
