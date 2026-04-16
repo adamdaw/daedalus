@@ -1015,3 +1015,34 @@ cases (missing files, empty sections), and cross-script integration.
 
 **Applied in:** `test/scripts/*.bats` (test files), `.github/workflows/build.yml`
 (test-elicitation job), `Dockerfile` (apt-get install), `Makefile` (`test-scripts` target).
+
+---
+
+### 90% coverage gates per language
+
+**Decision:** Enforce a minimum 90% line-level code coverage gate for all project-owned code.
+The gate fails the build if coverage drops below 90% for any language.
+
+**Per-language enforcement:**
+
+| Language | Tool | Gate mechanism | Applied in |
+|---|---|---|---|
+| Bash | bashcov + SimpleCov | `.simplecov` → `minimum_coverage 90` | `make coverage`, CI |
+| Python | pytest-cov | `--cov-fail-under=90` | `make test-python`, CI |
+| Lua | (excluded — vendored) | Integration tests must pass | `make test-lua`, CI |
+
+**Rationale:** Line-level coverage gates prevent regressions and ensure the non-AI elicitation
+path (the primary interface) remains production-grade. The 90% threshold balances thoroughness
+with the practical reality that some code paths (interactive I/O, error recovery) require
+complex test fixtures.
+
+**Vendored Lua exclusion:** `filters/diagram.lua` is vendored third-party code
+(pandoc-ext/diagram v1.2.0). It runs inside pandoc's embedded Lua interpreter, which does
+not support standard coverage instrumentation (luacov). It is tested via integration tests
+but excluded from the per-language gate. This is standard practice for vendored dependencies.
+
+**References:**
+- bashcov — https://github.com/infertux/bashcov
+- SimpleCov minimum_coverage — https://github.com/simplecov-ruby/simplecov#minimum-coverage
+- pytest-cov — https://pytest-cov.readthedocs.io
+- Coverage gates best practice — https://docs.codecov.io/docs/commit-status

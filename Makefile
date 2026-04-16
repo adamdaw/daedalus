@@ -360,9 +360,9 @@ test-scripts: ## Run bats unit tests for shell scripts (https://github.com/bats-
 	@command -v bats >/dev/null 2>&1 || { echo "Error: bats not found. Run: apt-get install bats"; exit 1; }
 	bats test/scripts/*.bats
 
-test-python: ## Run Python unit tests (requires pytest)
+test-python: ## Run Python unit tests with coverage gate (requires pytest + pytest-cov)
 	@command -v python3 >/dev/null 2>&1 || { echo "Error: python3 not found."; exit 1; }
-	python3 -m pytest test/python/ -v
+	python3 -m pytest test/python/ -v --cov=scripts --cov-report=term-missing --cov-fail-under=90
 
 test-lua: ## Run Lua filter integration tests (requires pandoc + mmdc)
 	bash test/lua/run_tests.sh

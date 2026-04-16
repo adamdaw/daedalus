@@ -230,7 +230,7 @@ jobs:
         run: |
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck bats
           sudo gem install --no-document bashcov simplecov-cobertura
-          pip install --constraint requirements-dev.txt pytest
+          pip install --constraint requirements-dev.txt pytest pytest-cov
           chmod +x scripts/*.sh scripts/lib/*.sh test/lua/run_tests.sh
 
       - name: Lint shell scripts (ShellCheck)
@@ -239,8 +239,12 @@ jobs:
       - name: Run bats unit tests with coverage (bashcov)
         run: bashcov -- bats test/scripts/*.bats
 
-      - name: Run Python unit tests (pytest)
-        run: python3 -m pytest test/python/ -v
+      - name: Run Python unit tests with coverage (pytest-cov)
+        # --cov-fail-under=90: gate that fails the build if Python coverage drops below 90%.
+        # Reference: pytest-cov — https://pytest-cov.readthedocs.io
+        run: |
+          python3 -m pytest test/python/ -v \
+            --cov=scripts --cov-report=term-missing --cov-fail-under=90
 
       - name: Upload coverage report
         if: always()
