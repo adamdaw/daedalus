@@ -24,7 +24,7 @@ implementation decision is documented with its rationale and authoritative refer
 | **arc42** | [arc42.org](https://arc42.org) | Document template structure — all 11 sections |
 | **C4 Model** | [c4model.com](https://c4model.com) | Context, Container, and Deployment diagrams (Sections 3, 5, 7) |
 | **Architecture Decision Records** | [adr.github.io](https://adr.github.io) | Section 9 ADR format (Nygard, 2011) |
-| **ISO/IEC 25010** | [iso25010.info](https://iso25010.info) | Software quality model — Section 10 quality scenarios, `/req-03` non-functional requirements |
+| **ISO/IEC 25010** | [iso25000.com/iso-25010](https://iso25000.com/en/iso-25000-standards/iso-25010) | Software quality model — Section 10 quality scenarios, `/req-03` non-functional requirements |
 | **ISO/IEC/IEEE 29148:2018** | [iso.org/standard/72089](https://www.iso.org/standard/72089.html) | Requirements specification structure — `requirements.md` template, `/req-*` commands |
 
 ### Pipeline & Tooling

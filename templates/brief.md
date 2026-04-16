@@ -7,7 +7,7 @@
 
 ## 01 — Introduction and Goals
 <!-- arc42 §1 — https://docs.arc42.org/section-1/ -->
-<!-- ISO/IEC 25010 quality model — https://iso25010.info -->
+<!-- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- Status: empty -->
 
 ### System Overview
@@ -154,7 +154,7 @@
 
 ## 10 — Quality Requirements
 <!-- arc42 §10 — https://docs.arc42.org/section-10/                                              -->
-<!-- ISO/IEC 25010 — https://iso25010.info                                                       -->
+<!-- ISO/IEC 25010 — https://iso25000.com/en/iso-25000-standards/iso-25010                                                       -->
 <!-- ATAM quality scenarios — https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908 -->
 <!-- Status: empty -->
 

@@ -1,12 +1,12 @@
 # Quality Requirements
 
 <!-- arc42 Section 10 — https://docs.arc42.org/section-10/
-     Quality model: ISO/IEC 25010 — https://iso25010.info -->
+     Quality model: ISO/IEC 25010 — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 
 ## Quality Tree
 
 <!-- Refine the quality goals from Section 1 into concrete, measurable scenarios.
-     Use ISO/IEC 25010 quality categories as a guide — https://iso25010.info -->
+     Use ISO/IEC 25010 quality categories as a guide — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 
 | Quality Category | Quality Goal | Priority |
 | --- | --- | --- |

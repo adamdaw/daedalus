@@ -18,7 +18,7 @@
 
 <!-- The top 3–5 quality goals that have the highest priority for this architecture.
      These should be the most important criteria for architecture decisions.
-     Use ISO/IEC 25010 quality categories (https://iso25010.info) as a guide.
+     Use ISO/IEC 25010 quality categories (https://iso25000.com/en/iso-25000-standards/iso-25010) as a guide.
      See Section 10 for measurable quality scenarios. -->
 
 | Priority | Quality Goal | Motivation |

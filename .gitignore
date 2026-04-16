@@ -26,3 +26,4 @@ coverage/
 # OS
 .DS_Store
 Thumbs.db
+kcov_38+dfsg-1_amd64.deb

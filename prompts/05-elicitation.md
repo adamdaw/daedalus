@@ -91,7 +91,7 @@ arc42 numbering; Section 01 first (quality goals from §01 are referenced in §0
 
 ### §01 — Introduction and Goals
 - **arc42 §1** — https://docs.arc42.org/section-1/
-- **ISO/IEC 25010** quality model — https://iso25010.info  
+- **ISO/IEC 25010** quality model — https://iso25000.com/en/iso-25000-standards/iso-25010  
   Quality goals are drawn from the eight ISO/IEC 25010 quality characteristics
   (Performance Efficiency, Compatibility, Usability, Reliability, Security,
   Maintainability, Portability) to ensure goals are internationally recognised and
@@ -150,7 +150,7 @@ arc42 numbering; Section 01 first (quality goals from §01 are referenced in §0
 
 ### §10 — Quality Requirements
 - **arc42 §10** — https://docs.arc42.org/section-10/
-- **ISO/IEC 25010** — https://iso25010.info
+- **ISO/IEC 25010** — https://iso25000.com/en/iso-25000-standards/iso-25010
 - **ATAM quality scenarios (CMU SEI)** — https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908  
   Each quality scenario has six fields: Stimulus Source, Stimulus, Environment,
   Artefact, Response, Response Measure. The Response Measure must be quantified —

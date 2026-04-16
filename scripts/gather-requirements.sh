@@ -8,7 +8,7 @@
 #
 # Standards:
 #   ISO/IEC/IEEE 29148:2018 — https://www.iso.org/standard/72089.html
-#   ISO/IEC 25010 quality model — https://iso25010.info
+#   ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010
 #   MoSCoW prioritisation (DSDM) — https://www.agilebusiness.org
 #   BDD Given/When/Then — https://cucumber.io/docs/bdd/better-gherkin/
 
@@ -104,7 +104,7 @@ ${FR_CONTENT}
 
 ## 05 — Non-Functional Requirements
 <!-- ISO/IEC/IEEE 29148:2018 §5.2.5 — system requirements -->
-<!-- ISO/IEC 25010 quality model — https://iso25010.info -->
+<!-- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- Status: complete -->
 
 | ID | ISO 25010 Category | Description | Measurable Criterion | Priority |

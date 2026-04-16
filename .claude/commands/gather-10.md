@@ -6,7 +6,7 @@ You are gathering information for **Section 10 — Quality Requirements** of an 
 
 **Standards:**
 - arc42 §10 — https://docs.arc42.org/section-10/
-- ISO/IEC 25010 quality model — https://iso25010.info
+- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010
 - ATAM quality scenarios (CMU SEI) — https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908  
   A quality scenario has six parts: Stimulus Source, Stimulus, Environment, Artefact, Response, Response Measure.
   The Response Measure must be quantified — this is the most common gap in quality requirement sections.
@@ -49,7 +49,7 @@ Replace the `## 10 — Quality Requirements` block with:
 ```markdown
 ## 10 — Quality Requirements
 <!-- arc42 §10 — https://docs.arc42.org/section-10/ -->
-<!-- ISO/IEC 25010 — https://iso25010.info -->
+<!-- ISO/IEC 25010 — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- ATAM quality scenarios — https://resources.sei.cmu.edu/library/asset-view.cfm?assetid=513908 -->
 <!-- Status: complete -->
 

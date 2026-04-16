@@ -6,7 +6,7 @@ You are gathering non-functional requirements for the **Requirements Specificati
 
 **Standards:**
 - ISO/IEC/IEEE 29148:2018 §5.2.5 — system requirements — https://www.iso.org/standard/72089.html
-- ISO/IEC 25010 quality model — https://iso25010.info  
+- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010  
   NFRs are categorised using the eight ISO 25010 quality characteristics to ensure they
   are internationally recognised and unambiguous. Every NFR must have a measurable criterion —
   "fast" and "reliable" are descriptions, not requirements.
@@ -53,7 +53,7 @@ Replace the `## 05 — Non-Functional Requirements` block with:
 ```markdown
 ## 05 — Non-Functional Requirements
 <!-- ISO/IEC/IEEE 29148:2018 §5.2.5 — system requirements -->
-<!-- ISO/IEC 25010 quality model — https://iso25010.info -->
+<!-- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- Every NFR must have a measurable criterion — vague descriptors are not accepted -->
 <!-- MoSCoW: M = Must, S = Should, C = Could, W = Won't (this release) -->
 <!-- Status: complete -->

@@ -6,7 +6,7 @@ You are gathering information for **Section 01 — Introduction and Goals** of a
 
 **Standards:**
 - arc42 §1 — https://docs.arc42.org/section-1/
-- ISO/IEC 25010 quality model — https://iso25010.info
+- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010
 - SMART requirements (Specific, Measurable, Achievable, Relevant, Time-bound)
 
 ## Procedure
@@ -58,7 +58,7 @@ Replace the `## 01 — Introduction and Goals` block with:
 ```markdown
 ## 01 — Introduction and Goals
 <!-- arc42 §1 — https://docs.arc42.org/section-1/ -->
-<!-- ISO/IEC 25010 quality model — https://iso25010.info -->
+<!-- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- Status: complete -->
 
 ### System Overview
@@ -71,7 +71,7 @@ Replace the `## 01 — Introduction and Goals` block with:
 | R-01 | [requirement] | [High/Medium/Low] |
 
 ### Quality Goals
-<!-- ISO/IEC 25010: https://iso25010.info -->
+<!-- ISO/IEC 25010: https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 | Priority | Quality Goal | Motivation |
 | --- | --- | --- |
 | 1 | [characteristic] | [specific motivation] |

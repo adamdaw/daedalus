@@ -68,7 +68,7 @@ Organised by functional area. Each story has a unique FR-NN identifier for trace
 ---
 
 ## 05 — Non-Functional Requirements
-<!-- ISO/IEC 25010 quality model — https://iso25010.info -->
+<!-- ISO/IEC 25010 quality model — https://iso25000.com/en/iso-25000-standards/iso-25010 -->
 <!-- Categories: Performance Efficiency, Reliability, Security, Maintainability, Usability, Compatibility, Portability -->
 <!-- Every NFR must have a measurable criterion — vague descriptors ("fast", "reliable") are not requirements -->
 <!-- MoSCoW: M = Must, S = Should, C = Could, W = Won't (this release) -->
