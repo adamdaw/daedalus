@@ -1,6 +1,6 @@
 # Daedalus
 
-[![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml)
+[![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml?query=branch%3Amaster)
 
 A document generation pipeline for [arc42](https://arc42.org) architectural documentation. Write content in Markdown using the arc42 template structure, run `make all`, get a professional PDF, HTML, and DOCX — with cover page, table of contents, running headers, Mermaid diagrams, cross-references, and bibliography.
 

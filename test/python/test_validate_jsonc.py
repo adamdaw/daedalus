@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = str(Path(__file__).parent.parent.parent / "scripts" / "validate-jsonc.py")
 
 
@@ -58,8 +60,40 @@ class TestStripLineComments:
 # ---------------------------------------------------------------------------
 
 
+class TestMainInProcess:
+    """Tests for main() called in-process so pytest-cov can trace coverage."""
+
+    def test_valid_file_exits_clean(self, validate_jsonc, tmp_path, monkeypatch):
+        f = tmp_path / "valid.jsonc"
+        f.write_text('{"name": "test"} // comment\n')
+        monkeypatch.setattr("sys.argv", ["validate-jsonc.py", str(f)])
+        validate_jsonc.main()  # should not raise
+
+    def test_invalid_file_exits_one(self, validate_jsonc, tmp_path, monkeypatch):
+        f = tmp_path / "invalid.jsonc"
+        f.write_text('{"broken": }')
+        monkeypatch.setattr("sys.argv", ["validate-jsonc.py", str(f)])
+        with pytest.raises(SystemExit) as exc_info:
+            validate_jsonc.main()
+        assert exc_info.value.code == 1
+
+    def test_no_files_exits_clean(self, validate_jsonc, monkeypatch):
+        monkeypatch.setattr("sys.argv", ["validate-jsonc.py"])
+        validate_jsonc.main()  # no files = no errors
+
+    def test_mixed_files(self, validate_jsonc, tmp_path, monkeypatch):
+        good = tmp_path / "good.jsonc"
+        good.write_text('{"ok": true}\n')
+        bad = tmp_path / "bad.jsonc"
+        bad.write_text('not json')
+        monkeypatch.setattr("sys.argv", ["validate-jsonc.py", str(good), str(bad)])
+        with pytest.raises(SystemExit) as exc_info:
+            validate_jsonc.main()
+        assert exc_info.value.code == 1
+
+
 class TestMain:
-    """Tests for main() invoked as a subprocess."""
+    """Tests for main() invoked as a subprocess (integration tests)."""
 
     def test_valid_jsonc_exits_zero(self, tmp_path):
         f = tmp_path / "valid.jsonc"
