@@ -60,6 +60,15 @@ implementation decision is documented with its rationale and authoritative refer
 | `markdownlint-cli` 0.48.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.48.0` |
 | `codespell` | Spell checking (optional) | `pip install --constraint requirements-dev.txt codespell` |
 
+Development tools (for testing and coverage — not required for document generation):
+
+| Tool | Purpose | Install |
+|---|---|---|
+| `bats` | Shell script testing | `apt install bats` / [bats-core](https://github.com/bats-core/bats-core) |
+| `shellcheck` | Shell script linting | `apt install shellcheck` / [shellcheck.net](https://www.shellcheck.net) |
+| `pytest` + `pytest-cov` | Python testing + coverage | `pip install --constraint requirements-dev.txt pytest pytest-cov` |
+| `bashcov` | Bash coverage analysis | `gem install bashcov simplecov-cobertura` / [Gemfile](Gemfile) |
+
 pandoc-crossref must be version-matched to pandoc. Download the Linux binary and place it on your `$PATH`:
 
 ```bash
@@ -100,15 +109,34 @@ make help         # list all available targets
 ```bash
 make lint         # run markdownlint on content files
 make spellcheck   # run codespell on content files
-make validate     # run lint + spellcheck (without building)
-make progress     # show elicitation completion dashboard
-make ready        # validate artifacts are ready for spec authoring
+make shellcheck   # lint shell scripts with ShellCheck
+make validate     # run lint + spellcheck + shellcheck (without building)
 make wordcount    # word count per file and total
 make status       # show build state and word count for all proposals
 make version      # print installed versions of all build tools
-make shellcheck   # lint shell scripts with ShellCheck
-make test-scripts # run bats unit tests for shell scripts
+make progress     # show elicitation completion dashboard
+make ready        # validate artifacts are ready for spec authoring
 ```
+
+### Testing
+
+```bash
+make test-scripts  # run bats unit tests for shell scripts (95 tests)
+make test-python   # run Python unit tests with 90% coverage gate
+make test-lua      # run Lua filter integration tests
+make test-all      # run all tests (bats + Python + Lua)
+make coverage      # run bash test coverage analysis (requires Ruby + bashcov)
+```
+
+The test suite comprises 113 tests across three languages:
+- **95 bats tests** — shell scripts and Makefile targets (`test/scripts/*.bats`)
+- **12 pytest tests** — Python JSONC validation (`test/python/`)
+- **6 Lua integration tests** — pandoc diagram filter (`test/lua/`)
+
+Coverage gates enforce 90% minimum line coverage for project-owned code:
+- **Bash:** [bashcov](https://github.com/infertux/bashcov) + [SimpleCov](https://github.com/simplecov-ruby/simplecov) (`.simplecov` config)
+- **Python:** [pytest-cov](https://pytest-cov.readthedocs.io) with `--cov-fail-under=90`
+- **Lua:** Excluded from line-level gate — `filters/diagram.lua` is [vendored third-party code](https://github.com/pandoc-ext/diagram) tested via integration tests
 
 ### Draft mode
 
@@ -352,7 +380,11 @@ daedalus/
     validate-artifacts.sh  # Validate requirements.md and brief.md structure
     progress.sh            # Elicitation progress dashboard
     validate-jsonc.py      # JSONC validation for devcontainer.json
-  test/fixtures/           # CI fixture data for elicitation pipeline tests
+  test/
+    scripts/             # bats unit tests (95 tests across 8 files)
+    python/              # pytest tests for validate-jsonc.py (12 tests)
+    lua/                 # Lua filter integration tests (6 tests)
+    fixtures/            # CI fixture data (requirements, brief, JSONC)
   .claude/commands/        # Claude Code slash commands (/start-proposal, /elicit, /req-01–05, /gather-01–11)
   .devcontainer/           # VS Code Dev Container config
   .github/
@@ -365,6 +397,8 @@ daedalus/
   .codespellrc             # Spell check configuration
   .pre-commit-config.yaml  # Pre-commit hook definitions
   .editorconfig            # Consistent formatting across editors
+  Gemfile                  # Ruby dependencies for coverage tooling (bashcov)
+  .simplecov               # bashcov/SimpleCov coverage configuration (90% gate)
 ```
 
 ---

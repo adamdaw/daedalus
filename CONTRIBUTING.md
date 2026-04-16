@@ -62,6 +62,8 @@ Key tools and version pins (update all together — see `CLAUDE.md` Critical Con
 | codespell | `requirements-dev.txt` | `pip install --constraint requirements-dev.txt codespell` (use a venv on Ubuntu 24.04+) |
 | ShellCheck | latest | `apt-get install shellcheck` / [shellcheck.net](https://www.shellcheck.net/) |
 | bats | latest | `apt-get install bats` / [github.com/bats-core](https://github.com/bats-core/bats-core) |
+| pytest + pytest-cov | `requirements-dev.txt` | `pip install --constraint requirements-dev.txt pytest pytest-cov` |
+| bashcov | `Gemfile` | `gem install bashcov simplecov-cobertura` / `bundle install` |
 
 ---
 
@@ -88,19 +90,19 @@ make build DRAFT=1
 All checks must pass before a PR is merged. CI runs them automatically.
 
 ```bash
-make lint              # markdownlint on content/markdown/**/*.md
-make spellcheck        # codespell on content/markdown/**/*.md
-make validate          # lint + spellcheck (both in one command)
-make validate-all      # lint + spellcheck across all proposals
+make validate      # lint + spellcheck + shellcheck
+make test-scripts  # bats unit tests for shell scripts (95 tests)
+make test-python   # Python unit tests with 90% coverage gate
+make test-lua      # Lua filter integration tests
+make test-all      # all tests (bats + Python + Lua)
+make coverage      # bash coverage analysis (requires Ruby + bashcov)
 ```
 
-```bash
-make shellcheck    # ShellCheck static analysis on scripts/*.sh
-make test-scripts  # bats unit tests for shell scripts
-make test-all      # run all tests (bats + Python + Lua)
-make test-python   # Python unit tests for validate-jsonc.py
-make test-lua      # Lua filter integration tests
-```
+**Coverage gates.** All project-owned code must maintain 90% line coverage. Bash coverage
+is measured by [bashcov](https://github.com/infertux/bashcov) + SimpleCov (configured in
+`.simplecov`). Python coverage uses [pytest-cov](https://pytest-cov.readthedocs.io) with
+`--cov-fail-under=90`. Lua (`filters/diagram.lua`) is vendored third-party code and excluded
+from line-coverage gates.
 
 **British English.** Write all prose in British English (`organisation`, `colour`, `analyse`,
 `licence`, `fulfil`, etc.). codespell's default dictionaries do not include the `en-GB_to_en-US`

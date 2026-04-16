@@ -38,10 +38,12 @@ make spellcheck               # codespell on content
 make validate                 # lint + spellcheck
 make validate-all             # lint + spellcheck across all proposals
 make shellcheck               # lint shell scripts with ShellCheck
-make test-scripts              # run bats unit tests for shell scripts
-make test-python              # run Python unit tests (requires pytest)
+make test-scripts              # run bats unit tests for shell scripts (95 tests)
+make test-python              # run Python unit tests with 90% coverage gate
 make test-lua                 # run Lua filter integration tests
 make test-all                 # run all tests (bats + Python + Lua)
+make coverage                 # run bash coverage analysis (requires Ruby + bashcov)
+make test-elicitation          # run full non-AI pipeline test with fixtures
 make check                    # verify all build dependencies are installed
 make docker-run               # run make all inside locally-built Docker image
 make docker-pull-run          # pull pre-built image from GHCR and run (faster)
@@ -146,10 +148,10 @@ daedalus/
   .claude/commands/     Slash commands: start-proposal, elicit, gather-01 through gather-11, req-01 through req-05
   scripts/              Pipeline and elicitation scripts (bash + Python)
   scripts/progress.sh           Elicitation progress dashboard
-  test/scripts/         bats unit tests for shell scripts (95 tests)
-  test/python/          pytest tests for Python scripts
-  test/lua/             Lua filter integration tests
-  test/fixtures/        CI fixture data (requirements, brief, JSONC)
+  test/scripts/         bats unit tests: 8 files, 95 tests (input-lib, gather-requirements, gather-brief, progress, validate-artifacts, assemble, coverage-script, makefile)
+  test/python/          pytest tests for validate-jsonc.py (12 tests, 90% coverage gate)
+  test/lua/             Lua filter integration tests (6 tests — vendored code, no coverage gate)
+  test/fixtures/        CI fixture data: requirements-answers.txt, brief-answers.txt, jsonc/
   CLAUDE.md             This file
   CONTRIBUTING.md       Developer guide — setup, workflow, PR process, release
   SECURITY.md           Coordinated vulnerability disclosure policy
@@ -162,7 +164,10 @@ daedalus/
   .devcontainer/devcontainer.json  VS Code Dev Container (builds from Dockerfile)
   filters/diagram.lua     Vendored pandoc-ext/diagram Lua filter (v1.2.0) — invokes mmdc for Mermaid rendering
   package.json            Node.js tool version pins (source of truth for @mermaid-js/mermaid-cli, markdownlint-cli)
+  scripts/lib/input.sh    Shared I/O functions (ask, ask_yn, ask_multiline) — sourced by gather scripts
   scripts/                  Pre-commit helper scripts (validate-jsonc.py)
+  Gemfile                 Ruby dependencies for coverage tooling (bashcov, simplecov-cobertura)
+  .simplecov              bashcov/SimpleCov coverage configuration (90% minimum gate)
   .pre-commit-config.yaml
   .markdownlint.yaml
   .codespellrc
@@ -235,6 +240,7 @@ PDF validation checks: `pdfinfo` page count (≥5), `pdftotext` section heading 
 | **GitHub community health** | [docs.github.com — community health](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions) | `CONTRIBUTING.md`, `SECURITY.md` |
 | **ShellCheck** | [shellcheck.net](https://www.shellcheck.net/) | Static analysis for shell scripts — pre-commit, CI, `make shellcheck` |
 | **bats-core** | [github.com/bats-core/bats-core](https://github.com/bats-core/bats-core) | Bash Automated Testing System — TAP-compliant unit tests for `scripts/` |
+| **pytest-cov** | [pytest-cov.readthedocs.io](https://pytest-cov.readthedocs.io) | Python test coverage with 90% gate — `make test-python` |
 
 Every significant pipeline decision is documented with its rationale and authoritative reference in
 [`docs/pipeline-decisions.md`](../docs/pipeline-decisions.md).
@@ -400,3 +406,26 @@ See `docs/mem-4-process-lessons.md` for the full lesson log. Quick reference:
   `package.json` when accepting npm Dependabot PRs (see Critical Constraints above)
 - `pip install -r requirements-dev.txt` installs every listed package; use `--constraint`
   when an environment only needs a subset — prevents build-tool pollution in the wrong context
+
+---
+
+## Testing
+
+### Coverage gates (90% minimum)
+
+| Language | Lines | Tool | Gate | Enforcement |
+| --- | --- | --- | --- | --- |
+| Bash | ~1,762 | bashcov + SimpleCov | 90% line coverage | `.simplecov` → `minimum_coverage 90` |
+| Python | ~63 | pytest-cov | 90% line coverage | `--cov-fail-under=90` |
+| Lua | ~625 (vendored) | Integration tests | All tests pass | Excluded from line-coverage gate |
+
+Vendored Lua exclusion: `filters/diagram.lua` is third-party code (pandoc-ext/diagram v1.2.0)
+running inside pandoc's embedded Lua interpreter. It is tested via integration tests but
+excluded from the per-language coverage gate. See `docs/pipeline-decisions.md` for rationale.
+
+### Test architecture
+
+The scripts are refactored for testability: `gather-requirements.sh` and `gather-brief.sh`
+have named section functions (`gather_req_01()` through `gather_req_09()`, `gather_brief_01()`
+through `gather_brief_11()`) that can be tested independently via `--source-only` mode.
+Shared I/O functions (`ask()`, `ask_yn()`, `ask_multiline()`) are in `scripts/lib/input.sh`.
