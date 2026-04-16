@@ -144,7 +144,7 @@ jobs:
       - name: Lint shell scripts (ShellCheck)
         run: |
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck
-          shellcheck scripts/*.sh
+          shellcheck -x scripts/*.sh scripts/lib/*.sh
 
       - name: Run Lua filter integration tests
         run: bash test/lua/run_tests.sh
@@ -229,12 +229,12 @@ jobs:
       - name: Install test tools and make scripts executable
         run: |
           sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck bats
-          gem install --no-document bashcov simplecov-cobertura
+          sudo gem install --no-document bashcov simplecov-cobertura
           pip install --constraint requirements-dev.txt pytest
-          chmod +x scripts/*.sh test/lua/run_tests.sh
+          chmod +x scripts/*.sh scripts/lib/*.sh test/lua/run_tests.sh
 
       - name: Lint shell scripts (ShellCheck)
-        run: shellcheck scripts/*.sh
+        run: shellcheck -x scripts/*.sh scripts/lib/*.sh
 
       - name: Run bats unit tests with coverage (bashcov)
         run: bashcov -- bats test/scripts/*.bats
