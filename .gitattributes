@@ -1,0 +1,31 @@
+# .gitattributes — Cross-platform line ending normalisation and binary file handling.
+#
+# Ensures consistent LF line endings regardless of contributor's OS.
+# Reference: https://git-scm.com/docs/gitattributes
+# Reference: https://docs.github.com/en/get-started/getting-started-with-git/configuring-git-to-handle-line-endings
+
+# Default: normalise all text files to LF on commit, check out as native.
+* text=auto
+
+# Explicitly declare text files (LF in repo, native on checkout).
+*.md    text
+*.yaml  text
+*.yml   text
+*.json  text
+*.sh    text eol=lf
+*.py    text eol=lf
+*.lua   text eol=lf
+*.tex   text
+*.css   text
+*.bib   text
+*.bats  text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+Gemfile  text eol=lf
+
+# Binary files — do not normalise.
+*.jpg  binary
+*.png  binary
+*.pdf  binary
+*.zip  binary
+*.deb  binary
