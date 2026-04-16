@@ -192,6 +192,11 @@ jobs:
       - name: Spell check
         run: make spellcheck PROPOSAL="${{ matrix.proposal }}"
 
+      - name: Lint shell scripts (ShellCheck)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -x scripts/*.sh scripts/lib/*.sh
+
       - name: Build PDF
         run: make build PROPOSAL="${{ matrix.proposal }}"
 

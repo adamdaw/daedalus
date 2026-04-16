@@ -264,6 +264,8 @@ archive: ## Package source + output into a timestamped zip (requires PROPOSAL=)
 	@test -n "$(PROPOSAL)" || { echo "Usage: make archive PROPOSAL=my-proposal"; exit 1; }
 	@command -v zip >/dev/null 2>&1 || { echo "Error: zip not found. Run: apt install zip / brew install zip"; exit 1; }
 	@test -f $(OUTPUT) || { echo "Error: Run 'make build PROPOSAL=$(PROPOSAL)' first"; exit 1; }
+	@test -f $(HTML_OUT) || echo "Warning: $(HTML_OUT) not found — archive will not include HTML"
+	@test -f $(DOCX_OUT) || echo "Warning: $(DOCX_OUT) not found — archive will not include DOCX"
 	@TIMESTAMP=$$(date +%Y%m%d-%H%M%S); \
 	ARCHIVE="proposals/$(PROPOSAL)-$${TIMESTAMP}.zip"; \
 	zip -r "$${ARCHIVE}" \
@@ -435,13 +437,14 @@ docker-build: ## Build the Docker image locally
 		--build-arg VCS_REF=$(shell git rev-parse HEAD 2>/dev/null || echo unknown) \
 		-t daedalus .
 
-docker-run: docker-build ## Run the build inside the locally-built Docker image (optional: TARGET=all TARGET=validate)
+docker-run: docker-build ## Run the build inside the locally-built Docker image (default: make all; override with TARGET=validate)
 	docker run --rm -v "$(CURDIR):/workspace" \
 		$(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) \
 		daedalus \
 		$(if $(TARGET),make $(TARGET))
 
 docker-pull-run: ## Pull the pre-built image from GHCR and run the build (no local Docker build required)
+	@command -v docker >/dev/null 2>&1 || { echo "Error: docker not found."; exit 1; }
 	docker pull ghcr.io/adamdaw/daedalus:latest
 	docker run --rm -v "$(CURDIR):/workspace" \
 		$(if $(PROPOSAL),--env PROPOSAL=$(PROPOSAL),) \

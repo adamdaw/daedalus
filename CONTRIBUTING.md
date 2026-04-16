@@ -64,6 +64,7 @@ Key tools and version pins (update all together — see `CLAUDE.md` Critical Con
 | bats | latest | `apt-get install bats` / [github.com/bats-core](https://github.com/bats-core/bats-core) |
 | pytest + pytest-cov | `requirements-dev.txt` | `pip install --constraint requirements-dev.txt pytest pytest-cov` |
 | bashcov | `Gemfile` | `gem install bashcov simplecov-cobertura` / `bundle install` |
+| Node.js | >= 22 | [nodejs.org](https://nodejs.org) (version constraint in `package.json`) |
 
 ---
 

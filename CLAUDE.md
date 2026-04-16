@@ -7,8 +7,9 @@ any changes to this repository.
 
 ## What This Project Is
 
-Daedalus is a document generation pipeline for architectural proposal documents using the
-[arc42](https://arc42.org) standard. Authors write content in Markdown; the pipeline
+Daedalus is an architecture documentation pipeline with structured requirements elicitation.
+It currently uses the [arc42](https://arc42.org) template as its default, with additional
+frameworks [planned](../docs/ENHANCEMENTS.md). Authors write content in Markdown; the pipeline
 produces a professional PDF, HTML, and optionally DOCX — with cover page, TOC, running
 headers, Mermaid diagrams, cross-references, and bibliography.
 
@@ -104,6 +105,14 @@ Pinned across six places — update all together: `package.json` (source of trut
 `.pre-commit-config.yaml`, CI npm install commands, Dockerfile, README.md (dependency
 table + Troubleshooting section), and CONTRIBUTING.md (dependency table). Dependabot opens
 PRs against `package.json`; when accepting, update the other five to match.
+
+### shellcheck-py (ShellCheck pre-commit wrapper)
+The `shellcheck-py` pre-commit hook (`.pre-commit-config.yaml`) bundles the ShellCheck
+binary. The hook `rev:` pin (currently `v0.10.0.1`) determines which ShellCheck version
+runs during pre-commit. Update this rev when Dependabot or manual review identifies a
+newer release at https://github.com/shellcheck-py/shellcheck-py/releases. The CI
+workflows install ShellCheck via `apt-get` — the system package version may differ
+from the pre-commit wrapper version but ShellCheck is backward-compatible.
 
 ### codespell
 `requirements-dev.txt` is the sole source of truth. Accepting a Dependabot PR to

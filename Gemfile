@@ -17,5 +17,5 @@
 
 source "https://rubygems.org"
 
-gem "bashcov", "~> 3.2"
-gem "simplecov-cobertura", "~> 2.1"
+gem "bashcov", "3.2.0"
+gem "simplecov-cobertura", "2.1.0"

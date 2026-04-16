@@ -133,6 +133,11 @@ jobs:
       - name: Spell check
         run: make spellcheck
 
+      - name: Lint shell scripts (ShellCheck)
+        run: |
+          sudo apt-get update -q && sudo apt-get install -y --no-install-recommends shellcheck
+          shellcheck -x scripts/*.sh scripts/lib/*.sh
+
       - name: Build PDF, HTML, and DOCX
         run: make all
 

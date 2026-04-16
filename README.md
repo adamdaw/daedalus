@@ -59,6 +59,7 @@ implementation decision is documented with its rationale and authoritative refer
 | Chromium / Chrome | Required by mmdc (Puppeteer) | `apt install chromium` / `brew install chromium` |
 | `markdownlint-cli` 0.48.0 | Markdown linting (optional) | `npm install -g markdownlint-cli@0.48.0` |
 | `codespell` | Spell checking (optional) | `pip install --constraint requirements-dev.txt codespell` |
+| Node.js >= 22 | Required by npm tools | [nodejs.org](https://nodejs.org) |
 
 Development tools (for testing and coverage — not required for document generation):
 

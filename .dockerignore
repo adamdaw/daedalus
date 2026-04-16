@@ -31,4 +31,6 @@ __pycache__
 README.md
 docs/
 prompts/
+# Development-only files — not needed for the document build pipeline.
+# Elicitation scripts, prompts, and docs are for development and CI workflows.
 scripts/
