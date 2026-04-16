@@ -672,3 +672,16 @@ Alternatively, use Docker — all dependencies are pre-installed:
 ```bash
 make docker-run
 ```
+
+---
+
+## Roadmap
+
+Daedalus is designed to be framework-agnostic — arc42 is the current default, not a
+permanent commitment. Planned enhancements include support for additional documentation
+frameworks (TOGAF, 4+1 View, ISO 42010), requirements standards (BABOK, Volere),
+prioritisation methods (WSJF, Kano, RICE), diagram engines (PlantUML, GraphViz, D2),
+and output formats (web via MkDocs, AsciiDoc input).
+
+See [`docs/ENHANCEMENTS.md`](docs/ENHANCEMENTS.md) for the full roadmap and
+[open issues](https://github.com/adamdaw/daedalus/issues) for tracked work.

@@ -610,16 +610,29 @@ be encountered via glob patterns do not, and would produce false positives.
 ### `"private": true`
 
 Prevents accidental `npm publish` from publishing this internal tooling manifest to the public
-npm registry. This file manages build tool version pins, not a distributable library.
+npm registry. This file manages build tool version pins, not a distributable library. Without
+this field, a bare `npm publish` from the project root would attempt to upload `package.json`
+and all non-gitignored files to the public npm registry — leaking internal documentation,
+build scripts, and potentially credentials. The `"private": true` field causes npm to
+unconditionally refuse the publish, regardless of `.npmignore` or `files` configuration.
+This is a defence-in-depth measure: even if an automated script or CI misconfiguration
+invokes `npm publish`, the operation is blocked.
 
 **Reference:** https://docs.npmjs.com/cli/v10/configuring-npm/package-json#private
 
 ### `"engines": { "node": ">=22" }`
 
 Declares the Node.js version requirement. Node.js 20 reached End of Life on 30 April 2026;
-Node.js 22 is the current LTS. `npm install` warns on incompatible versions.
+Node.js 22 is the current LTS. `npm install` warns on incompatible versions. The `engines`
+field serves as executable documentation — it is checked by npm at install time (when
+`engine-strict` is set) and by CI/Docker environments to verify compatibility. Without it,
+contributors using an older Node.js version would encounter cryptic runtime errors from
+`@mermaid-js/mermaid-cli` or `markdownlint-cli` rather than a clear version mismatch warning.
+The `>=22` constraint (rather than `>=20` or exact `22.x`) allows adoption of Node.js 24+
+when it becomes LTS without requiring a `package.json` update.
 
-**Reference:** Node.js release schedule — https://nodejs.org/en/about/previous-releases
+**Reference:** Node.js release schedule — https://nodejs.org/en/about/previous-releases  
+**Reference:** npm engines — https://docs.npmjs.com/cli/v10/configuring-npm/package-json#engines
 
 ### Exact version pins (no `^` or `~`)
 
@@ -985,7 +998,17 @@ on every commit (pre-commit hook) and in CI.
 
 **Rationale:** The non-AI elicitation path runs entirely through bash scripts — they must be
 production-grade. ShellCheck catches quoting errors, unused variables, non-portable constructs,
-and other common shell scripting mistakes that manual review often misses.
+and other common shell scripting mistakes that manual review often misses. ShellCheck is the
+de facto standard static analysis tool for shell scripts, with over 35k GitHub stars, support
+for bash/sh/dash/ksh, and comprehensive coverage of POSIX compliance issues. Its wiki provides
+detailed explanations and fixes for every diagnostic code, making it educational as well as
+preventive.
+
+**Alternatives considered:** shellharden (Rust-based — focuses on quoting fixes, narrower
+scope than ShellCheck's full diagnostic range), shfmt (Go-based — formatter only, does not
+perform semantic analysis), bash -n (syntax check only — catches parse errors but not logic
+bugs or quoting issues), manual code review (unreliable for shell's many quoting and
+expansion edge cases).
 
 **References:**
 - ShellCheck — https://www.shellcheck.net/
@@ -1006,12 +1029,23 @@ the Bash Automated Testing System. Tests are TAP-compliant and run in CI.
 **Rationale:** The non-AI elicitation pipeline (`gather-requirements.sh`, `gather-brief.sh`,
 `assemble.sh`, `validate-artifacts.sh`, `progress.sh`) is the primary interface for teams
 without Claude Code. Unit tests verify each script's argument parsing, output format, edge
-cases (missing files, empty sections), and cross-script integration.
+cases (missing files, empty sections), and cross-script integration. bats-core is the most
+popular bash testing framework (10k+ GitHub stars), available in Ubuntu/Debian apt repos,
+with TAP-compliant output that integrates with any CI system. The `@test` syntax is intuitive
+— tests are just bash functions; heredoc/pipe input patterns work naturally for testing
+stdin-driven scripts like the gather scripts.
+
+**Alternatives considered:** shunit2 (xUnit-based — older, less actively maintained, its own
+test suite has broken tests in recent versions), shellspec (BDD-style — more features
+including mocking, parameterised tests, and multi-shell support, but less ubiquitous and the
+BDD DSL adds learning overhead), basht (minimalist — too simple for a project of this size),
+plain bash scripts with exit codes (no framework — poor test reporting and isolation).
 
 **References:**
 - bats-core — https://github.com/bats-core/bats-core
 - TAP (Test Anything Protocol) — https://testanything.org
 - Bash Best Practices — https://bertvv.github.io/cheat-sheets/Bash.html
+- shellspec comparison — https://shellspec.info/comparison.html
 
 **Applied in:** `test/scripts/*.bats` (test files), `.github/workflows/build.yml`
 (test-elicitation job), `Dockerfile` (apt-get install), `Makefile` (`test-scripts` target).
@@ -1032,9 +1066,16 @@ The gate fails the build if coverage drops below 90% for any language.
 | Lua | (excluded — vendored) | Integration tests must pass | `make test-lua`, CI |
 
 **Rationale:** Line-level coverage gates prevent regressions and ensure the non-AI elicitation
-path (the primary interface) remains production-grade. The 90% threshold balances thoroughness
-with the practical reality that some code paths (interactive I/O, error recovery) require
+path (the primary interface) remains production-grade. The 90% threshold is an industry-standard
+target for mature projects. Below 80% allows too many untested code paths, increasing regression
+risk. Above 95% forces testing trivial code (guard clauses, unreachable error handling) with
+diminishing returns and brittle tests. 90% balances thoroughness with the practical reality
+that some code paths (interactive terminal I/O, error recovery from external tools) require
 complex test fixtures.
+
+**Alternatives considered:** 80% (simpler to achieve but leaves significant gaps), 95%
+(stricter but forces testing edge cases that rarely execute), 100% (theoretically ideal but
+practically unachievable for interactive scripts without mocking the terminal).
 
 **Vendored Lua exclusion:** `filters/diagram.lua` is vendored third-party code
 (pandoc-ext/diagram v1.2.0). It runs inside pandoc's embedded Lua interpreter, which does
@@ -1046,3 +1087,299 @@ but excluded from the per-language gate. This is standard practice for vendored 
 - SimpleCov minimum_coverage — https://github.com/simplecov-ruby/simplecov#minimum-coverage
 - pytest-cov — https://pytest-cov.readthedocs.io
 - Coverage gates best practice — https://docs.codecov.io/docs/commit-status
+- Google Testing Blog — https://testing.googleblog.com
+
+---
+
+## Architecture & Standards
+
+### arc42 as default documentation template
+
+**Decision:** Use arc42 as the default architecture documentation template.
+
+**Rationale:** Pragmatic, section-driven (11 concrete sections vs. abstract views), maps naturally to C4 diagrams, widely adopted in enterprise software. Template-based — authors fill sections rather than defining views from scratch. Process-neutral (no mandated methodology). Critically, the pipeline itself is framework-agnostic: Pandoc + Markdown can render any structure. arc42 is the current default, not a permanent commitment.
+
+**Alternatives considered:** TOGAF ADM deliverables (enterprise-scale, viewpoint-driven — planned enhancement), 4+1 View Model (Philippe Kruchten — logical/process/physical/development + scenarios — planned enhancement), Rozanski & Woods viewpoints (context/functional/information/concurrency/deployment/operational), ISO/IEC/IEEE 42010:2022 (formal architecture description standard — viewpoints + views + correspondence rules — planned enhancement), C4-only lightweight mode (diagrams + ADRs, skip prose sections — planned enhancement), custom user-defined templates (planned enhancement).
+
+**References:**
+- arc42 — https://arc42.org
+- docs/ENHANCEMENTS.md for planned alternatives
+
+**Applied in:** `templates/`, `markdown/`, `.claude/commands/gather-*.md`, `scripts/gather-brief.sh`
+
+---
+
+### ISO/IEC/IEEE 29148:2018 for requirements specification
+
+**Decision:** Use ISO/IEC/IEEE 29148:2018 as the requirements specification standard.
+
+**Rationale:** Modern triple-badged standard (ISO + IEC + IEEE). Supersedes IEEE 830-1998. Covers the full requirements lifecycle (stakeholder → system → software requirements), not just SRS document format. Explicit traceability requirements (§5.2.8). Well-structured section hierarchy maps directly to the five /req-* elicitation commands.
+
+**Alternatives considered:** IEEE 830-1998 (legacy predecessor — still widely cited but superseded), BABOK v3 (Business Analysis Body of Knowledge — broader business analysis scope, not requirements-specific — planned enhancement), IREB CPRE syllabus (certification-oriented methodology, not a document template), SWEBOK (Software Engineering Body of Knowledge — reference framework, not template), user stories only (lightweight Agile approach, no formal structure — planned enhancement), Volere template (Robertson & Robertson — alternative section structure).
+
+**References:**
+- ISO/IEC/IEEE 29148:2018 — https://www.iso.org/standard/72089.html
+- IEEE 29148-2018 — https://standards.ieee.org/standard/29148-2018.html
+
+**Applied in:** `templates/requirements.md`, `.claude/commands/req-*.md`, `scripts/gather-requirements.sh`
+
+---
+
+### C4 Model for architecture diagrams
+
+**Decision:** Use the C4 Model (Context, Container, Component, Code) as the primary diagram notation.
+
+**Rationale:** Hierarchical abstraction maps to arc42 sections (§3 Context, §5 Building Blocks, §7 Deployment). Text-renderable in Mermaid. Lightweight — four levels, each with a clear purpose. Created by Simon Brown specifically for software architecture communication.
+
+**Alternatives considered:** UML component/deployment/sequence diagrams (richer notation but heavier tooling and steeper learning curve), ArchiMate (enterprise architecture, aligned with TOGAF — more formal than needed for single-system docs), SysML (systems engineering — covers hardware + software, overkill for pure software), Structurizr DSL (C4 as code — more opinionated rendering than Mermaid), box-and-line diagrams (informal, no standard semantics or hierarchy).
+
+**References:**
+- C4 Model — https://c4model.com
+- Software architecture diagrams — https://dev.to/simonbrown/software-architecture-diagrams-which-tool-should-we-use-29e
+
+**Applied in:** `.claude/commands/gather-03.md`, `gather-05.md`, `gather-07.md`; `templates/brief.md`
+
+---
+
+### MoSCoW for requirements prioritisation
+
+**Decision:** Use MoSCoW (Must/Should/Could/Won't) as the default prioritisation method.
+
+**Rationale:** Simplest categorical method — no numeric scoring required. Forces the "Won't" conversation early, preventing scope creep at fixed-scope/fixed-deadline scale. Universally understood by non-technical stakeholders. Well-supported by DSDM methodology.
+
+**Alternatives considered:** WSJF — Weighted Shortest Job First (SAFe — optimises flow using Cost of Delay / Job Size ratio, requires numeric estimates — planned enhancement), Kano model (customer satisfaction — must-be/one-dimensional/attractive, requires survey data — planned enhancement), RICE (Reach × Impact × Confidence / Effort — numeric scoring — planned enhancement), Value vs. Complexity matrix (2×2 visual, good for workshops), dot-voting / stakeholder voting (democratic, quick but unsystematic).
+
+**References:**
+- DSDM MoSCoW — https://www.agilebusiness.org/dsdm-project-framework/moscow-prioririsation.html
+- Prioritisation methods comparison — https://highberg.com/insights/a-comparison-of-prioritization-methods/
+
+**Applied in:** `templates/requirements.md`, `.claude/commands/req-02.md`, `scripts/gather-requirements.sh`
+
+---
+
+### BDD Given/When/Then for acceptance criteria
+
+**Decision:** Use BDD Given/When/Then format for acceptance criteria in requirements.md §08.
+
+**Rationale:** Testable by definition — each criterion maps directly to an executable test. Ubiquitous format understood by developers, testers, and business stakeholders (Cucumber, SpecFlow, Behave). ISO 29148 §5.2.8 traceability: each acceptance criterion links to a requirement ID. Forces concrete pre-conditions, actions, and observable outcomes.
+
+**Alternatives considered:** ATDD scenarios (similar intent, framed as acceptance tests rather than behaviour specifications), Specification by Example / SbE (Gojko Adzic — uses concrete data examples, more tabular), FIT/FitNesse tables (tabular acceptance tests — framework-specific), decision tables (combinatorial conditions, good for complex business rules), rule-based criteria (simple bullet list of rules — flexible but not testable by format), freestyle prose acceptance tests (simple but ambiguous and hard to automate).
+
+**References:**
+- Cucumber BDD — https://cucumber.io/docs/bdd/better-gherkin/
+- ISO/IEC/IEEE 29148:2018 (§5.2.8) — https://www.iso.org/standard/72089.html
+
+**Applied in:** `templates/requirements.md` §08, `.claude/commands/req-05.md`, `scripts/gather-requirements.sh`
+
+---
+
+### Requirements and architecture as separate documents
+
+**Decision:** Maintain requirements.md (ISO 29148) and brief.md (arc42) as separate artifacts.
+
+**Rationale:** Different audiences — requirements.md serves business stakeholders and QA; brief.md serves architects and developers. Different lifecycles — requirements stabilise before architecture decisions are finalised. Different standards — ISO 29148 and arc42 have independent section structures. Separation enables parallel work and reuse (requirements can feed multiple architecture proposals). Cross-referencing is handled by the elicitation commands and the RTM (§09).
+
+**Alternatives considered:** Unified requirements-and-architecture document (simpler but mixes audiences and change cadences), ADR-only lightweight approach (just Architecture Decision Records, no formal specification structure), wiki-based documentation (collaborative but harder to version-control and validate in CI).
+
+**Applied in:** `templates/`, `scripts/gather-requirements.sh`, `scripts/gather-brief.sh`, `scripts/assemble.sh`
+
+---
+
+## Methodology & Process
+
+### Non-AI bash/Makefile as the primary interface
+
+**Decision:** The bash scripts and Makefile are the primary interface for the elicitation and build pipeline, not a fallback for the AI-assisted commands.
+
+**Rationale:** End users may not have Claude Code or any AI tool. CI pipelines must validate without AI dependencies. Bash scripts are auditable, version-controlled, diff-able, and automatable. Every GNU/Linux system has bash and make — zero additional runtime dependencies. The AI-assisted commands (/req-*, /gather-*, /elicit, /start-proposal) are enrichment on top of a solid non-AI foundation. If a feature cannot work without AI, it must have a non-AI equivalent.
+
+**References:**
+- GNU Make conventions — https://www.gnu.org/software/make/manual/html_node/Makefile-Conventions.html
+- Shell script best practices — https://sharats.me/posts/shell-script-best-practices/
+
+**Applied in:** `scripts/`, `Makefile`, `.github/workflows/build.yml` (test-elicitation job validates the non-AI path end-to-end)
+
+---
+
+### British English for all prose
+
+**Decision:** Write all prose (documentation, templates, comments, commit messages) in British English.
+
+**Rationale:** Author preference. Once a spelling convention is chosen, consistency across the entire project is more important than the specific choice. British English is the author's native dialect. codespell's default dictionaries (`clear`, `rare`) do not include the `en-GB_to_en-US` dictionary, so British spellings pass through unchecked — enforcement is by convention and code review.
+
+**Alternatives considered:** American English (would require enabling codespell's `en-GB_to_en-US` dictionary to flag British spellings).
+
+**Applied in:** All prose files, `.codespellrc`, `CLAUDE.md` (documented constraint)
+
+---
+
+### Conventional Commits for commit message format
+
+**Decision:** Enforce Conventional Commits format on all commit messages.
+
+**Rationale:** Enables automated changelog generation from commit history. Type-driven CI logic (feat → minor version bump, fix → patch, chore → no release). Semantic commit history makes git log scannable without reading diffs. Unambiguous format prevents "fix stuff" or "WIP" messages. Widely adopted by major open-source projects (Angular, Vue, Rust).
+
+**Alternatives considered:** Angular commit format (Conventional Commits is a generalisation of Angular's format), Jira-key-prefixed commits (e.g., PROJ-123: description — ties commits to issue tracker), freeform messages (no enforcement — relies on discipline).
+
+**References:**
+- Conventional Commits — https://www.conventionalcommits.org/en/v1.0.0/
+
+**Applied in:** `.pre-commit-config.yaml` (commit-msg hook via compilerla/conventional-pre-commit)
+
+---
+
+### CI job decomposition (build, test-elicitation, docker)
+
+**Decision:** Split the CI pipeline into three parallel jobs with distinct responsibilities.
+
+**Rationale:** Separation of concerns — each job validates one aspect of the project: (1) build validates the document pipeline (lint → spellcheck → shellcheck → Lua tests → PDF/HTML/DOCX generation → output validation); (2) test-elicitation validates the non-AI elicitation scripts (bats unit tests, pytest, bashcov coverage, fixture-based integration pipeline); (3) docker validates the containerised environment (Docker build → run inside container → Trivy CVE scan → GHCR push). Parallel execution reduces wall-clock time: test-elicitation (~1 min) completes while docker (~11 min) is still building.
+
+**Alternatives considered:** Single monolithic job (simpler configuration but longer wall-clock time, harder to diagnose failures), per-script job matrix (too granular, excessive overhead from repeated checkouts and installs).
+
+**Applied in:** `.github/workflows/build.yml`
+
+---
+
+## Tool Choices
+
+### bats-core for bash testing (over shunit2, shellspec)
+
+**Decision:** Use bats-core as the bash unit testing framework.
+
+**Rationale — ubiquity:** Most popular bash test framework; available in Ubuntu/Debian apt repos; 10k+ GitHub stars; TAP-compliant output integrates with any CI system. **Relevance:** `@test` syntax is intuitive — tests are just bash functions; heredoc/pipe input patterns work naturally for testing stdin-driven scripts. **Ease of use:** No class hierarchy (unlike shunit2's xUnit style), no domain-specific language to learn (unlike shellspec's BDD DSL).
+
+**Alternatives considered:** shunit2 (xUnit-based — older, less actively maintained, its own test suite has broken tests in recent versions), shellspec (BDD-style — more features including mocking, parameterised tests, and multi-shell support, but less ubiquitous and the BDD DSL adds learning overhead), basht (minimalist — too simple for a project of this size), plain bash scripts with exit codes (no framework — poor test reporting and isolation).
+
+**References:**
+- bats-core — https://github.com/bats-core/bats-core
+- shellspec comparison — https://shellspec.info/comparison.html
+
+**Applied in:** `test/scripts/*.bats`, `Makefile` (`test-scripts` target), `.github/workflows/build.yml`
+
+---
+
+### pytest for Python testing (over unittest, nose2)
+
+**Decision:** Use pytest as the Python testing framework.
+
+**Rationale — ubiquity:** De facto Python testing standard; installed in virtually every Python development environment; enormous plugin ecosystem. **Relevance:** Fixture system, parametrisation, and pytest-cov plugin for coverage enforcement. **Ease of use:** Zero boilerplate — functions, not classes; automatic test discovery; assert rewriting produces clear failure messages without assertEqual/assertTrue ceremony.
+
+**Alternatives considered:** unittest (Python standard library — built-in but verbose class-based API, weaker fixtures, no parametrize decorator, no plugin ecosystem), nose2 (unittest extension — less actively maintained, smaller community), hypothesis (property-based testing — complementary, not a replacement for unit tests).
+
+**References:**
+- pytest — https://docs.pytest.org
+- pytest-cov — https://pytest-cov.readthedocs.io
+
+**Applied in:** `test/python/`, `requirements-dev.txt`, `Makefile` (`test-python` target), `.github/workflows/build.yml`
+
+---
+
+### bashcov for bash coverage (over kcov)
+
+**Decision:** Use bashcov (Ruby) for bash code coverage measurement.
+
+**Rationale:** bashcov uses bash's native PS4/BASH_XTRACEFD tracing mechanism, which traces ALL bash execution including sourced files (`scripts/lib/input.sh`) and scripts invoked by bats test subprocesses. SimpleCov integration provides HTML reports, Cobertura XML output, result merging across multiple test runs, and the `.simplecov` configuration file with `minimum_coverage 90` gate enforcement.
+
+**Why not kcov:** kcov v38 (available via apt on Ubuntu 24.04) is too old to trace through bats subprocesses — it instruments bats itself rather than the scripts bats invokes. kcov v43 (latest) fixes this but requires building from source (cmake + C++ compiler), adding significant build complexity. kcov also lacks SimpleCov-style configuration, merge support, and minimum_coverage gating.
+
+**Trade-off:** bashcov requires Ruby, which is an unusual dependency for a bash-focused project. This is the one tool choice driven by technical necessity rather than ubiquity — kcov simply could not produce accurate coverage data for our bats-driven test suite.
+
+**References:**
+- bashcov — https://github.com/infertux/bashcov
+- kcov — https://github.com/SimonKagstrom/kcov
+- bats-core kcov issue — https://github.com/bats-core/bats-core/issues/15
+
+**Applied in:** `Gemfile`, `.simplecov`, `scripts/coverage.sh`, `.github/workflows/build.yml`, `Dockerfile`
+
+---
+
+## Additional Tool Justifications
+
+### Pandoc as document generation engine
+
+**Decision:** Use Pandoc as the core document generation engine.
+
+**Rationale:** Universal converter — Markdown → PDF + HTML + DOCX from a single source. Extensive filter ecosystem: Lua filters (`diagram.lua` for Mermaid/PlantUML/GraphViz), pandoc-crossref (figure/table/equation numbering), citeproc (bibliography). No vendor lock-in — Markdown input is portable to any other tool if Pandoc is ever replaced. Mature, well-documented, actively maintained (John MacFarlane, UC Berkeley).
+
+**Alternatives considered:** Sphinx (Python-centric, requires reStructuredText or MyST-Markdown, primarily HTML output — planned enhancement for web output), Asciidoctor (AsciiDoc markup, Ruby-based, strong PDF via asciidoctor-pdf — planned enhancement for AsciiDoc input), Hugo / MkDocs / Docusaurus (static site generators — web-focused, no native PDF — planned enhancement for web output), LaTeX direct (no Markdown input, requires LaTeX expertise), groff / troff (Unix legacy, not Markdown-based).
+
+**References:**
+- Pandoc — https://pandoc.org
+- Pandoc Lua filters — https://pandoc.org/lua-filters.html
+
+**Applied in:** `Makefile` (`PANDOC_FLAGS`), `Dockerfile` (pandoc installation), `.github/workflows/build.yml`
+
+---
+
+### XeLaTeX as PDF engine (over pdflatex, LuaLaTeX)
+
+**Decision:** Use XeLaTeX as the PDF rendering engine.
+
+**Rationale:** Enables custom fonts (system fonts via fontspec) and full Unicode support — pdflatex does not support either. XeLaTeX is older and more widely tested than LuaLaTeX, with fewer rendering edge cases. It is the default pandoc PDF engine for custom font usage.
+
+**Alternatives considered:** pdflatex (faster compilation but no custom font support and limited Unicode), LuaLaTeX (newer, adds Lua scripting within LaTeX — ironically relevant given our Lua filter, but has occasional font rendering differences and is less battle-tested; worth revisiting as it matures), Typst (modern alternative to LaTeX — much faster, simpler syntax, but less mature and lacks pandoc integration).
+
+**References:**
+- LaTeX Project — https://www.latex-project.org
+- Pandoc PDF creation — https://pandoc.org/MANUAL.html#creating-a-pdf
+
+**Applied in:** `Makefile` (`--pdf-engine=xelatex`), `project.tex`
+
+---
+
+### Mermaid as default diagram engine (over PlantUML, GraphViz)
+
+**Decision:** Use Mermaid as the default diagram rendering engine.
+
+**Rationale:** JavaScript-based — renders in browser (GitHub Markdown preview), CLI (mmdc), and embedded environments. No Java dependency (unlike PlantUML). Sufficient diagram types for architecture documentation: flowchart, sequence, entity-relationship, Gantt, C4 (via flowchart subgraphs). The vendored `pandoc-ext/diagram` filter supports PlantUML, GraphViz, TikZ, Asymptote, and Cetz in addition to Mermaid — Mermaid is the default, not the only option.
+
+**Alternatives considered:** PlantUML (more diagram types, UML-native, but requires Java runtime — support already in vendored filter, planned enhancement to test and document), GraphViz/dot (excellent for graph visualisation, widely available via apt — support already in vendored filter, planned enhancement), D2 (modern text-to-diagram, auto-layout — not yet in vendored filter), Structurizr DSL (C4-specific rendering — opinionated but limited to C4), ArchiMate tooling (enterprise-focused — overkill for single-system architecture).
+
+**References:**
+- Mermaid — https://mermaid.js.org
+- pandoc-ext/diagram — https://github.com/pandoc-ext/diagram
+- Text-to-diagram landscape — https://text-to-diagram.com
+
+**Applied in:** `package.json` (`@mermaid-js/mermaid-cli`), `filters/diagram.lua`, `Dockerfile`, `.github/workflows/build.yml`
+
+---
+
+## Testability Patterns
+
+### Shared I/O library (scripts/lib/input.sh)
+
+**Decision:** Extract shared I/O functions (`ask`, `ask_yn`, `ask_multiline`) into a shared library sourced by both gather scripts.
+
+**Rationale:** DRY principle — the three functions were identically duplicated in `gather-requirements.sh` and `gather-brief.sh` (50 lines × 2). Single source of truth means bugs are fixed once, coverage is measured once, and I/O behaviour is guaranteed consistent. Independent testability — the library can be unit-tested in isolation (`test/scripts/input-lib.bats`).
+
+**References:**
+- Bash Best Practices — https://bertvv.github.io/cheat-sheets/Bash.html (prefer local variables, Single Responsibility)
+
+**Applied in:** `scripts/lib/input.sh`, `scripts/gather-requirements.sh`, `scripts/gather-brief.sh`, `test/scripts/input-lib.bats`
+
+---
+
+### Section functions + --source-only guard
+
+**Decision:** Refactor gather scripts into named section functions with a `--source-only` guard for test imports.
+
+**Rationale:** Enables unit testing individual sections without running the full interactive flow. Each function (`gather_req_01` through `gather_req_09`, `gather_brief_01` through `gather_brief_11`) reads from stdin and sets global variables — tests pipe known input and verify the results. The `--source-only` guard (`if [[ "${1-}" == "--source-only" ]]; then return 0 2>/dev/null || exit 0; fi`) allows `source script.sh --source-only` to import all functions without executing the main body. Standard pattern in testable bash architecture.
+
+**Applied in:** `scripts/gather-requirements.sh`, `scripts/gather-brief.sh`, `test/scripts/gather-requirements.bats`, `test/scripts/gather-brief.bats`
+
+---
+
+### 90% coverage threshold
+
+**Decision:** Enforce 90% minimum line-level code coverage for all project-owned code.
+
+**Rationale:** Industry-standard threshold for mature projects. Below 80% allows too many untested code paths, increasing regression risk. Above 95% forces testing trivial code (guard clauses, unreachable error handling) with diminishing returns and brittle tests. 90% balances thoroughness with the practical reality that some code paths (interactive terminal I/O, error recovery from external tools) require complex test fixtures.
+
+**Alternatives considered:** 80% (simpler to achieve but leaves significant gaps), 95% (stricter but forces testing edge cases that rarely execute), 100% (theoretically ideal but practically unachievable for interactive scripts without mocking the terminal).
+
+**References:**
+- SimpleCov minimum_coverage — https://github.com/simplecov-ruby/simplecov#minimum-coverage
+- Codecov commit status — https://docs.codecov.io/docs/commit-status
+- Google Testing Blog — https://testing.googleblog.com
+
+**Applied in:** `.simplecov` (`minimum_coverage 90`), `Makefile` (`test-python --cov-fail-under=90`), `docs/pipeline-decisions.md`
