@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:24.04@sha256:c4a8d5503dfb2a3eb8ab5f807da5bc69a85730fb49b5cfca2330194ebcc41c7b
 
 # DEBIAN_FRONTEND as ARG (not ENV): scoped to build-time RUN commands only and does not
 # persist into the final image. If set as ENV it affects every container run from this image,
