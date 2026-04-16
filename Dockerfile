@@ -35,13 +35,35 @@ LABEL org.opencontainers.image.title="Daedalus" \
 # only invalidate layers from that point forward.
 # Reference — https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#leverage-build-cache
 
+# apt-get retry wrapper — Ubuntu archive mirrors occasionally return hash mismatches during
+# mirror sync windows ("File has unexpected size … Mirror sync in progress?"). Retrying
+# apt-get update after a short delay resolves this reliably.
+# Reference — https://bugs.launchpad.net/ubuntu/+source/apt/+bug/1785778
+COPY <<'EOF' /usr/local/bin/apt-retry
+#!/bin/sh
+# Retry apt-get update up to 3 times with a 10-second delay between attempts.
+max_attempts=3
+attempt=1
+while [ "$attempt" -le "$max_attempts" ]; do
+    if apt-get update; then
+        exec apt-get "$@"
+    fi
+    echo "apt-get update failed (attempt $attempt/$max_attempts), retrying in 10s..."
+    sleep 10
+    attempt=$((attempt + 1))
+done
+echo "apt-get update failed after $max_attempts attempts" >&2
+exit 1
+EOF
+RUN chmod +x /usr/local/bin/apt-retry
+
 # Base utilities — curl used throughout (not wget) for consistency; -fsSL flags enforce
 # error detection (-f: fail on HTTP error), silent output, and redirect following.
 # --no-install-recommends: excludes optional packages not required at runtime, reducing
 # image size significantly. rm -rf /var/lib/apt/lists/*: must be in the same RUN layer as
 # apt-get install to prevent the package index from being baked into the image layer.
 # Reference — https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#apt-get
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-retry install -y --no-install-recommends \
     bats \
     ca-certificates \
     curl \
@@ -68,7 +90,7 @@ RUN curl -fsSL -o pandoc-crossref.tar.xz \
     && rm pandoc-crossref.tar.xz
 
 # Install XeLaTeX (large layer — placed after pandoc which changes less often than Node/npm).
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-retry install -y --no-install-recommends \
     texlive-xetex \
     texlive-fonts-recommended \
     texlive-latex-extra \
@@ -84,7 +106,7 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
       | gpg --dearmor -o /usr/share/keyrings/nodesource.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_22.x nodistro main" \
        > /etc/apt/sources.list.d/nodesource.list \
-    && apt-get update && apt-get install -y --no-install-recommends nodejs \
+    && apt-retry install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome for @mermaid-js/mermaid-cli (mmdc).
@@ -96,7 +118,7 @@ RUN curl -fsSL https://dl-ssl.google.com/linux/linux_signing_key.pub \
       | gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg \
     && echo "deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main" \
        > /etc/apt/sources.list.d/google-chrome.list \
-    && apt-get update && apt-get install -y --no-install-recommends \
+    && apt-retry install -y --no-install-recommends \
         google-chrome-stable \
     && rm -rf /var/lib/apt/lists/*
 
@@ -154,7 +176,7 @@ RUN cd /tmp/npm-install \
 # Reference — PEP 668: https://peps.python.org/pep-0668/
 # Reference — pip constraints files: https://pip.pypa.io/en/stable/user_guide/#constraints-files
 COPY requirements-dev.txt /tmp/requirements-dev.txt
-RUN apt-get update && apt-get install -y --no-install-recommends python3-venv \
+RUN apt-retry install -y --no-install-recommends python3-venv \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/codespell \
     && /opt/codespell/bin/pip install --no-cache-dir --constraint /tmp/requirements-dev.txt codespell \
@@ -166,7 +188,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3-venv \
 # Reference — bashcov: https://github.com/infertux/bashcov
 # Reference — simplecov-cobertura: https://github.com/dashingrocket/simplecov-cobertura
 COPY Gemfile /tmp/Gemfile
-RUN apt-get update && apt-get install -y --no-install-recommends ruby ruby-dev build-essential \
+RUN apt-retry install -y --no-install-recommends ruby ruby-dev build-essential \
     && rm -rf /var/lib/apt/lists/* \
     && cd /tmp && gem install bundler --no-document \
     && bundle install --gemfile=/tmp/Gemfile --no-cache \
