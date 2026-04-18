@@ -2,7 +2,7 @@
 
 [![Build & Validate PDF](https://github.com/adamdaw/daedalus/actions/workflows/build.yml/badge.svg?branch=master)](https://github.com/adamdaw/daedalus/actions/workflows/build.yml?query=branch%3Amaster)
 
-An architecture documentation pipeline with structured requirements elicitation. Write in Markdown, run `make all`, get professional PDF, HTML, and DOCX — with cover page, table of contents, Mermaid diagrams, cross-references, and bibliography. No AI required.
+An architecture documentation pipeline with structured requirements elicitation. Write in Markdown, run `make all`, get professional PDF, HTML, and DOCX — with cover page, table of contents, Mermaid diagrams, cross-references, and bibliography. Works with or without AI.
 
 Daedalus guides you from blank proposal to finished document through two phases: **requirements gathering** ([ISO/IEC/IEEE 29148:2018](https://www.iso.org/standard/72089.html)) and **architecture elicitation** ([arc42](https://arc42.org) default template, with [C4 Model](https://c4model.com) diagrams). Interactive bash scripts walk you through each section at the terminal; [Claude Code](https://docs.anthropic.com/en/docs/claude-code) commands provide AI-assisted enrichment for teams that use it.
 
