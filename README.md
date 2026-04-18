@@ -10,6 +10,31 @@ Built on [Pandoc](https://pandoc.org/), [XeLaTeX](https://www.latex-project.org/
 
 ---
 
+## Where Daedalus fits
+
+Daedalus is the **spec artifact layer** of a Verified Spec-Driven Development (VSDD)
+workflow — upstream of any implementation pipeline:
+
+```
+  raw material              Daedalus              spec artifact            downstream
+  (notes, briefs,           (this repo)           (arc42 document          implementation
+   stakeholder       ───→   elicitation   ───→     + ADRs                  + verification
+   conversations)           + assembly             + quality scenarios)    (out of scope)
+```
+
+The arc42 document Daedalus produces *is* the formal specification — Section 1 is the
+behavioural contract, Section 9 (ADRs) is the decision record, Section 10 is the
+provable properties catalogue. Once the spec converges (see [phase gates](docs/mem-1-project-context.md#phase-gate-rules)),
+it's intended to drive whatever downstream pipeline you have for code, configuration,
+and verification work.
+
+You can also use Daedalus standalone as a documentation pipeline — most users will. The
+VSDD framing matters when you want the spec to act as a contract that downstream agents
+(or humans) consume, not just a deliverable. See [`docs/mem-2-vsdd-reference.md`](docs/mem-2-vsdd-reference.md)
+for the methodology in full.
+
+---
+
 ## 30-second quickstart
 
 No local install required — pull the pre-built image from GitHub Container Registry and build the example document:
