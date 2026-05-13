@@ -57,6 +57,13 @@ exit 1
 EOF
 RUN chmod +x /usr/local/bin/apt-retry
 
+# pebble is Canonical's container init system shipped in the ubuntu base image.
+# It is not used here (CMD is make all). Remove it to eliminate Go stdlib CVEs
+# it would otherwise carry into the image (the vulnerable DNS, HTTP/2, and email
+# parsing code paths are never reached by this build pipeline).
+RUN apt-get remove -y --purge pebble \
+    && rm -rf /var/lib/apt/lists/*
+
 # Base utilities — curl used throughout (not wget) for consistency; -fsSL flags enforce
 # error detection (-f: fail on HTTP error), silent output, and redirect following.
 # --no-install-recommends: excludes optional packages not required at runtime, reducing
