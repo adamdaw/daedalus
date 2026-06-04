@@ -34,7 +34,7 @@ jobs:
       proposals: ${{ steps.detect.outputs.proposals }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
           # fetch-depth: 2 — requires HEAD and HEAD~1 to compute git diff for change detection.
@@ -86,7 +86,7 @@ jobs:
         proposal: ${{ fromJson(needs.detect.outputs.proposals) }}
 
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
           persist-credentials: false
           fetch-depth: 1
