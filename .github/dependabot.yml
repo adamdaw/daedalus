@@ -6,6 +6,13 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
+    # The codeql-action sub-actions (init, autobuild, analyze) must move in
+    # lockstep — a partial bump makes CodeQL fail with a step-version mismatch.
+    # Grouping them means Dependabot opens a single PR that updates all usages.
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
 
   - package-ecosystem: "docker"
     directory: "/"
