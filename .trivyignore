@@ -28,3 +28,26 @@
 #
 # Reference: https://avd.aquasec.com/nvd/cve-2026-33671
 CVE-2026-33671 target:usr/lib/node_modules/npm/node_modules/picomatch/package.json
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CVE-2026-48815 — sigstore certificateOIDs bypass in npm's internal bundle
+# ─────────────────────────────────────────────────────────────────────────────
+# sigstore < 4.1.1 silently drops the `certificateOIDs` option passed to
+# sigstore.verify(), so required certificate-extension OIDs are never enforced
+# (CWE-347, integrity-only; CVSS 7.5). The fix is sigstore >= 4.1.1.
+#
+# The flagged instance is /usr/lib/node_modules/npm/node_modules/sigstore — npm's
+# own bundled provenance dependency (Node 22 / npm 10 installed by NodeSource),
+# not code we wrote nor a build tool we invoke. As with the picomatch entry above,
+# package.json overrides cannot reach npm's internal bundle, and upgrading npm is
+# the same dead end (Node 22's npm 10.x bundles sigstore 3.1.0).
+#
+# The bug is only reachable by a caller that invokes sigstore.verify() with a
+# `certificateOIDs` constraint. The daedalus image builds PDFs; it never publishes
+# npm packages nor verifies sigstore attestations at runtime, so this code path is
+# never exercised. This entry will be removed when NodeSource ships a Node.js whose
+# bundled npm includes sigstore >= 4.1.1.
+#
+# Reference: https://github.com/advisories/GHSA-52v5-jr5w-gjxr
+# Reference: https://nvd.nist.gov/vuln/detail/CVE-2026-48815
+CVE-2026-48815 target:usr/lib/node_modules/npm/node_modules/sigstore/package.json
